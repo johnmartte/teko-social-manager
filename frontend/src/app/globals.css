@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f5f2ec;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-hover: #fafaf8;
+  --border: #e8e4dc;
+  --muted: #9a9489;
+  --accent: #e1306c;
+  --accent-light: #fce4ec;
+  --fb: #1877f2;
+  --fb-light: #e3f0ff;
+  --warning: #f5a623;
+  --warning-light: #fef3cd;
+  --success: #22c55e;
+  --success-light: #dcfce7;
+  --sidebar: #1a1a1a;
+  --sidebar-text: #a0a0a0;
+  --sidebar-active: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-fb: var(--fb);
+  --color-fb-light: var(--fb-light);
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-text: var(--sidebar-text);
+  --color-sidebar-active: var(--sidebar-active);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
