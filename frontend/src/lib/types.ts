@@ -61,3 +61,26 @@ export type FacebookPost = {
   likes?: { summary: { total_count: number } };
   comments?: { summary: { total_count: number } };
 };
+
+export type ScheduledPost = {
+  id: number;
+  platform: "instagram" | "facebook" | "both";
+  type: "photo" | "reel" | "carousel" | "text";
+  caption: string | null;
+  media_urls: string[] | null;
+  scheduled_at: string;
+  status: "pending" | "published" | "failed";
+  error_message: string | null;
+  meta_post_id: string | null;
+  ig_user_id: string | null;
+  fb_page_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type IgComment = {
+  id: string;
+  text: string;
+  username: string;
+  timestamp: string;
+};

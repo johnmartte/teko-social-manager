@@ -317,4 +317,12 @@ class MetaApiService
             'access_token' => $pageToken,
         ])->json();
     }
+
+    public function updatePagePost(string $postId, string $pageToken, string $message): array
+    {
+        return Http::post("{$this->fbApi}/{$postId}", [
+            'message' => $message,
+            'access_token' => $pageToken,
+        ])->json();
+    }
 }

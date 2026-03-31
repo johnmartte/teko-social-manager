@@ -13,6 +13,7 @@ const navItems = [
   { href: "/comments", label: "Comentarios", icon: CommentsIcon },
   { href: "/insights", label: "Estadísticas", icon: InsightsIcon },
   { href: "/automations", label: "Automatizaciones", icon: SparkIcon },
+  { href: "/posts", label: "Mis posts", icon: PostsIcon },
 ];
 
 export default function Sidebar() {
@@ -150,6 +151,15 @@ function InsightsIcon({ active }: { active: boolean }) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? "#fff" : "#a0a0a0"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 20V10M12 20V4M6 20v-6" />
+    </svg>
+  );
+}
+
+function PostsIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? "#fff" : "#a0a0a0"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18M9 21V9" />
     </svg>
   );
 }

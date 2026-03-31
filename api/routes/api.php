@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FacebookController;
 use App\Http\Controllers\InstagramController;
+use App\Http\Controllers\ScheduledPostController;
 use App\Http\Controllers\UploadController;
 use App\Http\Middleware\EnsureFacebookToken;
 use App\Http\Middleware\EnsureInstagramToken;
@@ -43,4 +44,11 @@ Route::prefix('facebook')->middleware(EnsureFacebookToken::class)->group(functio
     Route::post('/page/publish/photo', [FacebookController::class, 'publishPhoto']);
 
     Route::delete('/posts/{postId}', [FacebookController::class, 'deletePost']);
+    Route::patch('/posts/{postId}', [FacebookController::class, 'updatePost']);
 });
+
+// Scheduled posts
+Route::get('/scheduled-posts', [ScheduledPostController::class, 'index']);
+Route::post('/scheduled-posts', [ScheduledPostController::class, 'store']);
+Route::delete('/scheduled-posts/{scheduledPost}', [ScheduledPostController::class, 'destroy']);
+Route::post('/scheduled-posts/{scheduledPost}/publish', [ScheduledPostController::class, 'publish']);

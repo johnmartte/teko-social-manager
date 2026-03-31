@@ -101,4 +101,25 @@ class FacebookController extends Controller
             $this->meta->deletePost($postId, $request->attributes->get('fb_token'))
         );
     }
+
+    public function updatePost(Request $request, string $postId): JsonResponse
+    {
+        $request->validate(['message' => 'required|string']);
+
+        try {
+            $result = $this->meta->updatePagePost(
+                $postId,
+                $request->attributes->get('fb_token'),
+                $request->input('message'),
+            );
+
+            if (!empty($result['error'])) {
+                return response()->json(['error' => $result['error']['message'] ?? json_encode($result['error'])], 422);
+            }
+
+            return response()->json($result);
+        } catch (Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
 }
