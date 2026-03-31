@@ -78,8 +78,8 @@ export default function Header() {
         )}
 
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-warning to-accent flex items-center justify-center text-white text-sm font-bold shadow-[0_12px_24px_rgba(232,161,38,0.35)]">
-          T
+        <div className="w-10 h-10 rounded-2xl bg-sidebar flex items-center justify-center shadow-[0_12px_24px_rgba(16,130,255,0.25)] overflow-hidden p-1.5">
+          <img src="/logos/isotipo.svg" alt="Teko" className="w-full h-full object-contain" />
         </div>
       </div>
     </header>
