@@ -15,7 +15,6 @@ return [
         'pages_show_list',
         'pages_read_engagement',
         'pages_manage_posts',
-        'pages_manage_engagement',
         'business_management',
     ],
 
