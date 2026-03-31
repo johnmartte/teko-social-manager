@@ -157,6 +157,11 @@ class MetaApiService
             'access_token' => $token,
         ])->json();
 
+        if (empty($container['id'])) {
+            $msg = $container['error']['message'] ?? json_encode($container);
+            throw new \RuntimeException("Instagram container error: {$msg}");
+        }
+
         return Http::post("{$this->igApi}/{$userId}/media_publish", [
             'creation_id' => $container['id'],
             'access_token' => $token,
@@ -171,6 +176,11 @@ class MetaApiService
             'caption' => $caption,
             'access_token' => $token,
         ])->json();
+
+        if (empty($container['id'])) {
+            $msg = $container['error']['message'] ?? json_encode($container);
+            throw new \RuntimeException("Instagram container error: {$msg}");
+        }
 
         return Http::post("{$this->igApi}/{$userId}/media_publish", [
             'creation_id' => $container['id'],
@@ -187,6 +197,10 @@ class MetaApiService
                 'is_carousel_item' => true,
                 'access_token' => $token,
             ])->json();
+            if (empty($resp['id'])) {
+                $msg = $resp['error']['message'] ?? json_encode($resp);
+                throw new \RuntimeException("Instagram carousel item error: {$msg}");
+            }
             $itemIds[] = $resp['id'];
         }
 
@@ -196,6 +210,11 @@ class MetaApiService
             'caption' => $caption,
             'access_token' => $token,
         ])->json();
+
+        if (empty($carousel['id'])) {
+            $msg = $carousel['error']['message'] ?? json_encode($carousel);
+            throw new \RuntimeException("Instagram carousel error: {$msg}");
+        }
 
         return Http::post("{$this->igApi}/{$userId}/media_publish", [
             'creation_id' => $carousel['id'],

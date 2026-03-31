@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\MetaApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 class InstagramController extends Controller
 {
@@ -51,14 +52,18 @@ class InstagramController extends Controller
             'caption' => 'nullable|string|max:2200',
         ]);
 
-        return response()->json(
-            $this->meta->publishPhoto(
-                $request->attributes->get('ig_user_id'),
-                $request->attributes->get('ig_token'),
-                $request->input('image_url'),
-                $request->input('caption', ''),
-            )
-        );
+        try {
+            return response()->json(
+                $this->meta->publishPhoto(
+                    $request->attributes->get('ig_user_id'),
+                    $request->attributes->get('ig_token'),
+                    $request->input('image_url'),
+                    $request->input('caption', ''),
+                )
+            );
+        } catch (Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
     public function publishReel(Request $request): JsonResponse
@@ -68,14 +73,18 @@ class InstagramController extends Controller
             'caption' => 'nullable|string|max:2200',
         ]);
 
-        return response()->json(
-            $this->meta->publishReel(
-                $request->attributes->get('ig_user_id'),
-                $request->attributes->get('ig_token'),
-                $request->input('video_url'),
-                $request->input('caption', ''),
-            )
-        );
+        try {
+            return response()->json(
+                $this->meta->publishReel(
+                    $request->attributes->get('ig_user_id'),
+                    $request->attributes->get('ig_token'),
+                    $request->input('video_url'),
+                    $request->input('caption', ''),
+                )
+            );
+        } catch (Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
     public function publishCarousel(Request $request): JsonResponse
@@ -86,14 +95,18 @@ class InstagramController extends Controller
             'caption' => 'nullable|string|max:2200',
         ]);
 
-        return response()->json(
-            $this->meta->publishCarousel(
-                $request->attributes->get('ig_user_id'),
-                $request->attributes->get('ig_token'),
-                $request->input('image_urls'),
-                $request->input('caption', ''),
-            )
-        );
+        try {
+            return response()->json(
+                $this->meta->publishCarousel(
+                    $request->attributes->get('ig_user_id'),
+                    $request->attributes->get('ig_token'),
+                    $request->input('image_urls'),
+                    $request->input('caption', ''),
+                )
+            );
+        } catch (Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
     public function comments(Request $request, string $mediaId): JsonResponse
