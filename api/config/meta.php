@@ -14,7 +14,6 @@ return [
         'instagram_manage_comments',
         'pages_show_list',
         'pages_read_engagement',
-        'pages_manage_posts',
         'business_management',
     ],
 
