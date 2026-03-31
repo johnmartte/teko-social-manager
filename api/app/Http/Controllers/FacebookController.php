@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\MetaApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 class FacebookController extends Controller
 {
@@ -42,14 +43,22 @@ class FacebookController extends Controller
             'link' => 'nullable|url',
         ]);
 
-        return response()->json(
-            $this->meta->publishPagePost(
+        try {
+            $result = $this->meta->publishPagePost(
                 $request->attributes->get('fb_page_id'),
                 $request->attributes->get('fb_token'),
                 $request->input('message'),
                 $request->input('link'),
-            )
-        );
+            );
+
+            if (!empty($result['error'])) {
+                return response()->json(['error' => $result['error']['message'] ?? json_encode($result['error'])], 422);
+            }
+
+            return response()->json($result);
+        } catch (Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
     public function publishPhoto(Request $request): JsonResponse
@@ -59,14 +68,22 @@ class FacebookController extends Controller
             'caption' => 'nullable|string',
         ]);
 
-        return response()->json(
-            $this->meta->publishPagePhoto(
+        try {
+            $result = $this->meta->publishPagePhoto(
                 $request->attributes->get('fb_page_id'),
                 $request->attributes->get('fb_token'),
                 $request->input('image_url'),
-                $request->input('caption', ''),
-            )
-        );
+                (string) $request->input('caption', ''),
+            );
+
+            if (!empty($result['error'])) {
+                return response()->json(['error' => $result['error']['message'] ?? json_encode($result['error'])], 422);
+            }
+
+            return response()->json($result);
+        } catch (Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
     public function insights(Request $request): JsonResponse
