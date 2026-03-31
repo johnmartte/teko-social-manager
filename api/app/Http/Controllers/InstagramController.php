@@ -58,7 +58,7 @@ class InstagramController extends Controller
                     $request->attributes->get('ig_user_id'),
                     $request->attributes->get('ig_token'),
                     $request->input('image_url'),
-                    $request->input('caption', ''),
+                    (string) $request->input('caption', ''),
                 )
             );
         } catch (Throwable $e) {
@@ -79,7 +79,7 @@ class InstagramController extends Controller
                     $request->attributes->get('ig_user_id'),
                     $request->attributes->get('ig_token'),
                     $request->input('video_url'),
-                    $request->input('caption', ''),
+                    (string) $request->input('caption', ''),
                 )
             );
         } catch (Throwable $e) {
@@ -101,7 +101,7 @@ class InstagramController extends Controller
                     $request->attributes->get('ig_user_id'),
                     $request->attributes->get('ig_token'),
                     $request->input('image_urls'),
-                    $request->input('caption', ''),
+                    (string) $request->input('caption', ''),
                 )
             );
         } catch (Throwable $e) {
