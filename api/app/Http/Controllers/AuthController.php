@@ -59,8 +59,8 @@ class AuthController extends Controller
 
             return redirect("{$frontendUrl}?auth=success");
         } catch (Throwable $e) {
-            report($e);
-            return redirect("{$frontendUrl}?auth=error");
+            \Log::error('OAuth callback error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect("{$frontendUrl}?auth=error&reason=" . urlencode($e->getMessage()));
         }
     }
 
