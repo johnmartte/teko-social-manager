@@ -3,16 +3,54 @@
 import { useAuth } from "@/context/AuthContext";
 import Card, { StatCard } from "@/components/Card";
 import { getLoginUrl, formatNum, api } from "@/lib/api";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { InstagramProfile, FacebookPage } from "@/lib/types";
+
+type SocialTask = {
+  id: string;
+  title: string;
+  owner: string;
+  tag: "Contenido" | "Moderacion" | "Ads" | "Comunidad";
+  due: string;
+};
+
+const dailyTasks: SocialTask[] = [
+  {
+    id: "t1",
+    title: "Programar carrusel de producto",
+    owner: "Andrea",
+    tag: "Contenido",
+    due: "10:30",
+  },
+  {
+    id: "t2",
+    title: "Responder mensajes urgentes",
+    owner: "Luis",
+    tag: "Comunidad",
+    due: "11:15",
+  },
+  {
+    id: "t3",
+    title: "Revisar comentarios reportados",
+    owner: "Nora",
+    tag: "Moderacion",
+    due: "13:00",
+  },
+  {
+    id: "t4",
+    title: "Ajustar presupuesto campaña",
+    owner: "Marco",
+    tag: "Ads",
+    due: "15:40",
+  },
+];
 
 export default function DashboardPage() {
   const { status, loading } = useAuth();
 
   if (loading) return <DashboardSkeleton />;
 
-  const connected =
-    status?.instagram.connected || status?.facebook.connected;
+  const connected = status?.instagram.connected || status?.facebook.connected;
 
   if (!connected) return <ConnectPrompt />;
 
@@ -21,25 +59,29 @@ export default function DashboardPage() {
 
 function ConnectPrompt() {
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center max-w-md">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-accent to-[#7c3aed] flex items-center justify-center">
+    <div className="flex items-center justify-center min-h-[70vh] teko-enter">
+      <div className="w-full max-w-xl rounded-[34px] border border-border bg-card/95 px-8 py-10 shadow-[0_32px_60px_rgba(64,48,21,0.14)] text-center relative overflow-hidden">
+        <div className="absolute -left-10 -top-12 w-40 h-40 rounded-full bg-accent-light/70 blur-2xl" />
+        <div className="absolute -right-10 -bottom-14 w-48 h-48 rounded-full bg-fb-light/70 blur-2xl" />
+
+        <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-linear-to-br from-accent to-[#f39f1f] flex items-center justify-center shadow-[0_16px_34px_rgba(225,48,108,0.34)] relative z-10">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
             <polyline points="15,3 21,3 21,9" />
             <line x1="10" y1="14" x2="21" y2="3" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold mb-2">Bienvenido a Teko Social</h1>
-        <p className="text-muted mb-6 text-sm">
-          Conecta tu cuenta de Instagram Business o Creator para empezar a
-          gestionar tus redes sociales desde un solo lugar.
+
+        <h1 className="text-3xl font-bold mb-2 relative z-10">Centro de control social</h1>
+        <p className="text-muted mb-8 text-sm max-w-md mx-auto relative z-10">
+          Conecta Instagram y Facebook para activar el tablero avanzado de contenido,
+          comentarios, automatizaciones y analitica en un solo flujo.
         </p>
         <a
           href={getLoginUrl()}
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-accent to-[#7c3aed] text-white px-6 py-3 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 bg-linear-to-r from-accent to-[#f39f1f] text-white px-7 py-3.5 rounded-2xl font-semibold text-sm hover:opacity-90 transition-opacity shadow-[0_12px_28px_rgba(225,48,108,0.34)] relative z-10"
         >
-          Conectar con Instagram / Facebook
+          Conectar Instagram y Facebook
         </a>
       </div>
     </div>
@@ -64,129 +106,209 @@ function DashboardContent() {
     }
   }, [status]);
 
+  const completion = useMemo(() => {
+    const total = dailyTasks.length;
+    const done = 2;
+    return Math.round((done / total) * 100);
+  }, []);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold">
-          Hola{igProfile ? `, @${igProfile.username}` : ""}
-        </h1>
-        <p className="text-muted text-sm mt-1">
-          Este es el resumen de tus cuentas conectadas.
-        </p>
-      </div>
+    <div className="space-y-6 teko-enter">
+      <section className="rounded-[34px] border border-border bg-card/95 px-6 py-6 sm:px-8 relative overflow-hidden shadow-[0_24px_56px_rgba(75,58,28,0.1)]">
+        <div className="absolute -right-10 -top-5 h-40 w-40 rounded-full bg-fb-light/70 blur-2xl" />
+        <div className="absolute -left-8 -bottom-11 h-44 w-44 rounded-full bg-warning-light/70 blur-2xl" />
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {igProfile && (
-          <>
-            <StatCard
-              label="Seguidores en Instagram"
-              value={formatNum(igProfile.followers_count)}
-              color="#e1306c"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e1306c" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></svg>}
-            />
-            <StatCard
-              label="Posts en Instagram"
-              value={formatNum(igProfile.media_count)}
-              color="#f5a623"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f5a623" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>}
-            />
-          </>
-        )}
-        {fbPage && (
-          <>
-            <StatCard
-              label="Fans en Facebook"
-              value={formatNum(fbPage.fan_count)}
-              color="#1877f2"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="#1877f2"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /></svg>}
-            />
-            <StatCard
-              label="Seguidores en Facebook"
-              value={formatNum(fbPage.followers_count)}
-              color="#22c55e"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>}
-            />
-          </>
-        )}
-      </div>
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-muted font-semibold">Panel diario</p>
+            <h1 className="text-3xl font-bold mt-1">
+              Hola{igProfile ? `, @${igProfile.username}` : ""}
+            </h1>
+            <p className="text-sm text-muted mt-1 max-w-xl">
+              Gestiona publicaciones, conversaciones y rendimiento de tus cuentas
+              desde una vista unificada.
+            </p>
+          </div>
 
-      {/* Profile cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {igProfile && (
-          <Card title="Instagram" color="#e1306c">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent to-[#fcaf45] flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                {igProfile.username[0].toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{igProfile.name || igProfile.username}</p>
-                <p className="text-xs text-muted">@{igProfile.username}</p>
-                {igProfile.biography && <p className="text-xs text-muted mt-1 truncate">{igProfile.biography}</p>}
-              </div>
-            </div>
-            <div className="flex gap-6 mt-4 pt-4 border-t border-border">
-              <div>
-                <p className="text-lg font-bold">{formatNum(igProfile.followers_count)}</p>
-                <p className="text-xs text-muted">Seguidores</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold">{formatNum(igProfile.media_count)}</p>
-                <p className="text-xs text-muted">Publicaciones</p>
-              </div>
-            </div>
-          </Card>
-        )}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:max-w-140 teko-stagger">
+            {igProfile && (
+              <StatCard
+                label="Seguidores IG"
+                value={formatNum(igProfile.followers_count)}
+                color="#e1306c"
+                icon={<DotIcon color="#e1306c" />}
+              />
+            )}
+            {igProfile && (
+              <StatCard
+                label="Posts IG"
+                value={formatNum(igProfile.media_count)}
+                color="#e8a126"
+                icon={<DotIcon color="#e8a126" />}
+              />
+            )}
+            {fbPage && (
+              <StatCard
+                label="Fans FB"
+                value={formatNum(fbPage.fan_count)}
+                color="#1877f2"
+                icon={<DotIcon color="#1877f2" />}
+              />
+            )}
+            {fbPage && (
+              <StatCard
+                label="Seguidores FB"
+                value={formatNum(fbPage.followers_count)}
+                color="#22c55e"
+                icon={<DotIcon color="#22c55e" />}
+              />
+            )}
+          </div>
+        </div>
+      </section>
 
-        {fbPage && (
-          <Card title="Facebook" color="#1877f2">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-fb to-[#42b0ff] flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                {fbPage.name[0]}
+      <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Card title="Tareas del dia" className="xl:col-span-2">
+          <div className="space-y-2">
+            {dailyTasks.map((task) => (
+              <div key={task.id} className="flex items-center justify-between rounded-2xl border border-border bg-background/80 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold">{task.title}</p>
+                  <p className="text-xs text-muted mt-0.5">{task.owner} • {task.due}</p>
+                </div>
+                <span className="text-[11px] px-2.5 py-1 rounded-full bg-card border border-border text-muted">
+                  {task.tag}
+                </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{fbPage.name}</p>
-                <p className="text-xs text-muted">ID: {fbPage.id}</p>
-                {fbPage.about && <p className="text-xs text-muted mt-1 truncate">{fbPage.about}</p>}
-              </div>
-            </div>
-            <div className="flex gap-6 mt-4 pt-4 border-t border-border">
-              <div>
-                <p className="text-lg font-bold">{formatNum(fbPage.fan_count)}</p>
-                <p className="text-xs text-muted">Me gusta</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold">{formatNum(fbPage.followers_count)}</p>
-                <p className="text-xs text-muted">Seguidores</p>
-              </div>
-            </div>
-          </Card>
-        )}
-      </div>
+            ))}
+          </div>
+        </Card>
 
-      {/* Quick actions */}
-      <Card title="Acciones rápidas">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <QuickAction href="/publish" label="Publicar foto" color="#e1306c" icon="📷" />
-          <QuickAction href="/publish" label="Publicar Reel" color="#f5a623" icon="🎬" />
-          <QuickAction href="/insights" label="Ver estadísticas" color="#22c55e" icon="📊" />
-          <QuickAction href="/comments" label="Comentarios" color="#1877f2" icon="💬" />
+        <Card title="Ritmo de equipo">
+          <div className="space-y-4">
+            <div className="rounded-2xl p-4 bg-accent-light/70 border border-accent/10">
+              <p className="text-xs text-muted">Cumplimiento diario</p>
+              <p className="text-3xl font-bold mt-1">{completion}%</p>
+              <p className="text-xs text-muted mt-1">+12% vs semana anterior</p>
+            </div>
+            <div className="rounded-2xl p-4 bg-fb-light/70 border border-fb/10">
+              <p className="text-xs text-muted">Tiempo medio de respuesta</p>
+              <p className="text-2xl font-bold mt-1">19 min</p>
+              <p className="text-xs text-muted mt-1">Objetivo: menor a 30 min</p>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AccountPreviewCard
+          title="Instagram"
+          colorClass="from-accent to-[#f9ac36]"
+          handle={igProfile?.username ? `@${igProfile.username}` : "Cuenta conectada"}
+          primary={formatNum(igProfile?.followers_count)}
+          primaryLabel="Seguidores"
+          secondary={formatNum(igProfile?.media_count)}
+          secondaryLabel="Publicaciones"
+          description={igProfile?.biography || "Optimiza alcance, formato y horarios de publicación."}
+        />
+
+        <AccountPreviewCard
+          title="Facebook"
+          colorClass="from-fb to-[#41adff]"
+          handle={fbPage?.name || "Pagina conectada"}
+          primary={formatNum(fbPage?.fan_count)}
+          primaryLabel="Me gusta"
+          secondary={formatNum(fbPage?.followers_count)}
+          secondaryLabel="Seguidores"
+          description={fbPage?.about || "Gestiona engagement de comunidad y pauta activa."}
+        />
+      </section>
+
+      <Card title="Herramientas de administracion social">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 teko-stagger">
+          <QuickAction href="/publish" label="Publicador multiformato" hint="Foto, reel, carrusel y post" color="#e1306c" />
+          <QuickAction href="/planner" label="Planner editorial" hint="Calendario y pipeline de contenido" color="#e8a126" />
+          <QuickAction href="/inbox" label="Inbox unificado" hint="Mensajes y menciones en una vista" color="#1877f2" />
+          <QuickAction href="/automations" label="Automatizaciones" hint="Reglas para horario y moderacion" color="#22c55e" />
         </div>
       </Card>
     </div>
   );
 }
 
-function QuickAction({ href, label, color, icon }: { href: string; label: string; color: string; icon: string }) {
+function DotIcon({ color }: { color: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+      <circle cx="12" cy="12" r="7" />
+      <circle cx="12" cy="12" r="2.8" fill={color} stroke="none" />
+    </svg>
+  );
+}
+
+function AccountPreviewCard({
+  title,
+  colorClass,
+  handle,
+  primary,
+  primaryLabel,
+  secondary,
+  secondaryLabel,
+  description,
+}: {
+  title: string;
+  colorClass: string;
+  handle: string;
+  primary: string;
+  primaryLabel: string;
+  secondary: string;
+  secondaryLabel: string;
+  description: string;
+}) {
+  return (
+    <Card>
+      <div className="flex items-center gap-4">
+        <div className={`w-14 h-14 rounded-2xl bg-linear-to-br ${colorClass} text-white font-bold text-xl flex items-center justify-center shadow-[0_14px_26px_rgba(42,36,18,0.2)]`}>
+          {title[0]}
+        </div>
+        <div>
+          <p className="font-semibold">{title}</p>
+          <p className="text-xs text-muted">{handle}</p>
+        </div>
+      </div>
+      <p className="text-xs text-muted mt-3">{description}</p>
+      <div className="flex gap-7 mt-4 pt-4 border-t border-border">
+        <div>
+          <p className="text-lg font-bold">{primary}</p>
+          <p className="text-xs text-muted">{primaryLabel}</p>
+        </div>
+        <div>
+          <p className="text-lg font-bold">{secondary}</p>
+          <p className="text-xs text-muted">{secondaryLabel}</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function QuickAction({
+  href,
+  label,
+  hint,
+  color,
+}: {
+  href: string;
+  label: string;
+  hint: string;
+  color: string;
+}) {
   return (
     <a
       href={href}
-      className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-foreground/10 hover:bg-card-hover transition-all text-center"
+      className="rounded-2xl border border-border bg-background/75 hover:bg-card transition-colors px-4 py-4"
     >
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ backgroundColor: `${color}15` }}>
-        {icon}
-      </div>
-      <span className="text-xs font-medium">{label}</span>
+      <div className="w-9 h-9 rounded-xl" style={{ backgroundColor: `${color}1e` }} />
+      <p className="text-sm font-semibold mt-3">{label}</p>
+      <p className="text-xs text-muted mt-1">{hint}</p>
     </a>
   );
 }
@@ -194,13 +316,14 @@ function QuickAction({ href, label, color, icon }: { href: string; label: string
 function DashboardSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
-      <div className="h-7 w-48 bg-border rounded-lg" />
-      <div className="h-4 w-64 bg-border rounded-lg" />
-      <div className="grid grid-cols-4 gap-4">
+      <div className="h-8 w-60 bg-border rounded-lg" />
+      <div className="h-4 w-72 bg-border rounded-lg" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 bg-border rounded-2xl" />
+          <div key={i} className="h-24 bg-border rounded-3xl" />
         ))}
       </div>
+      <div className="h-60 bg-border rounded-3xl" />
     </div>
   );
 }

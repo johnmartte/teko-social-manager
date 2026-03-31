@@ -5,28 +5,34 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: DashboardIcon },
+  { href: "/planner", label: "Planner", icon: PlannerIcon },
+  { href: "/inbox", label: "Inbox", icon: InboxIcon },
   { href: "/instagram", label: "Instagram", icon: InstagramIcon },
   { href: "/facebook", label: "Facebook", icon: FacebookIcon },
   { href: "/publish", label: "Publicar", icon: PublishIcon },
   { href: "/comments", label: "Comentarios", icon: CommentsIcon },
   { href: "/insights", label: "Estadísticas", icon: InsightsIcon },
+  { href: "/automations", label: "Automatizaciones", icon: SparkIcon },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-[220px] bg-sidebar flex flex-col z-50">
+    <aside className="fixed left-4 top-4 bottom-4 w-56 rounded-3xl bg-sidebar text-white flex flex-col z-50 border border-white/10 shadow-[0_24px_64px_rgba(12,14,16,0.35)]">
       {/* Brand */}
-      <div className="flex items-center gap-3 px-6 h-16">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-[#7c3aed] flex items-center justify-center text-white font-bold text-sm">
+      <div className="flex items-center gap-3 px-6 h-18 pt-3">
+        <div className="w-9 h-9 rounded-xl bg-linear-to-br from-accent to-[#f8a716] flex items-center justify-center text-white font-bold text-sm shadow-[0_10px_24px_rgba(225,48,108,0.45)]">
           T
         </div>
-        <span className="text-white font-semibold text-sm">Teko Social</span>
+        <div>
+          <p className="text-white font-semibold text-sm leading-none">Teko Social</p>
+          <p className="text-[11px] text-sidebar-text mt-1">Social command center</p>
+        </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 mt-4">
+      <nav className="flex-1 px-3 mt-5">
         <ul className="space-y-1">
           {navItems.map((item) => {
             const isActive =
@@ -40,8 +46,8 @@ export default function Sidebar() {
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
                     isActive
-                      ? "bg-white/10 text-sidebar-active"
-                      : "text-sidebar-text hover:bg-white/5 hover:text-sidebar-active"
+                      ? "bg-white/12 text-sidebar-active shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                      : "text-sidebar-text hover:bg-white/6 hover:text-sidebar-active"
                   }`}
                 >
                   <item.icon active={isActive} />
@@ -54,7 +60,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="px-3 pb-4">
+      <div className="px-3 pb-5 pt-2 border-t border-white/10">
         <Link
           href="/settings"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-sidebar-text hover:bg-white/5 hover:text-sidebar-active transition-all"
@@ -79,6 +85,26 @@ function DashboardIcon({ active }: { active: boolean }) {
   );
 }
 
+function PlannerIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? "#fff" : "#a0a0a0"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+
+function InboxIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? "#fff" : "#a0a0a0"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+    </svg>
+  );
+}
+
 function InstagramIcon({ active }: { active: boolean }) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? "#fff" : "#a0a0a0"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -93,6 +119,18 @@ function FacebookIcon({ active }: { active: boolean }) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill={active ? "#fff" : "#a0a0a0"}>
       <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
+    </svg>
+  );
+}
+
+function SparkIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? "#fff" : "#a0a0a0"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m12 3-1.9 4.1L6 9l4.1 1.9L12 15l1.9-4.1L18 9l-4.1-1.9z" />
+      <path d="M5 3v4" />
+      <path d="M3 5h4" />
+      <path d="M19 17v4" />
+      <path d="M17 19h4" />
     </svg>
   );
 }

@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f2ec;
-  --foreground: #1a1a1a;
-  --card: #ffffff;
-  --card-hover: #fafaf8;
-  --border: #e8e4dc;
-  --muted: #9a9489;
+  --background: #ebe4d4;
+  --foreground: #1f1e1a;
+  --card: #fefbf4;
+  --card-hover: #f8f1e2;
+  --border: #ded2bc;
+  --muted: #887e6d;
   --accent: #e1306c;
-  --accent-light: #fce4ec;
+  --accent-light: #fde7ef;
   --fb: #1877f2;
-  --fb-light: #e3f0ff;
-  --warning: #f5a623;
-  --warning-light: #fef3cd;
+  --fb-light: #e7f1ff;
+  --warning: #e8a126;
+  --warning-light: #faefcf;
   --success: #22c55e;
-  --success-light: #dcfce7;
-  --sidebar: #1a1a1a;
-  --sidebar-text: #a0a0a0;
+  --success-light: #dcf8e4;
+  --sidebar: #0f1112;
+  --sidebar-text: #9ea3aa;
   --sidebar-active: #ffffff;
 }
 
@@ -43,9 +43,83 @@
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at 16% 12%, rgba(255, 236, 197, 0.75), transparent 38%),
+    radial-gradient(circle at 86% 2%, rgba(196, 227, 255, 0.6), transparent 34%),
+    radial-gradient(circle at 88% 88%, rgba(255, 194, 217, 0.38), transparent 38%),
+    var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c8bea9 transparent;
+}
+
+.teko-shell {
+  position: relative;
+}
+
+.teko-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(31, 30, 26, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 30, 26, 0.028) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(circle at 50% 32%, black 30%, transparent 100%);
+  z-index: 0;
+}
+
+.teko-enter {
+  animation: tekoEnter 0.45s ease-out;
+}
+
+.teko-stagger > * {
+  animation: tekoRise 0.4s ease-out both;
+}
+
+.teko-stagger > *:nth-child(1) {
+  animation-delay: 70ms;
+}
+
+.teko-stagger > *:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.teko-stagger > *:nth-child(3) {
+  animation-delay: 170ms;
+}
+
+.teko-stagger > *:nth-child(4) {
+  animation-delay: 220ms;
+}
+
+@keyframes tekoEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tekoRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Scrollbar */
