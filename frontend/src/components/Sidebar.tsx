@@ -21,14 +21,9 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-4 top-4 bottom-4 w-56 rounded-3xl bg-sidebar text-white flex flex-col z-50 border border-white/10 shadow-[0_24px_64px_rgba(12,14,16,0.35)]">
       {/* Brand */}
-      <div className="flex items-center gap-3 px-6 h-18 pt-3">
-        <div className="w-9 h-9 rounded-xl bg-linear-to-br from-accent to-[#f8a716] flex items-center justify-center text-white font-bold text-sm shadow-[0_10px_24px_rgba(225,48,108,0.45)]">
-          T
-        </div>
-        <div>
-          <p className="text-white font-semibold text-sm leading-none">Teko Social</p>
-          <p className="text-[11px] text-sidebar-text mt-1">Social command center</p>
-        </div>
+      <div className="flex items-center gap-3 px-5 py-4">
+        <img src="/logos/isotipo.svg" alt="Teko" className="w-9 h-9 shrink-0" />
+        <img src="/logos/logotipo.svg" alt="Teko Social" className="h-6 w-auto" />
       </div>
 
       {/* Nav */}
