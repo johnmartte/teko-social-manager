@@ -28,7 +28,7 @@ export default function Header() {
         <button className="hidden sm:inline-flex text-xs px-3.5 py-2.5 rounded-xl border border-border bg-card/92 hover:bg-card transition-colors">
           Hoy
         </button>
-        <button className="hidden sm:inline-flex text-xs px-3.5 py-2.5 rounded-xl border border-border bg-card/92 hover:bg-card transition-colors">
+        <button className="hidden sm:inline-flex text-xs px-3.5 py-2.5 rounded-xl border border-border bg-card/92 hover:bg-card transition-colors whitespace-nowrap">
           Esta semana
         </button>
       </div>
