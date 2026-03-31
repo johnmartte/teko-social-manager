@@ -43,7 +43,7 @@ export function StatCard({
   icon?: ReactNode;
 }) {
   return (
-    <div className="bg-card/95 rounded-3xl border border-border p-5 flex items-start gap-4 shadow-[0_16px_36px_rgba(67,54,27,0.07)]">
+    <div className="bg-card/95 rounded-3xl border border-border px-5 py-6 flex items-center gap-4 shadow-[0_16px_36px_rgba(67,54,27,0.07)]">
       {icon && (
         <div
           className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
