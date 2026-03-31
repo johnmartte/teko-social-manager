@@ -12,17 +12,17 @@ class FacebookController extends Controller
         private MetaApiService $meta,
     ) {}
 
-    public function pages(): JsonResponse
+    public function pages(Request $request): JsonResponse
     {
         return response()->json(
-            $this->meta->getFacebookPages(session('fb_token'))
+            $this->meta->getFacebookPages($request->attributes->get('fb_token'))
         );
     }
 
-    public function pageInfo(): JsonResponse
+    public function pageInfo(Request $request): JsonResponse
     {
         return response()->json(
-            $this->meta->getPageInfo(session('fb_page_id'), session('fb_token'))
+            $this->meta->getPageInfo($request->attributes->get('fb_page_id'), $request->attributes->get('fb_token'))
         );
     }
 
@@ -31,7 +31,7 @@ class FacebookController extends Controller
         $limit = (int) $request->input('limit', 10);
 
         return response()->json(
-            $this->meta->getPagePosts(session('fb_page_id'), session('fb_token'), $limit)
+            $this->meta->getPagePosts($request->attributes->get('fb_page_id'), $request->attributes->get('fb_token'), $limit)
         );
     }
 
@@ -44,8 +44,8 @@ class FacebookController extends Controller
 
         return response()->json(
             $this->meta->publishPagePost(
-                session('fb_page_id'),
-                session('fb_token'),
+                $request->attributes->get('fb_page_id'),
+                $request->attributes->get('fb_token'),
                 $request->input('message'),
                 $request->input('link'),
             )
@@ -61,8 +61,8 @@ class FacebookController extends Controller
 
         return response()->json(
             $this->meta->publishPagePhoto(
-                session('fb_page_id'),
-                session('fb_token'),
+                $request->attributes->get('fb_page_id'),
+                $request->attributes->get('fb_token'),
                 $request->input('image_url'),
                 $request->input('caption', ''),
             )
@@ -74,14 +74,14 @@ class FacebookController extends Controller
         $period = $request->input('period', 'day');
 
         return response()->json(
-            $this->meta->getPageInsights(session('fb_page_id'), session('fb_token'), $period)
+            $this->meta->getPageInsights($request->attributes->get('fb_page_id'), $request->attributes->get('fb_token'), $period)
         );
     }
 
-    public function deletePost(string $postId): JsonResponse
+    public function deletePost(Request $request, string $postId): JsonResponse
     {
         return response()->json(
-            $this->meta->deletePost($postId, session('fb_token'))
+            $this->meta->deletePost($postId, $request->attributes->get('fb_token'))
         );
     }
 }

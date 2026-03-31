@@ -9,9 +9,15 @@ class EnsureInstagramToken
 {
     public function handle(Request $request, \Closure $next): Response
     {
-        if (!session()->has('ig_token') || !session()->has('ig_user_id')) {
+        $token  = $request->header('X-IG-Token');
+        $userId = $request->header('X-IG-User-Id');
+
+        if (!$token || !$userId) {
             return response()->json(['error' => 'No autenticado con Instagram.'], 401);
         }
+
+        $request->attributes->set('ig_token', $token);
+        $request->attributes->set('ig_user_id', $userId);
 
         return $next($request);
     }

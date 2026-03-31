@@ -10,9 +10,15 @@ class EnsureFacebookToken
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!session()->has('fb_token')) {
+        $token  = $request->header('X-FB-Token');
+        $pageId = $request->header('X-FB-Page-Id');
+
+        if (!$token) {
             return response()->json(['error' => 'No autenticado con Facebook.'], 401);
         }
+
+        $request->attributes->set('fb_token', $token);
+        $request->attributes->set('fb_page_id', $pageId);
 
         return $next($request);
     }

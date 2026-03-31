@@ -12,10 +12,10 @@ class InstagramController extends Controller
         private MetaApiService $meta,
     ) {}
 
-    public function profile(): JsonResponse
+    public function profile(Request $request): JsonResponse
     {
         return response()->json(
-            $this->meta->getInstagramProfile(session('ig_user_id'), session('ig_token'))
+            $this->meta->getInstagramProfile($request->attributes->get('ig_user_id'), $request->attributes->get('ig_token'))
         );
     }
 
@@ -24,7 +24,7 @@ class InstagramController extends Controller
         $limit = (int) $request->input('limit', 12);
 
         return response()->json(
-            $this->meta->getInstagramMedia(session('ig_user_id'), session('ig_token'), $limit)
+            $this->meta->getInstagramMedia($request->attributes->get('ig_user_id'), $request->attributes->get('ig_token'), $limit)
         );
     }
 
@@ -33,14 +33,14 @@ class InstagramController extends Controller
         $period = $request->input('period', 'day');
 
         return response()->json(
-            $this->meta->getInstagramInsights(session('ig_user_id'), session('ig_token'), $period)
+            $this->meta->getInstagramInsights($request->attributes->get('ig_user_id'), $request->attributes->get('ig_token'), $period)
         );
     }
 
-    public function mediaInsights(string $mediaId): JsonResponse
+    public function mediaInsights(Request $request, string $mediaId): JsonResponse
     {
         return response()->json(
-            $this->meta->getMediaInsights($mediaId, session('ig_token'))
+            $this->meta->getMediaInsights($mediaId, $request->attributes->get('ig_token'))
         );
     }
 
@@ -53,8 +53,8 @@ class InstagramController extends Controller
 
         return response()->json(
             $this->meta->publishPhoto(
-                session('ig_user_id'),
-                session('ig_token'),
+                $request->attributes->get('ig_user_id'),
+                $request->attributes->get('ig_token'),
                 $request->input('image_url'),
                 $request->input('caption', ''),
             )
@@ -70,8 +70,8 @@ class InstagramController extends Controller
 
         return response()->json(
             $this->meta->publishReel(
-                session('ig_user_id'),
-                session('ig_token'),
+                $request->attributes->get('ig_user_id'),
+                $request->attributes->get('ig_token'),
                 $request->input('video_url'),
                 $request->input('caption', ''),
             )
@@ -88,18 +88,18 @@ class InstagramController extends Controller
 
         return response()->json(
             $this->meta->publishCarousel(
-                session('ig_user_id'),
-                session('ig_token'),
+                $request->attributes->get('ig_user_id'),
+                $request->attributes->get('ig_token'),
                 $request->input('image_urls'),
                 $request->input('caption', ''),
             )
         );
     }
 
-    public function comments(string $mediaId): JsonResponse
+    public function comments(Request $request, string $mediaId): JsonResponse
     {
         return response()->json(
-            $this->meta->getComments($mediaId, session('ig_token'))
+            $this->meta->getComments($mediaId, $request->attributes->get('ig_token'))
         );
     }
 
@@ -108,7 +108,7 @@ class InstagramController extends Controller
         $request->validate(['message' => 'required|string']);
 
         return response()->json(
-            $this->meta->replyToComment($mediaId, session('ig_token'), $request->input('message'))
+            $this->meta->replyToComment($mediaId, $request->attributes->get('ig_token'), $request->input('message'))
         );
     }
 
@@ -117,14 +117,14 @@ class InstagramController extends Controller
         $hide = $request->input('hide', true);
 
         return response()->json(
-            $this->meta->hideComment($commentId, session('ig_token'), $hide)
+            $this->meta->hideComment($commentId, $request->attributes->get('ig_token'), $hide)
         );
     }
 
-    public function deleteComment(string $commentId): JsonResponse
+    public function deleteComment(Request $request, string $commentId): JsonResponse
     {
         return response()->json(
-            $this->meta->deleteComment($commentId, session('ig_token'))
+            $this->meta->deleteComment($commentId, $request->attributes->get('ig_token'))
         );
     }
 }
