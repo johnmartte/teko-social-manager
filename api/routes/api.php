@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FacebookController;
 use App\Http\Controllers\InstagramController;
+use App\Http\Controllers\UploadController;
 use App\Http\Middleware\EnsureFacebookToken;
 use App\Http\Middleware\EnsureInstagramToken;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,9 @@ use Illuminate\Support\Facades\Route;
 // Auth status (no middleware needed)
 Route::get('/auth/status', [AuthController::class, 'status']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+// File upload
+Route::post('/upload', [UploadController::class, 'upload']);
 
 // Instagram
 Route::prefix('instagram')->middleware(EnsureInstagramToken::class)->group(function () {

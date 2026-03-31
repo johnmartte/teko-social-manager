@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
+import ImageUpload from "@/components/ImageUpload";
 import { api } from "@/lib/api";
 
 type Tab = "ig-photo" | "ig-reel" | "ig-carousel" | "fb-post" | "fb-photo";
@@ -104,7 +105,7 @@ function IGPhotoForm({ onSubmit, submitting }: FormProps) {
   return (
     <Card title="Publicar foto en Instagram" color="#e1306c">
       <div className="space-y-3">
-        <input type="url" placeholder="URL pública de la imagen (https://...)" value={url} onChange={(e) => setUrl(e.target.value)} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-accent" />
+        <ImageUpload value={url} onChange={setUrl} accept="image/*" label="imagen" accentColor="#e1306c" />
         <textarea placeholder="Pie de foto (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-accent resize-none" />
         <button disabled={!url || submitting} onClick={() => onSubmit("/instagram/publish/photo", { image_url: url, caption })} className="bg-accent text-white px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity">
           {submitting ? "Publicando..." : "Publicar foto"}
@@ -120,7 +121,7 @@ function IGReelForm({ onSubmit, submitting }: FormProps) {
   return (
     <Card title="Publicar Reel en Instagram" color="#f5a623">
       <div className="space-y-3">
-        <input type="url" placeholder="URL pública del video .mp4 (https://...)" value={url} onChange={(e) => setUrl(e.target.value)} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-warning" />
+        <ImageUpload value={url} onChange={setUrl} accept="video/*" label="video" accentColor="#f5a623" />
         <textarea placeholder="Descripción (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-warning resize-none" />
         <button disabled={!url || submitting} onClick={() => onSubmit("/instagram/publish/reel", { video_url: url, caption })} className="bg-warning text-white px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity">
           {submitting ? "Publicando..." : "Publicar Reel"}
@@ -131,24 +132,55 @@ function IGReelForm({ onSubmit, submitting }: FormProps) {
 }
 
 function IGCarouselForm({ onSubmit, submitting }: FormProps) {
-  const [urls, setUrls] = useState("");
+  const [images, setImages] = useState<string[]>([""]);
   const [caption, setCaption] = useState("");
+
+  function addSlot() {
+    if (images.length < 10) setImages([...images, ""]);
+  }
+
+  function updateSlot(i: number, url: string) {
+    const next = [...images];
+    next[i] = url;
+    setImages(next);
+  }
+
+  function removeSlot(i: number) {
+    setImages(images.filter((_, idx) => idx !== i));
+  }
+
+  const validUrls = images.filter(Boolean);
+
   return (
     <Card title="Publicar carrusel en Instagram" color="#7c3aed">
-      <div className="space-y-3">
-        <p className="text-xs text-muted">Una URL por línea (mínimo 2, máximo 10)</p>
-        <textarea placeholder={"https://imagen1.jpg\nhttps://imagen2.jpg\nhttps://imagen3.jpg"} value={urls} onChange={(e) => setUrls(e.target.value)} rows={5} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-[#7c3aed] resize-none font-mono" />
+      <div className="space-y-4">
+        {images.map((url, i) => (
+          <div key={i} className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted font-medium">Imagen {i + 1}</span>
+              {images.length > 1 && (
+                <button type="button" onClick={() => removeSlot(i)} className="text-xs text-red-400 hover:text-red-600">
+                  Quitar
+                </button>
+              )}
+            </div>
+            <ImageUpload value={url} onChange={(u) => updateSlot(i, u)} accept="image/*" label="imagen" accentColor="#7c3aed" />
+          </div>
+        ))}
+
+        {images.length < 10 && (
+          <button type="button" onClick={addSlot} className="w-full py-2 border border-dashed border-border rounded-xl text-xs text-muted hover:text-foreground hover:border-foreground/20 transition-colors">
+            + Agregar imagen ({images.length}/10)
+          </button>
+        )}
+
         <textarea placeholder="Descripción del carrusel (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-[#7c3aed] resize-none" />
         <button
-          disabled={submitting}
-          onClick={() => {
-            const imageUrls = urls.split("\n").map((u) => u.trim()).filter(Boolean);
-            if (imageUrls.length < 2) return alert("Necesitas al menos 2 URLs.");
-            onSubmit("/instagram/publish/carousel", { image_urls: imageUrls, caption });
-          }}
+          disabled={validUrls.length < 2 || submitting}
+          onClick={() => onSubmit("/instagram/publish/carousel", { image_urls: validUrls, caption })}
           className="bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
         >
-          {submitting ? "Publicando..." : "Publicar carrusel"}
+          {submitting ? "Publicando..." : `Publicar carrusel (${validUrls.length} imágenes)`}
         </button>
       </div>
     </Card>
@@ -177,7 +209,7 @@ function FBPhotoForm({ onSubmit, submitting }: FormProps) {
   return (
     <Card title="Publicar foto en Facebook" color="#1877f2">
       <div className="space-y-3">
-        <input type="url" placeholder="URL pública de la imagen (https://...)" value={url} onChange={(e) => setUrl(e.target.value)} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-fb" />
+        <ImageUpload value={url} onChange={setUrl} accept="image/*" label="imagen" accentColor="#1877f2" />
         <textarea placeholder="Descripción (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-fb resize-none" />
         <button disabled={!url || submitting} onClick={() => onSubmit("/facebook/page/publish/photo", { image_url: url, caption })} className="bg-fb text-white px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity">
           {submitting ? "Publicando..." : "Publicar foto"}
