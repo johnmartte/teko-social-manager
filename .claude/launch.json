@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Frontend (Next.js)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
+      "port": 3000
+    },
+    {
+      "name": "Backend (Laravel)",
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["api/artisan", "serve"],
+      "port": 8000
+    }
+  ]
+}

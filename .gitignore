@@ -1,0 +1,36 @@
+# Environment
+.env
+api/.env
+frontend/.env.local
+
+# Dependencies
+node_modules/
+/vendor/
+
+# Laravel
+api/vendor/
+api/storage/*.key
+api/database/*.sqlite
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Composer
+composer.phar
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Build
+dist/
+build/
