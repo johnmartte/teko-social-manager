@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FacebookController;
 use App\Http\Controllers\InstagramController;
 use App\Http\Controllers\ScheduledPostController;
+use App\Http\Controllers\SystemAuthController;
 use App\Http\Controllers\UploadController;
 use App\Http\Middleware\EnsureFacebookToken;
 use App\Http\Middleware\EnsureInstagramToken;
@@ -12,6 +13,14 @@ use Illuminate\Support\Facades\Route;
 // Auth status (no middleware needed)
 Route::get('/auth/status', [AuthController::class, 'status']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+// System auth (email/password)
+Route::post('/auth/system/register', [SystemAuthController::class, 'register']);
+Route::post('/auth/system/login', [SystemAuthController::class, 'login']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/auth/system/me', [SystemAuthController::class, 'me']);
+    Route::post('/auth/system/logout', [SystemAuthController::class, 'logout']);
+});
 
 // File upload
 Route::post('/upload', [UploadController::class, 'upload']);

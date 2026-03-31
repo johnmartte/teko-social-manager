@@ -1,4 +1,23 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const RAILWAY_API_URL = "https://teko-social-manager-production.up.railway.app";
+
+function resolveApiUrl(): string {
+  const envApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+  if (typeof window === "undefined") {
+    return envApiUrl;
+  }
+
+  const isLocalFrontend =
+    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
+  if (!isLocalFrontend && /localhost|127\.0\.0\.1/.test(envApiUrl)) {
+    return RAILWAY_API_URL;
+  }
+
+  return envApiUrl;
+}
+
+const API_URL = resolveApiUrl();
 
 type FetchOptions = {
   method?: string;
@@ -8,10 +27,12 @@ type FetchOptions = {
 function getTokenHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
   const headers: Record<string, string> = {};
+  const appToken = localStorage.getItem("app_token");
   const ig = localStorage.getItem("ig_token");
   const igUser = localStorage.getItem("ig_user_id");
   const fb = localStorage.getItem("fb_token");
   const fbPage = localStorage.getItem("fb_page_id");
+  if (appToken) headers.Authorization = `Bearer ${appToken}`;
   if (ig) headers["X-IG-Token"] = ig;
   if (igUser) headers["X-IG-User-Id"] = igUser;
   if (fb) headers["X-FB-Token"] = fb;

@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
 import { AuthProvider } from "@/context/AuthContext";
+import AppShell from "@/components/AppShell";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-geist-sans",
@@ -33,11 +32,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex teko-shell">
         <AuthProvider>
-          <Sidebar />
-          <div className="flex-1 ml-64 flex flex-col min-h-screen relative z-10">
-            <Header />
-            <main className="flex-1 px-5 py-5 sm:px-8 sm:py-7">{children}</main>
-          </div>
+          <AppShell>{children}</AppShell>
         </AuthProvider>
       </body>
     </html>
