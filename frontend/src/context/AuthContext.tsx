@@ -44,6 +44,8 @@ type AuthContextType = {
   loading: boolean;
   refresh: () => void;
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  updateEmail: (newEmail: string, currentPassword: string) => Promise<void>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -54,6 +56,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   refresh: () => {},
   loginWithEmail: async () => {},
+  updateEmail: async () => {},
+  updatePassword: async () => {},
   logout: () => {},
 });
 
@@ -91,17 +95,33 @@ function readUserFromStorage(): AppUser | null {
 }
 
 async function postSystemAuth<T>(path: string, payload: Record<string, string>): Promise<T> {
+  return requestSystemAuth<T>(path, { method: "POST", payload });
+}
+
+async function requestSystemAuth<T>(
+  path: string,
+  {
+    method,
+    payload,
+    token,
+  }: {
+    method: "GET" | "POST" | "PATCH" | "DELETE";
+    payload?: Record<string, string>;
+    token?: string;
+  }
+): Promise<T> {
   const candidateUrls = [`${API_URL}/api${path}`, `${API_URL}${path}`];
   let lastMessage = "No se pudo iniciar sesion";
 
   for (const url of candidateUrls) {
     const res = await fetch(url, {
-      method: "POST",
+      method,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify(payload),
+      body: payload ? JSON.stringify(payload) : undefined,
     });
 
     let data: unknown = null;
@@ -119,7 +139,7 @@ async function postSystemAuth<T>(path: string, payload: Record<string, string>):
     const message =
       (data as { message?: string } | null)?.message ||
       (data as { error?: string } | null)?.error ||
-      "No se pudo iniciar sesion";
+      "No se pudo completar la solicitud";
 
     lastMessage = message;
 
@@ -153,17 +173,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user as AppUser);
   }, []);
 
+  const updateEmail = useCallback(async (newEmail: string, currentPassword: string) => {
+    const appToken = localStorage.getItem("app_token");
+
+    if (!appToken) {
+      throw new Error("Tu sesion expiro. Inicia sesion nuevamente.");
+    }
+
+    const data = await requestSystemAuth<{ user: AppUser }>("/auth/system/email", {
+      method: "PATCH",
+      payload: {
+        email: newEmail,
+        current_password: currentPassword,
+      },
+      token: appToken,
+    });
+
+    localStorage.setItem("app_user", JSON.stringify(data.user));
+    setUser(data.user);
+  }, []);
+
+  const updatePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    const appToken = localStorage.getItem("app_token");
+
+    if (!appToken) {
+      throw new Error("Tu sesion expiro. Inicia sesion nuevamente.");
+    }
+
+    await requestSystemAuth<{ success: boolean }>("/auth/system/password", {
+      method: "PATCH",
+      payload: {
+        current_password: currentPassword,
+        new_password: newPassword,
+      },
+      token: appToken,
+    });
+  }, []);
+
   const logout = useCallback(() => {
     const appToken = localStorage.getItem("app_token");
 
     if (appToken) {
-      void fetch(`${API_URL}/api/auth/system/logout`, {
+      void requestSystemAuth<{ success: boolean }>("/auth/system/logout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${appToken}`,
-        },
+        token: appToken,
       });
     }
 
@@ -211,6 +264,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         refresh,
         loginWithEmail,
+        updateEmail,
+        updatePassword,
         logout,
       }}
     >

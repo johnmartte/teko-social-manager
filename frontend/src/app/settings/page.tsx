@@ -1,14 +1,75 @@
 "use client";
 
+import { FormEvent, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
 import { getLoginUrl } from "@/lib/api";
 
 export default function SettingsPage() {
-  const { status, logout } = useAuth();
+  const { status, user, logout, updateEmail, updatePassword } = useAuth();
+
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailError, setEmailError] = useState("");
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const igConnected = status?.instagram.connected;
   const fbConnected = status?.facebook.connected;
+
+  const submitEmail = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setEmailError("");
+    setEmailMessage("");
+    setEmailLoading(true);
+
+    try {
+      await updateEmail(email.trim(), emailPassword);
+      setEmailMessage("Correo actualizado correctamente.");
+      setEmailPassword("");
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : "No se pudo actualizar el correo.");
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const submitPassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError("");
+    setPasswordMessage("");
+
+    if (newPassword.length < 8) {
+      setPasswordError("La nueva contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("La confirmación no coincide con la nueva contraseña.");
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      await updatePassword(currentPassword, newPassword);
+      setPasswordMessage("Contraseña actualizada correctamente.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "No se pudo actualizar la contraseña.");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -102,7 +163,7 @@ export default function SettingsPage() {
               },
             ].map(({ n, title, desc }) => (
               <li key={n} className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="w-6 h-6 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                   {n}
                 </span>
                 <div>
@@ -133,6 +194,83 @@ export default function SettingsPage() {
           </p>
         </Card>
       )}
+
+      <Card title="Cuenta del sistema">
+        <div className="space-y-6">
+          <div>
+            <p className="text-sm font-medium">Usuario actual</p>
+            <p className="text-xs text-muted mt-1">{user?.name} · {user?.email}</p>
+          </div>
+
+          <form className="space-y-3" onSubmit={submitEmail}>
+            <h3 className="text-sm font-semibold">Cambiar correo</h3>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="nuevo-correo@dominio.com"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
+              required
+            />
+            <input
+              type="password"
+              value={emailPassword}
+              onChange={(event) => setEmailPassword(event.target.value)}
+              placeholder="Contraseña actual"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
+              required
+            />
+            {emailError ? <p className="text-xs text-red-500">{emailError}</p> : null}
+            {emailMessage ? <p className="text-xs text-green-700">{emailMessage}</p> : null}
+            <button
+              type="submit"
+              disabled={emailLoading}
+              className="text-xs px-4 py-2.5 rounded-xl bg-foreground text-white font-medium disabled:opacity-65"
+            >
+              {emailLoading ? "Actualizando..." : "Actualizar correo"}
+            </button>
+          </form>
+
+          <form className="space-y-3" onSubmit={submitPassword}>
+            <h3 className="text-sm font-semibold">Cambiar contraseña</h3>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder="Contraseña actual"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
+              required
+            />
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              placeholder="Nueva contraseña"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
+              required
+              minLength={8}
+            />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Confirmar nueva contraseña"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
+              required
+              minLength={8}
+            />
+            {passwordError ? <p className="text-xs text-red-500">{passwordError}</p> : null}
+            {passwordMessage ? <p className="text-xs text-green-700">{passwordMessage}</p> : null}
+            <button
+              type="submit"
+              disabled={passwordLoading}
+              className="text-xs px-4 py-2.5 rounded-xl bg-foreground text-white font-medium disabled:opacity-65"
+            >
+              {passwordLoading ? "Actualizando..." : "Actualizar contraseña"}
+            </button>
+          </form>
+        </div>
+      </Card>
 
       <Card title="Acerca de">
         <p className="text-sm text-muted">

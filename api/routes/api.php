@@ -20,6 +20,8 @@ Route::post('/auth/system/login', [SystemAuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/system/me', [SystemAuthController::class, 'me']);
     Route::post('/auth/system/logout', [SystemAuthController::class, 'logout']);
+    Route::patch('/auth/system/email', [SystemAuthController::class, 'updateEmail']);
+    Route::patch('/auth/system/password', [SystemAuthController::class, 'updatePassword']);
 });
 
 // File upload
