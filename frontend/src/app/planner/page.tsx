@@ -40,6 +40,8 @@ export default function PlannerPage() {
   const [modal, setModal] = useState<DetailModal | null>(null);
   const [publishing, setPublishing] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [deletingBulk, setDeletingBulk] = useState(false);
 
   async function loadPosts() {
     setLoading(true);
@@ -82,6 +84,51 @@ export default function PlannerPage() {
     } finally {
       setDeleting(null);
     }
+  }
+
+  function toggleSelect(postId: number) {
+    setSelectedIds((prev) =>
+      prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]
+    );
+  }
+
+  function selectAllPending() {
+    const pendingIds = posts.filter((p) => p.status !== "published").map((p) => p.id);
+    setSelectedIds(pendingIds);
+  }
+
+  function clearSelection() {
+    setSelectedIds([]);
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.length === 0) return;
+
+    if (!confirm(`¿Eliminar ${selectedIds.length} post(s) seleccionados?`)) return;
+
+    setDeletingBulk(true);
+    let deleted = 0;
+    let failed = 0;
+
+    for (const id of selectedIds) {
+      try {
+        await api(`/scheduled-posts/${id}`, { method: "DELETE" });
+        deleted++;
+      } catch {
+        failed++;
+      }
+    }
+
+    setDeletingBulk(false);
+    setSelectedIds([]);
+    await loadPosts();
+
+    if (failed > 0) {
+      alert(`${deleted} eliminados, ${failed} no se pudieron eliminar.`);
+      return;
+    }
+
+    alert(`${deleted} post(s) eliminados correctamente.`);
   }
 
   // Group posts by date
@@ -137,6 +184,36 @@ export default function PlannerPage() {
         </Card>
       ) : (
         <div className="space-y-6">
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-card/95 border border-border rounded-2xl px-4 py-3">
+            <p className="text-xs text-muted">
+              {selectedIds.length > 0
+                ? `${selectedIds.length} seleccionado(s)`
+                : "Selecciona posts para eliminar varios a la vez"}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={selectAllPending}
+                className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
+              >
+                Seleccionar pendientes
+              </button>
+              <button
+                onClick={clearSelection}
+                disabled={selectedIds.length === 0}
+                className="text-xs px-3 py-2 rounded-lg border border-border text-muted disabled:opacity-50"
+              >
+                Limpiar
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={selectedIds.length === 0 || deletingBulk}
+                className="text-xs px-3 py-2 rounded-lg border border-red-200 text-red-500 disabled:opacity-50 hover:bg-red-50"
+              >
+                {deletingBulk ? "Eliminando..." : "Eliminar seleccionados"}
+              </button>
+            </div>
+          </div>
+
           {Object.entries(grouped).map(([date, dayPosts]) => (
             <div key={date}>
               <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3 capitalize">
@@ -147,8 +224,19 @@ export default function PlannerPage() {
                   <button
                     key={post.id}
                     onClick={() => setModal({ post })}
-                    className="w-full flex items-center gap-4 bg-card/95 border border-border rounded-2xl px-5 py-4 text-left hover:border-foreground/10 transition-colors"
+                    className={`w-full flex items-center gap-4 bg-card/95 border rounded-2xl px-5 py-4 text-left hover:border-foreground/10 transition-colors ${
+                      selectedIds.includes(post.id) ? "border-accent" : "border-border"
+                    }`}
                   >
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(post.id)}
+                      disabled={post.status === "published"}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => toggleSelect(post.id)}
+                      className="h-4 w-4 shrink-0"
+                    />
+
                     {/* Time */}
                     <div className="shrink-0 text-center w-14">
                       <p className="text-sm font-bold">
