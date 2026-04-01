@@ -103,6 +103,85 @@ class WorkspaceController extends Controller
         ]);
     }
 
+    public function socialMeta(): JsonResponse
+    {
+        return response()->json([
+            'insights' => [
+                'periods' => [
+                    ['value' => 'day', 'label' => 'Hoy'],
+                    ['value' => 'week', 'label' => 'Semana'],
+                    ['value' => 'month', 'label' => 'Mes'],
+                ],
+                'instagram_labels' => [
+                    'impressions' => 'Impresiones',
+                    'reach' => 'Alcance',
+                    'profile_views' => 'Visitas al perfil',
+                    'follower_count' => 'Seguidores',
+                ],
+                'facebook_labels' => [
+                    'page_impressions' => 'Impresiones',
+                    'page_reach' => 'Alcance',
+                    'page_fans' => 'Fans',
+                    'page_views_total' => 'Visitas',
+                    'page_post_engagements' => 'Engagement',
+                ],
+                'messages' => [
+                    'no_data' => 'Sin datos disponibles.',
+                    'connect_account' => 'Conecta una cuenta para ver estadisticas.',
+                ],
+            ],
+            'comments' => [
+                'messages' => [
+                    'title' => 'Comentarios',
+                    'connect_instagram' => 'Conecta Instagram para gestionar comentarios.',
+                    'select_post_title' => 'Selecciona un post',
+                    'loading_posts' => 'Cargando posts...',
+                    'select_post_empty' => 'Selecciona un post para ver sus comentarios',
+                    'loading_comments' => 'Cargando comentarios...',
+                    'empty_comments' => 'Sin comentarios',
+                    'reply_placeholder' => 'Escribe una respuesta...',
+                    'reply' => 'Responder',
+                    'hide' => 'Ocultar',
+                    'delete' => 'Eliminar',
+                    'send' => 'Enviar',
+                    'no_caption' => '(Sin caption)',
+                    'comments_count_suffix' => 'comentarios',
+                    'load_posts_error' => 'Error cargando posts',
+                    'load_comments_error' => 'Error cargando comentarios',
+                    'reply_error' => 'Error al responder',
+                    'hide_error' => 'Error al ocultar',
+                    'delete_error' => 'Error al eliminar',
+                ],
+            ],
+            'posts' => [
+                'platforms' => [
+                    ['key' => 'instagram', 'label' => 'Instagram', 'color' => 'accent'],
+                    ['key' => 'facebook', 'label' => 'Facebook', 'color' => 'fb'],
+                ],
+                'messages' => [
+                    'title' => 'Mis posts',
+                    'connect_account' => 'Conecta una cuenta para ver tus posts.',
+                    'loading_posts' => 'Cargando posts...',
+                    'empty_posts' => 'No hay posts publicados.',
+                    'instagram_delete_confirm' => 'Eliminar este post de Instagram? Esta accion no se puede deshacer.',
+                    'facebook_delete_confirm' => 'Eliminar este post de Facebook?',
+                    'post_updated' => 'Post actualizado',
+                    'post_deleted' => 'Post eliminado',
+                    'update_error' => 'Error al editar',
+                    'delete_error' => 'Error al eliminar',
+                    'details_title' => 'Detalles del post',
+                    'edit_title' => 'Editar post',
+                    'save_changes' => 'Guardar cambios',
+                    'view_on_instagram' => 'Ver en Instagram',
+                    'instagram_caption_note' => 'Instagram no permite editar el caption de posts publicados.',
+                    'no_text' => '(Sin texto)',
+                    'no_image' => 'Sin imagen',
+                    'message_label' => 'Mensaje',
+                ],
+            ],
+        ]);
+    }
+
     public function inbox(): JsonResponse
     {
         $this->seedInboxDefaults();

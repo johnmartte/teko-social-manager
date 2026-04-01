@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/workspace/dashboard', [WorkspaceController::class, 'dashboard']);
     Route::get('/workspace/planner/meta', [WorkspaceController::class, 'plannerMeta']);
+    Route::get('/workspace/social/meta', [WorkspaceController::class, 'socialMeta']);
     Route::get('/workspace/inbox', [WorkspaceController::class, 'inbox']);
     Route::post('/workspace/inbox/templates', [WorkspaceController::class, 'addTemplate']);
     Route::get('/workspace/automations', [WorkspaceController::class, 'automations']);

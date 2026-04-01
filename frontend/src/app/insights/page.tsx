@@ -4,13 +4,20 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
 import { api, formatNum } from "@/lib/api";
-import type { InsightMetric } from "@/lib/types";
+import type { InsightMetric, WorkspaceSocialMeta } from "@/lib/types";
 
 export default function InsightsPage() {
   const { status } = useAuth();
   const [igInsights, setIgInsights] = useState<InsightMetric[]>([]);
   const [fbInsights, setFbInsights] = useState<InsightMetric[]>([]);
   const [period, setPeriod] = useState("day");
+  const [meta, setMeta] = useState<WorkspaceSocialMeta["insights"] | null>(null);
+
+  useEffect(() => {
+    api<WorkspaceSocialMeta>("/workspace/social/meta")
+      .then((r) => setMeta(r.insights))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (status?.instagram.connected) {
@@ -25,20 +32,15 @@ export default function InsightsPage() {
     }
   }, [status, period]);
 
-  const igLabels: Record<string, string> = {
-    impressions: "Impresiones",
-    reach: "Alcance",
-    profile_views: "Visitas al perfil",
-    follower_count: "Seguidores",
-  };
-
-  const fbLabels: Record<string, string> = {
-    page_impressions: "Impresiones",
-    page_reach: "Alcance",
-    page_fans: "Fans",
-    page_views_total: "Visitas",
-    page_post_engagements: "Engagement",
-  };
+  const periods = meta?.periods ?? [
+    { value: "day", label: "Hoy" },
+    { value: "week", label: "Semana" },
+    { value: "month", label: "Mes" },
+  ];
+  const igLabels = meta?.instagram_labels ?? {};
+  const fbLabels = meta?.facebook_labels ?? {};
+  const noDataText = meta?.messages.no_data ?? "Sin datos disponibles.";
+  const connectText = meta?.messages.connect_account ?? "Conecta una cuenta para ver estadisticas.";
 
   return (
     <div className="space-y-6">
@@ -49,9 +51,11 @@ export default function InsightsPage() {
           onChange={(e) => setPeriod(e.target.value)}
           className="text-xs bg-card border border-border rounded-lg px-3 py-2 outline-none"
         >
-          <option value="day">Hoy</option>
-          <option value="week">Semana</option>
-          <option value="month">Mes</option>
+          {periods.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.label}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -68,7 +72,7 @@ export default function InsightsPage() {
               );
             })}
             {igInsights.length === 0 && (
-              <p className="col-span-4 text-sm text-muted text-center py-4">Sin datos disponibles.</p>
+              <p className="col-span-4 text-sm text-muted text-center py-4">{noDataText}</p>
             )}
           </div>
         </Card>
@@ -87,14 +91,14 @@ export default function InsightsPage() {
               );
             })}
             {fbInsights.length === 0 && (
-              <p className="col-span-5 text-sm text-muted text-center py-4">Sin datos disponibles.</p>
+              <p className="col-span-5 text-sm text-muted text-center py-4">{noDataText}</p>
             )}
           </div>
         </Card>
       )}
 
       {!status?.instagram.connected && !status?.facebook.connected && (
-        <p className="text-muted text-center py-12">Conecta una cuenta para ver estadísticas.</p>
+        <p className="text-muted text-center py-12">{connectText}</p>
       )}
     </div>
   );

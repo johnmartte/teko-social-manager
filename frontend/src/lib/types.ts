@@ -84,3 +84,61 @@ export type IgComment = {
   username: string;
   timestamp: string;
 };
+
+export type WorkspaceSocialMeta = {
+  insights: {
+    periods: { value: string; label: string }[];
+    instagram_labels: Record<string, string>;
+    facebook_labels: Record<string, string>;
+    messages: {
+      no_data: string;
+      connect_account: string;
+    };
+  };
+  comments: {
+    messages: {
+      title: string;
+      connect_instagram: string;
+      select_post_title: string;
+      loading_posts: string;
+      select_post_empty: string;
+      loading_comments: string;
+      empty_comments: string;
+      reply_placeholder: string;
+      reply: string;
+      hide: string;
+      delete: string;
+      send: string;
+      no_caption: string;
+      comments_count_suffix: string;
+      load_posts_error: string;
+      load_comments_error: string;
+      reply_error: string;
+      hide_error: string;
+      delete_error: string;
+    };
+  };
+  posts: {
+    platforms: { key: "instagram" | "facebook"; label: string; color: string }[];
+    messages: {
+      title: string;
+      connect_account: string;
+      loading_posts: string;
+      empty_posts: string;
+      instagram_delete_confirm: string;
+      facebook_delete_confirm: string;
+      post_updated: string;
+      post_deleted: string;
+      update_error: string;
+      delete_error: string;
+      details_title: string;
+      edit_title: string;
+      save_changes: string;
+      view_on_instagram: string;
+      instagram_caption_note: string;
+      no_text: string;
+      no_image: string;
+      message_label: string;
+    };
+  };
+};
