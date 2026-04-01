@@ -87,6 +87,8 @@ Route::get('/debug/scheduled-posts', function () {
         'has_fb_token' => !empty($p->fb_token),
         'has_fb_pid'   => !empty($p->fb_page_id),
         'error'        => $p->error_message,
+        'caption'      => $p->caption ? mb_substr($p->caption, 0, 50) : null,
+        'media_urls'   => $p->media_urls,
     ]);
     return response()->json(['server_now' => now()->toIso8601String(), 'posts' => $posts]);
 });

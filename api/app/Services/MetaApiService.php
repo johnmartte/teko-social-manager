@@ -162,10 +162,17 @@ class MetaApiService
             throw new \RuntimeException("Instagram container error: {$msg}");
         }
 
-        return Http::post("{$this->igApi}/{$userId}/media_publish", [
+        $publish = Http::post("{$this->igApi}/{$userId}/media_publish", [
             'creation_id' => $container['id'],
             'access_token' => $token,
         ])->json();
+
+        if (empty($publish['id'])) {
+            $msg = $publish['error']['message'] ?? json_encode($publish);
+            throw new \RuntimeException("Instagram publish error: {$msg}");
+        }
+
+        return $publish;
     }
 
     public function publishReel(string $userId, string $token, string $videoUrl, string $caption = ''): array
@@ -182,10 +189,17 @@ class MetaApiService
             throw new \RuntimeException("Instagram container error: {$msg}");
         }
 
-        return Http::post("{$this->igApi}/{$userId}/media_publish", [
+        $publish = Http::post("{$this->igApi}/{$userId}/media_publish", [
             'creation_id' => $container['id'],
             'access_token' => $token,
         ])->json();
+
+        if (empty($publish['id'])) {
+            $msg = $publish['error']['message'] ?? json_encode($publish);
+            throw new \RuntimeException("Instagram publish error: {$msg}");
+        }
+
+        return $publish;
     }
 
     public function publishCarousel(string $userId, string $token, array $imageUrls, string $caption = ''): array
@@ -216,10 +230,17 @@ class MetaApiService
             throw new \RuntimeException("Instagram carousel error: {$msg}");
         }
 
-        return Http::post("{$this->igApi}/{$userId}/media_publish", [
+        $publish = Http::post("{$this->igApi}/{$userId}/media_publish", [
             'creation_id' => $carousel['id'],
             'access_token' => $token,
         ])->json();
+
+        if (empty($publish['id'])) {
+            $msg = $publish['error']['message'] ?? json_encode($publish);
+            throw new \RuntimeException("Instagram carousel publish error: {$msg}");
+        }
+
+        return $publish;
     }
 
     public function getComments(string $mediaId, string $token): array
@@ -290,16 +311,28 @@ class MetaApiService
             $params['link'] = $link;
         }
 
-        return Http::post("{$this->fbApi}/{$pageId}/feed", $params)->json();
+        $result = Http::post("{$this->fbApi}/{$pageId}/feed", $params)->json();
+
+        if (isset($result['error'])) {
+            throw new \RuntimeException("Facebook post error: " . ($result['error']['message'] ?? json_encode($result)));
+        }
+
+        return $result;
     }
 
     public function publishPagePhoto(string $pageId, string $pageToken, string $imageUrl, string $caption = ''): array
     {
-        return Http::post("{$this->fbApi}/{$pageId}/photos", [
+        $result = Http::post("{$this->fbApi}/{$pageId}/photos", [
             'url' => $imageUrl,
             'caption' => $caption,
             'access_token' => $pageToken,
         ])->json();
+
+        if (isset($result['error'])) {
+            throw new \RuntimeException("Facebook photo error: " . ($result['error']['message'] ?? json_encode($result)));
+        }
+
+        return $result;
     }
 
     public function getPageInsights(string $pageId, string $pageToken, string $period = 'day'): array
