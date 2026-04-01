@@ -127,3 +127,55 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.ui-control {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68));
+  border: 1px solid color-mix(in oklab, var(--border) 86%, #000 14%);
+  border-radius: 0.85rem;
+  padding: 0.62rem 0.8rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.ui-control::placeholder {
+  color: color-mix(in oklab, var(--muted) 88%, #fff 12%);
+}
+
+.ui-control:hover {
+  border-color: color-mix(in oklab, var(--muted) 60%, var(--border) 40%);
+}
+
+.ui-control:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 72%, #fff 28%);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-light) 70%, #fff 30%);
+}
+
+.ui-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2.4rem;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23655f53' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: 0 0, right 0.8rem center;
+  background-size: auto, 0.95rem;
+}
+
+.ui-control[type="date"],
+.ui-control[type="time"],
+.ui-control[type="datetime-local"] {
+  min-height: 2.6rem;
+}
+
+.ui-control[type="date"]::-webkit-calendar-picker-indicator,
+.ui-control[type="time"]::-webkit-calendar-picker-indicator,
+.ui-control[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: saturate(0.4) contrast(1.25);
+  cursor: pointer;
+}

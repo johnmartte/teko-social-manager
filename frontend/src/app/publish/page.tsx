@@ -205,7 +205,7 @@ function ScheduleInput({ value, onChange }: { value: string; onChange: (v: strin
         min={min}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent"
+        className="ui-control"
       />
     </div>
   );
@@ -761,7 +761,7 @@ function BulkScheduler({
                       value={startDate}
                       min={new Date().toISOString().slice(0, 10)}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                      className="ui-control"
                     />
                   </div>
                   <div className="space-y-1">
@@ -772,7 +772,7 @@ function BulkScheduler({
                       max={60}
                       value={totalDays}
                       onChange={(e) => setTotalDays(Math.min(Math.max(Number(e.target.value || 1), 1), 60))}
-                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                      className="ui-control"
                     />
                   </div>
                   <div className="space-y-1">
@@ -783,7 +783,7 @@ function BulkScheduler({
                       max={8}
                       value={postsPerDay}
                       onChange={(e) => syncTimeSlots(Number(e.target.value || 1))}
-                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                      className="ui-control"
                     />
                   </div>
                   <div className="space-y-1">
@@ -800,7 +800,7 @@ function BulkScheduler({
                     <select
                       value={platform}
                       onChange={(e) => setPlatform(e.target.value as BulkItem["platform"])}
-                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                      className="ui-control ui-select"
                     >
                       {igConnected && <option value="instagram">Instagram</option>}
                       {fbConnected && <option value="facebook">Facebook</option>}
@@ -812,7 +812,7 @@ function BulkScheduler({
                     <select
                       value={type}
                       onChange={(e) => setType(e.target.value as Exclude<BulkItem["type"], "text">)}
-                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                      className="ui-control ui-select"
                     >
                       <option value="photo">Foto</option>
                       <option value="reel">Reel</option>
@@ -838,7 +838,7 @@ function BulkScheduler({
                           type="time"
                           value={slot}
                           onChange={(e) => updateTimeSlot(idx, e.target.value)}
-                          className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                          className="ui-control"
                         />
                       ))}
                     </div>
@@ -1036,7 +1036,7 @@ function BulkScheduler({
                       <select
                         value={item.platform}
                         onChange={(e) => updateItem(item.id, { platform: e.target.value as BulkItem["platform"] })}
-                        className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                        className="ui-control ui-select"
                       >
                         {igConnected && <option value="instagram">Instagram</option>}
                         {fbConnected && <option value="facebook">Facebook</option>}
@@ -1049,7 +1049,7 @@ function BulkScheduler({
                       <select
                         value={item.type}
                         onChange={(e) => updateItem(item.id, { type: e.target.value as BulkItem["type"] })}
-                        className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                        className="ui-control ui-select"
                       >
                         <option value="photo">Foto</option>
                         <option value="reel">Reel</option>
