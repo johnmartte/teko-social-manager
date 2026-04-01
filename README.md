@@ -1,474 +1,375 @@
-# 📱 Teko Social Manager
+﻿# Teko Social Manager
 
-Sistema de administración de redes sociales (Instagram y Facebook) usando la API oficial de Meta.
+Guia completa para implementar, escalar y operar el sistema de forma segura.
 
----
+## 1. Estado actual del sistema
 
-## 📋 Tabla de Contenidos
+Teko Social Manager es una plataforma para gestionar Instagram y Facebook desde un panel unificado.
 
-1. [Resumen del Proyecto](#resumen-del-proyecto)
-2. [Limitaciones importantes de la API](#limitaciones-importantes-de-la-api)
-3. [Requisitos previos](#requisitos-previos)
-4. [Configuración en Meta Developers](#configuración-en-meta-developers)
-5. [Estructura del proyecto](#estructura-del-proyecto)
-6. [Instalación](#instalación)
-7. [Variables de entorno](#variables-de-entorno)
-8. [Flujo de autenticación OAuth](#flujo-de-autenticación-oauth)
-9. [Funcionalidades y endpoints](#funcionalidades-y-endpoints)
-10. [Roadmap de desarrollo](#roadmap-de-desarrollo)
-11. [Recursos útiles](#recursos-útiles)
+Stack actual:
+- Frontend: Next.js 16, React 19, TypeScript, Tailwind v4
+- Backend: Laravel 13, Sanctum
+- Base de datos: SQLite (dev), compatible con MySQL/PostgreSQL para produccion
+- Integraciones: Meta Graph API (Instagram/Facebook), Cloudinary
+- Deploy actual: Frontend en Vercel, Backend en Railway
 
----
-
-## 🎯 Resumen del Proyecto
-
-**Teko Social Manager** es un sistema web que permite gestionar cuentas de Instagram y Facebook desde un único dashboard. Utiliza la API oficial de Instagram (Instagram Graph API) y la API de páginas de Facebook (Pages API) de Meta.
-
-**Tecnologías:**
-- Backend: Node.js + Express
-- Frontend: HTML + CSS + JavaScript (Vanilla o React)
-- API: Meta Graph API (Instagram + Facebook)
-- Auth: OAuth 2.0 con Instagram Business Login
+Capacidades ya implementadas:
+- Login de sistema (email/password)
+- Conexion social Meta
+- Publicacion inmediata (IG y FB)
+- Programacion de publicaciones
+- Planner con publicacion manual y borrado masivo
+- Inbox unificado con templates
+- Reglas de automatizacion (toggle)
+- Insights basicos IG/FB
 
 ---
 
-## ⚠️ Limitaciones importantes de la API
+## 2. Arquitectura recomendada
 
-Antes de comenzar, es fundamental conocer qué **sí** y qué **no** permite la API oficial de Meta:
+## 2.1 Backend (Laravel)
 
-| Funcionalidad | Disponible |
-|---|---|
-| Publicar fotos, videos, Reels | ✅ Sí |
-| Publicar Stories | ✅ Sí |
-| Publicar carruseles | ✅ Sí |
-| Ver estadísticas (Insights) | ✅ Sí |
-| Moderar comentarios | ✅ Sí |
-| Enviar/recibir mensajes directos | ✅ Sí |
-| Ver el feed de la cuenta | ✅ Sí |
-| Eliminar publicaciones propias | ✅ Sí |
-| **Seguir personas** | ❌ No permitido por la API |
-| **Dejar de seguir personas** | ❌ No permitido por la API |
-| Publicar en cuentas personales | ❌ Solo cuentas Business/Creator |
+Capas:
+- Controllers: entrada/salida HTTP
+- Services: logica de negocio e integraciones externas
+- Models: persistencia
+- Jobs/Queues: tareas asincronas
+- Middleware: autenticacion/autorizacion
 
-> ⚠️ Meta no expone endpoints de follow/unfollow en su API pública. Intentar automatizar esto viola sus políticas de uso.
+Rutas principales:
+- Auth sistema: api/auth/system/*
+- Workspace: api/workspace/*
+- Instagram: api/instagram/*
+- Facebook: api/facebook/*
+- Scheduler: api/scheduled-posts*
 
----
+## 2.2 Frontend (Next.js)
 
-## ✅ Requisitos previos
-
-### Cuentas necesarias
-- Cuenta de **Facebook** de desarrollador
-- Cuenta de **Instagram Business o Creator** (no personal)
-  - Para convertirla: Instagram → Configuración → Cuenta → Cambiar a cuenta profesional
-- Cuenta de Instagram vinculada a una **Página de Facebook**
-
-### Software necesario
-- Node.js (v18 o superior)
-- npm o yarn
-- Git
-- Un editor de código (VS Code recomendado)
+Bloques:
+- App Router para paginas
+- AuthContext para sesion de sistema
+- lib/api para llamadas al backend
+- UI pages: dashboard, publish, planner, inbox, automations, insights, settings
 
 ---
 
-## ⚙️ Configuración en Meta Developers
+## 3. Setup local completo
 
-### Paso 1 — Crear la App en Meta Developers
+## 3.1 Requisitos
 
-1. Ve a [developers.facebook.com/apps](https://developers.facebook.com/apps)
-2. Haz clic en **"Crear app"**
-3. Selecciona el tipo **"Business"**
-4. Agrega nombre y correo de contacto
-5. Haz clic en **"Crear app"**
+- Node 20+
+- npm 10+
+- PHP 8.4+
+- Composer 2+
+- SQLite o MySQL/PostgreSQL
 
-### Paso 2 — Agregar casos de uso
+## 3.2 Backend
 
-Agrega **únicamente** estos dos casos de uso:
+1. Entrar a carpeta api
+2. Instalar dependencias
+3. Crear .env
+4. Generar key
+5. Migrar base de datos
+6. Levantar servidor
 
-- ✅ **"Administrar mensajes y contenido en Instagram"** — Para toda la gestión de Instagram
-- ✅ **"Administrar todos los aspectos de tu página"** — Para gestión de Facebook Pages
-
-### Paso 3 — Configurar permisos de Instagram
-
-En el caso de uso de Instagram, haz clic en **"Add all required permissions"**. Esto agrega:
-
-- `instagram_business_basic`
-- `instagram_business_content_publish`
-- `instagram_manage_comments`
-- `instagram_business_manage_messages`
-- `instagram_business_manage_insights`
-
-### Paso 4 — Agregar cuenta de Instagram para pruebas
-
-1. En **Roles → Roles**, agrega tu usuario de Instagram como **"Evaluador de Instagram"**
-2. Desde la app de Instagram en tu celular, acepta la invitación:
-   - Configuración → Aplicaciones y sitios web → Solicitudes de evaluadores
-3. Regresa a la configuración de la API y haz clic en **"Agregar cuenta"**
-
-### Paso 5 — Credenciales de la app
-
-Guarda estas credenciales (se usan en el archivo `.env`):
-
-| Campo | Dónde encontrarlo |
-|---|---|
-| **App ID** | Configuración → Básica |
-| **App Secret** | Configuración → Básica → "Mostrar" |
-
-> 🔒 **NUNCA** compartas ni subas el App Secret a GitHub. Úsalo solo en tu archivo `.env` local.
-
-### Paso 6 — Configurar OAuth Redirect URI
-
-1. Ve a **Instagram → Configuración de la API con inicio de sesión**
-2. En **"Configurar Instagram Business Login"**, agrega tu Redirect URI:
-   - Desarrollo: `http://localhost:3000/auth/callback`
-   - Producción: `https://tu-dominio.com/auth/callback`
-
-### Paso 7 — Webhooks (para más adelante)
-
-Los webhooks se configuran cuando tengas un servidor con URL pública. Permiten recibir notificaciones en tiempo real de:
-- Nuevos comentarios
-- Nuevos mensajes directos
-- Menciones
-
-> ⏳ Este paso se completa en la Fase 3 del desarrollo.
-
----
-
-## 🗂️ Estructura del proyecto
-
-```
-teko-social-manager/
-├── backend/
-│   ├── server.js              # Servidor principal Express
-│   ├── routes/
-│   │   ├── auth.js            # Rutas de autenticación OAuth
-│   │   ├── instagram.js       # Rutas de Instagram
-│   │   └── facebook.js        # Rutas de Facebook
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── instagramController.js
-│   │   └── facebookController.js
-│   ├── services/
-│   │   ├── instagramService.js  # Lógica de llamadas a la API de IG
-│   │   └── facebookService.js   # Lógica de llamadas a la API de FB
-│   ├── middleware/
-│   │   └── auth.js              # Middleware de verificación de token
-│   ├── .env                     # Variables de entorno (NO subir a GitHub)
-│   ├── .env.example             # Plantilla de variables de entorno
-│   └── package.json
-├── frontend/
-│   ├── index.html               # Dashboard principal
-│   ├── css/
-│   │   └── styles.css
-│   └── js/
-│       ├── app.js
-│       ├── instagram.js
-│       └── facebook.js
-├── .gitignore
-└── README.md
-```
-
----
-
-## 🚀 Instalación
+Comandos:
 
 ```bash
-# 1. Clona el repositorio
-git clone https://github.com/tu-usuario/teko-social-manager.git
-cd teko-social-manager
-
-# 2. Instala dependencias del backend
-cd backend
-npm install
-
-# 3. Crea tu archivo de variables de entorno
+cd api
+composer install
 cp .env.example .env
-# Edita .env con tus credenciales
+php artisan key:generate
+php artisan migrate --force
+php artisan serve --host=127.0.0.1 --port=8000
+```
 
-# 4. Inicia el servidor
+## 3.3 Frontend
+
+Comandos:
+
+```bash
+cd frontend
+npm install
 npm run dev
 ```
 
 ---
 
-## 🔐 Variables de entorno
+## 4. Variables de entorno
 
-Crea un archivo `.env` en la carpeta `backend/` con este contenido:
+## 4.1 Backend (.env)
 
-```env
-# Meta App Credentials
-APP_ID=2106254986819873
-APP_SECRET=tu_app_secret_aqui
+Base:
+- APP_ENV=local
+- APP_DEBUG=true
+- APP_URL=http://127.0.0.1:8000
+- FRONTEND_URL=http://localhost:3000
 
-# OAuth
-REDIRECT_URI=http://localhost:3000/auth/callback
+DB:
+- DB_CONNECTION=sqlite
 
-# Servidor
-PORT=3000
-NODE_ENV=development
+Sanctum/CORS:
+- SESSION_DRIVER=database
+- SANCTUM_STATEFUL_DOMAINS=localhost:3000
+- CORS_ALLOWED_ORIGINS=http://localhost:3000
 
-# Opcional: Token de larga duración guardado
-INSTAGRAM_ACCESS_TOKEN=
-FACEBOOK_ACCESS_TOKEN=
-INSTAGRAM_USER_ID=
-```
+Meta:
+- META_APP_ID=
+- META_APP_SECRET=
+- META_REDIRECT_URI=http://127.0.0.1:8000/auth/callback
+- META_OAUTH_PROVIDER=instagram
+- META_VERIFY_SSL=true
 
-> ⚠️ Agrega `.env` a tu `.gitignore` para que nunca se suba a GitHub.
+Cloudinary:
+- CLOUDINARY_CLOUD_NAME=
+- CLOUDINARY_UPLOAD_PRESET=
+
+Queue:
+- QUEUE_CONNECTION=database
+
+## 4.2 Frontend (.env.local)
+
+- NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
 
 ---
 
-## 🔑 Flujo de autenticación OAuth
+## 5. Despliegue productivo
 
-El flujo de autenticación funciona así:
+## 5.1 Backend (Railway)
 
-```
-Usuario hace clic en "Conectar Instagram"
-         ↓
-Backend redirige a Meta OAuth
-(https://www.instagram.com/oauth/authorize)
-         ↓
-Usuario inicia sesión y aprueba permisos
-         ↓
-Meta redirige a tu Redirect URI con un ?code=...
-         ↓
-Backend intercambia el code por un Access Token
-(POST https://api.instagram.com/oauth/access_token)
-         ↓
-Backend solicita un token de larga duración (60 días)
-(GET https://graph.instagram.com/access_token)
-         ↓
-Token guardado y listo para usar
-```
+Checklist:
+1. Variables de entorno completas
+2. APP_ENV=production
+3. APP_DEBUG=false
+4. APP_KEY valida
+5. QUEUE_CONNECTION=database (o redis)
+6. Ejecutar migraciones en deploy
+7. Worker de cola activo si se usan jobs
+8. Task scheduler activo cada minuto
 
-### URL de autorización
-
-```
-https://www.instagram.com/oauth/authorize
-  ?client_id={APP_ID}
-  &redirect_uri={REDIRECT_URI}
-  &scope=instagram_business_basic,instagram_business_content_publish,instagram_manage_comments,instagram_business_manage_messages,instagram_business_manage_insights
-  &response_type=code
-```
-
-### Intercambio de código por token
+Comandos utiles:
 
 ```bash
-POST https://api.instagram.com/oauth/access_token
-  client_id={APP_ID}
-  client_secret={APP_SECRET}
-  grant_type=authorization_code
-  redirect_uri={REDIRECT_URI}
-  code={CODE_RECIBIDO}
+php artisan migrate --force
+php artisan config:cache
+php artisan route:cache
+php artisan optimize
 ```
 
-### Token de larga duración
+## 5.2 Frontend (Vercel)
 
-```bash
-GET https://graph.instagram.com/access_token
-  ?grant_type=ig_exchange_token
-  &client_id={APP_ID}
-  &client_secret={APP_SECRET}
-  &access_token={SHORT_TOKEN}
-```
+Checklist:
+1. NEXT_PUBLIC_API_URL apuntando a Railway
+2. Build exitoso
+3. Deploy en produccion
 
 ---
 
-## 📡 Funcionalidades y endpoints
+## 6. Seguridad obligatoria antes de escalar
 
-### Instagram
+## 6.1 Tokens sociales
 
-#### Ver perfil y media
-```
-GET https://graph.instagram.com/me
-  ?fields=id,username,name,biography,followers_count,media_count
-  &access_token={TOKEN}
+Problema actual:
+- El sistema acepta tokens sociales por headers del cliente.
 
-GET https://graph.instagram.com/{IG_USER_ID}/media
-  ?fields=id,caption,media_type,media_url,thumbnail_url,timestamp
-  &access_token={TOKEN}
-```
+Accion requerida:
+- Mover credenciales sociales a almacenamiento seguro server-side por usuario/workspace.
+- No confiar en tokens enviados por navegador para operaciones sensibles.
 
-#### Publicar una foto
-```
-# Paso 1: Crear contenedor
-POST https://graph.instagram.com/{IG_USER_ID}/media
-  image_url=https://url-publica-de-tu-imagen.jpg
-  caption=Tu pie de foto aquí
-  access_token={TOKEN}
+## 6.2 Multiusuario real
 
-# Paso 2: Publicar el contenedor
-POST https://graph.instagram.com/{IG_USER_ID}/media_publish
-  creation_id={IG_CONTAINER_ID}
-  access_token={TOKEN}
-```
+Problema actual:
+- Datos de workspace (inbox/templates/rules) sin ownership fuerte.
 
-> ⚠️ La imagen debe estar en una URL pública accesible. Límite: 100 posts por 24 horas.
+Accion requerida:
+- Agregar user_id o workspace_id a todas las tablas operativas.
+- Aplicar filtros por tenant en todas las consultas.
 
-#### Publicar un Reel
-```
-POST https://graph.instagram.com/{IG_USER_ID}/media
-  media_type=REELS
-  video_url=https://url-publica-de-tu-video.mp4
-  caption=Tu descripción aquí
-  access_token={TOKEN}
-```
+## 6.3 OAuth
 
-#### Publicar un carrusel
-```
-# Paso 1: Crear contenedor para cada imagen
-POST https://graph.instagram.com/{IG_USER_ID}/media
-  image_url=https://imagen1.jpg
-  is_carousel_item=true
-  access_token={TOKEN}
+Problema actual:
+- Riesgo al mover credenciales por query string en redirects.
 
-# Paso 2: Crear contenedor del carrusel
-POST https://graph.instagram.com/{IG_USER_ID}/media
-  media_type=CAROUSEL
-  children={ID1},{ID2},{ID3}
-  caption=Descripción del carrusel
-  access_token={TOKEN}
-
-# Paso 3: Publicar
-POST https://graph.instagram.com/{IG_USER_ID}/media_publish
-  creation_id={CAROUSEL_CONTAINER_ID}
-  access_token={TOKEN}
-```
-
-#### Estadísticas de la cuenta
-```
-GET https://graph.instagram.com/{IG_USER_ID}/insights
-  ?metric=impressions,reach,profile_views,follower_count
-  &period=day
-  &access_token={TOKEN}
-```
-
-#### Estadísticas de un post
-```
-GET https://graph.instagram.com/{IG_MEDIA_ID}/insights
-  ?metric=impressions,reach,engagement,saved
-  &access_token={TOKEN}
-```
-
-#### Moderar comentarios
-```
-# Ver comentarios de un post
-GET https://graph.instagram.com/{IG_MEDIA_ID}/comments
-  ?access_token={TOKEN}
-
-# Responder a un comentario
-POST https://graph.instagram.com/{IG_MEDIA_ID}/replies
-  message=Tu respuesta aquí
-  access_token={TOKEN}
-
-# Ocultar un comentario
-POST https://graph.instagram.com/{IG_COMMENT_ID}
-  hide=true
-  access_token={TOKEN}
-
-# Eliminar un comentario
-DELETE https://graph.instagram.com/{IG_COMMENT_ID}
-  access_token={TOKEN}
-```
-
-### Facebook (Pages API)
-
-#### Ver información de la página
-```
-GET https://graph.facebook.com/{PAGE_ID}
-  ?fields=id,name,fan_count,followers_count,about
-  &access_token={PAGE_TOKEN}
-```
-
-#### Publicar en la página
-```
-POST https://graph.facebook.com/{PAGE_ID}/feed
-  message=Tu publicación aquí
-  access_token={PAGE_TOKEN}
-```
-
-#### Estadísticas de la página
-```
-GET https://graph.facebook.com/{PAGE_ID}/insights
-  ?metric=page_impressions,page_reach,page_fans
-  &period=day
-  &access_token={PAGE_TOKEN}
-```
+Accion requerida:
+- Usar intercambio seguro server-side y tokens de sesion de corta vida.
 
 ---
 
-## 🗺️ Roadmap de desarrollo
+## 7. Fiabilidad operativa
 
-### Fase 1 — Autenticación y conexión ✅ En progreso
-- [ ] Configuración de la app en Meta Developers
-- [ ] Flujo OAuth con Instagram
-- [ ] Flujo OAuth con Facebook
-- [ ] Guardar y renovar tokens de acceso
-- [ ] Dashboard básico con estado de conexión
+## 7.1 Publicaciones programadas
 
-### Fase 2 — Publicación de contenido
-- [ ] Publicar fotos en Instagram
-- [ ] Publicar videos y Reels en Instagram
-- [ ] Publicar carruseles en Instagram
-- [ ] Publicar Stories en Instagram
-- [ ] Publicar en página de Facebook
-- [ ] Programador de publicaciones (con fecha y hora)
-- [ ] Vista previa antes de publicar
+Mejoras requeridas:
+- Idempotencia por post
+- Lock transaccional para evitar doble publicacion
+- Retry/backoff segun tipo de error
+- Historial de intentos con trazabilidad
 
-### Fase 3 — Estadísticas
-- [ ] Dashboard de métricas de Instagram
-- [ ] Dashboard de métricas de Facebook
-- [ ] Estadísticas por post
-- [ ] Gráficas de crecimiento
-- [ ] Exportar reportes
+## 7.2 Observabilidad
 
-### Fase 4 — Gestión de comentarios y mensajes
-- [ ] Ver y responder comentarios de Instagram
-- [ ] Ocultar/eliminar comentarios
-- [ ] Bandeja de mensajes directos de Instagram
-- [ ] Moderar comentarios de Facebook
-
-### Fase 5 — Webhooks y notificaciones en tiempo real
-- [ ] Configurar servidor de webhooks
-- [ ] Notificaciones de nuevos comentarios
-- [ ] Notificaciones de nuevos mensajes
-- [ ] Alertas del sistema
-
-### Fase 6 — Producción
-- [ ] Deploy del backend (Railway, Render, o VPS)
-- [ ] Deploy del frontend
-- [ ] Configurar App Review de Meta para acceso avanzado
-- [ ] SSL y seguridad
+Agregar:
+- Logs estructurados (request_id, user_id, post_id)
+- Metricas de exito/fallo de publicacion
+- Alertas por tasa de fallo alta
 
 ---
 
-## 📚 Recursos útiles
+## 8. Funciones inteligentes a implementar
 
-- [Instagram Platform Overview](https://developers.facebook.com/docs/instagram-platform/overview)
-- [Instagram API with Instagram Login](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login)
-- [Content Publishing Guide](https://developers.facebook.com/docs/instagram-platform/content-publishing)
-- [Insights Guide](https://developers.facebook.com/docs/instagram-platform/insights)
-- [Graph API Explorer](https://developers.facebook.com/tools/explorer/) — Para probar llamadas a la API
-- [Meta App Dashboard](https://developers.facebook.com/apps)
-- [Error Codes Reference](https://developers.facebook.com/docs/instagram-api/reference/error-codes)
+## 8.1 Smart Scheduler
+
+- Recomendador de franjas horarias por red y tipo
+- Ranking de horarios por engagement historico
+- Simulador de plan semanal
+
+## 8.2 Copiloto de contenido
+
+- Generacion de captions por tono/objetivo
+- Variantes A/B
+- Sugerencias de hashtags por tema
+
+## 8.3 Moderacion inteligente
+
+- Clasificacion de comentarios (spam, toxicidad, compra, soporte)
+- Priorizacion automatica
+- Ocultado automatico con umbrales configurables
+
+## 8.4 Inbox inteligente
+
+- Sugerencias de respuesta contextual
+- Auto-enrutamiento por intencion
+- Escalamiento automatico con SLA
+
+## 8.5 Alertas de anomalias
+
+- Caidas/subidas fuera de patron en alcance y engagement
+- Alertas por canal (email, dashboard)
 
 ---
 
-## 🔒 Seguridad
+## 9. Automatizaciones recomendadas
 
-- **NUNCA** subas el archivo `.env` a GitHub
-- **NUNCA** expongas el App Secret en el frontend
-- Todos los tokens deben manejarse únicamente en el backend
-- Rota el App Secret si sospechas que fue comprometido (Configuración → Básica → Restablecer)
-- Los tokens de larga duración expiran en 60 días — implementa un sistema de renovación automática
+Nivel 1 (rapidas):
+- Reintento automatico de posts fallidos
+- Recordatorios de slots vacios
+- Resumen diario de actividad
+
+Nivel 2 (operativas):
+- Auto-prioridad en inbox por palabras clave
+- Auto-respuesta para FAQs
+- Auto-tag de conversaciones
+
+Nivel 3 (inteligentes):
+- Sugerencia automatica de hora y formato
+- Prediccion simple de rendimiento semanal
 
 ---
 
-## 📝 Notas adicionales
+## 10. Roadmap de implementacion por fases
 
-- La app debe pasar el **App Review de Meta** antes de poder acceder a cuentas que no son tuyas
-- Durante el desarrollo, solo puedes acceder a cuentas que hayas agregado como evaluadores (testers)
-- Límite de publicación: **100 posts por 24 horas** vía API
-- Los webhooks requieren que la app esté publicada y el servidor tenga URL pública con HTTPS
+## Fase 1 (1-2 semanas) - Base segura
+
+Objetivo:
+- Blindar seguridad y tenancy.
+
+Tareas:
+1. Modelo SocialCredential cifrado por usuario
+2. Refactor de middlewares para resolver credenciales server-side
+3. Agregar user_id/workspace_id a tablas operativas
+4. Polices/autorizacion por recurso
+5. Tests feature minimos de auth/schedule
+
+Definition of done:
+- Ningun endpoint sensible depende de token social enviado por cliente.
+
+## Fase 2 (2-4 semanas) - Fiabilidad
+
+Objetivo:
+- Publicacion programada robusta.
+
+Tareas:
+1. Job por publicacion con cola
+2. Locking + idempotencia
+3. Retry/backoff por error
+4. Panel de errores de scheduler
+
+Definition of done:
+- No hay doble publicacion bajo concurrencia.
+
+## Fase 3 (4-8 semanas) - Inteligencia y automatizacion
+
+Objetivo:
+- Productividad y rendimiento.
+
+Tareas:
+1. Smart Scheduler v1
+2. Inbox Copilot v1
+3. Moderacion inteligente v1
+4. Alertas de anomalias
+
+Definition of done:
+- Mejora medible en tiempo operativo y engagement.
 
 ---
 
-*Proyecto desarrollado con la asistencia de Claude (Anthropic)*
+## 11. KPIs para validar el avance
+
+- Publish success rate
+- Mean time to publish
+- Tiempo medio de respuesta inbox
+- Engagement por horario recomendado vs manual
+- % de conversaciones auto-clasificadas correctamente
+- % de fallos por token expirado
+- Tiempo ahorrado por automatizaciones
+
+---
+
+## 12. Testing strategy
+
+Backend:
+- Feature tests: auth sistema, scheduled posts, workspace ownership
+- Unit tests: servicios de reglas, normalizadores, scoring scheduler
+
+Frontend:
+- Component tests para formularios criticos
+- Flujos E2E: login, programacion, inbox, insights
+
+CI recomendado:
+- Build frontend
+- PHPUnit backend
+- Lint frontend
+- Smoke tests de rutas principales
+
+---
+
+## 13. Convenciones recomendadas
+
+- Todo endpoint nuevo con validacion Request dedicada
+- Sin logica compleja en controllers
+- Servicios puros para negocio
+- Mensajes de error estandarizados
+- Sin strings hardcode en UI (usar metadata API)
+
+---
+
+## 14. Plan de ejecucion inmediato sugerido
+
+Sprint A (arrancar ya):
+1. SocialCredential seguro + migracion de tokens
+2. Scoping multiusuario en tablas workspace
+3. Tests de seguridad y autorizacion
+
+Sprint B:
+1. Scheduler robusto con jobs
+2. Dashboard de fallos/reintentos
+
+Sprint C:
+1. Smart Scheduler v1
+2. Inbox Copilot v1
+
+---
+
+## 15. Nota importante
+
+Este README esta pensado como guia de implementacion real para evolucionar el producto a nivel produccion/escala.
+Si quieres, el siguiente paso es convertir este plan en backlog tecnico (tickets) con estimacion por tarea, riesgo y orden exacto de ejecucion.
