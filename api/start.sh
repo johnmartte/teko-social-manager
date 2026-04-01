@@ -9,7 +9,12 @@ mkdir -p /app/database
 touch /app/database/database.sqlite
 
 echo "[start] Running migrations..."
-php artisan migrate --force 2>&1
+if [ "${FORCE_MIGRATE_FRESH:-false}" = "true" ]; then
+	echo "[start] FORCE_MIGRATE_FRESH=true -> running migrate:fresh..."
+	php artisan migrate:fresh --force 2>&1
+else
+	php artisan migrate --force 2>&1
+fi
 
 echo "[start] Verifying critical tables..."
 if ! php -r "require 'vendor/autoload.php'; \$app = require 'bootstrap/app.php'; \$app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap(); exit(Illuminate\\Support\\Facades\\Schema::hasTable('users') ? 0 : 1);"; then
