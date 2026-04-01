@@ -194,6 +194,14 @@ export default function PublishPage() {
     }
   }
 
+  // Convert datetime-local string (local time) → UTC ISO so the backend
+  // never misinterprets the timezone.
+  function toUTCISO(localDatetime: string): string {
+    if (!localDatetime) return localDatetime;
+    const d = new Date(localDatetime);
+    return isNaN(d.getTime()) ? localDatetime : d.toISOString();
+  }
+
   async function handleSchedule(scheduleBody: {
     platform: string;
     type: string;
@@ -203,7 +211,10 @@ export default function PublishPage() {
   }) {
     setSubmitting(true);
     try {
-      await api("/scheduled-posts", { method: "POST", body: scheduleBody });
+      await api("/scheduled-posts", {
+        method: "POST",
+        body: { ...scheduleBody, scheduled_at: toUTCISO(scheduleBody.scheduled_at) },
+      });
       showToast("success", "Post programado correctamente.");
     } catch (err: unknown) {
       showToast("error", err instanceof Error ? err.message : "Error al programar.");

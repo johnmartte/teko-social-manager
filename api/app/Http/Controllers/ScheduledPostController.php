@@ -24,7 +24,7 @@ class ScheduledPostController extends Controller
             'caption'      => 'nullable|string',
             'media_urls'   => 'nullable|array',
             'media_urls.*' => 'url',
-            'scheduled_at' => 'required|date|after:now',
+            'scheduled_at' => 'required|date|after:' . now()->subMinutes(5)->toDateTimeString(),
         ]);
 
         $data['ig_token']   = $request->header('X-IG-Token');
