@@ -11,9 +11,16 @@ touch /app/database/database.sqlite
 echo "[start] Running migrations..."
 php artisan migrate --force 2>&1
 
+echo "[start] Verifying critical tables..."
+if ! php -r "require 'vendor/autoload.php'; \$app = require 'bootstrap/app.php'; \$app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap(); exit(Illuminate\\Support\\Facades\\Schema::hasTable('users') ? 0 : 1);"; then
+	echo "[start] users table missing. Running migrate:fresh..."
+	php artisan migrate:fresh --force 2>&1
+fi
+
 if [ "${SEED_SYSTEM_USER:-false}" = "true" ]; then
 	echo "[start] Seeding system user..."
-	php artisan db:seed --class=Database\\Seeders\\ProductionSystemUserSeeder --force 2>&1
+	php artisan db:seed --class=Database\\Seeders\\ProductionSystemUserSeeder --force 2>&1 || \
+		echo "[start] Warning: system user seeder failed; continuing startup."
 fi
 
 echo "[start] Caching config..."
