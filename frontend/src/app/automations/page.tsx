@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Card from "@/components/Card";
+import { api } from "@/lib/api";
 
 type Rule = {
   id: string;
@@ -10,42 +11,46 @@ type Rule = {
   enabled: boolean;
 };
 
-const initialRules: Rule[] = [
-  {
-    id: "r1",
-    name: "Publicacion inteligente",
-    description: "Sugiere hora de posteo segun rendimiento de las ultimas 4 semanas.",
-    enabled: true,
-  },
-  {
-    id: "r2",
-    name: "Moderacion automatica",
-    description: "Marca comentarios con spam o lenguaje toxico para revision rapida.",
-    enabled: true,
-  },
-  {
-    id: "r3",
-    name: "Escalamiento de soporte",
-    description: "Cuando un mensaje incluye palabras clave, lo envia a prioridad alta.",
-    enabled: false,
-  },
-  {
-    id: "r4",
-    name: "Resumen ejecutivo diario",
-    description: "Genera un resumen de KPIs y actividad de comunidad al final del dia.",
-    enabled: true,
-  },
-];
+type AutomationsResponse = {
+  rules: Rule[];
+  impact: {
+    operational_savings_hours: string;
+    response_time_reduction_percent: number;
+    crisis_risk_reduction_percent: number;
+  };
+};
 
 export default function AutomationsPage() {
-  const [rules, setRules] = useState(initialRules);
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [impact, setImpact] = useState<AutomationsResponse["impact"] | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  function toggleRule(id: string) {
+  async function loadData() {
+    setLoading(true);
+    try {
+      const data = await api<AutomationsResponse>("/workspace/automations");
+      setRules(data.rules || []);
+      setImpact(data.impact || null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadData();
+  }, []);
+
+  async function toggleRule(id: string) {
     setRules((prev) =>
-      prev.map((rule) =>
-        rule.id === id ? { ...rule, enabled: !rule.enabled } : rule,
-      ),
+      prev.map((rule) => (rule.id === id ? { ...rule, enabled: !rule.enabled } : rule))
     );
+
+    try {
+      await api(`/workspace/automations/${id}/toggle`, { method: "PATCH" });
+      await loadData();
+    } catch {
+      await loadData();
+    }
   }
 
   return (
@@ -59,6 +64,7 @@ export default function AutomationsPage() {
 
       <Card title="Reglas activas">
         <div className="space-y-3">
+          {loading ? <p className="text-sm text-muted text-center py-6">Cargando reglas...</p> : null}
           {rules.map((rule) => (
             <div key={rule.id} className="rounded-2xl border border-border bg-background/80 p-4 flex items-center justify-between gap-3">
               <div>
@@ -86,9 +92,9 @@ export default function AutomationsPage() {
 
       <Card title="Impacto estimado">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <MetricCard label="Ahorro operativo" value="6.5 h/sem" tone="success" />
-          <MetricCard label="Tiempo de respuesta" value="-22%" tone="info" />
-          <MetricCard label="Riesgo de crisis" value="-31%" tone="warning" />
+          <MetricCard label="Ahorro operativo" value={`${impact?.operational_savings_hours || "0.0"} h/sem`} tone="success" />
+          <MetricCard label="Tiempo de respuesta" value={`-${impact?.response_time_reduction_percent ?? 0}%`} tone="info" />
+          <MetricCard label="Riesgo de crisis" value={`-${impact?.crisis_risk_reduction_percent ?? 0}%`} tone="warning" />
         </div>
       </Card>
     </div>

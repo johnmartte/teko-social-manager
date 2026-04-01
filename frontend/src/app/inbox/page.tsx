@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Card from "@/components/Card";
+import { api } from "@/lib/api";
 
 type InboxItem = {
   id: string;
@@ -11,49 +13,45 @@ type InboxItem = {
   age: string;
 };
 
-const inboxItems: InboxItem[] = [
-  {
-    id: "m1",
-    channel: "Instagram",
-    from: "@sara.m",
-    message: "Hola, tienen stock del modelo rojo?",
-    level: "Alta",
-    age: "hace 3 min",
-  },
-  {
-    id: "m2",
-    channel: "Facebook",
-    from: "Camilo Reyes",
-    message: "No puedo completar el checkout, me ayudan?",
-    level: "Alta",
-    age: "hace 8 min",
-  },
-  {
-    id: "m3",
-    channel: "Instagram",
-    from: "@maria.pr",
-    message: "Me encanto su ultima publicacion!",
-    level: "Baja",
-    age: "hace 25 min",
-  },
-  {
-    id: "m4",
-    channel: "Facebook",
-    from: "Helena Vargas",
-    message: "Podrian compartir tabla de tallas?",
-    level: "Media",
-    age: "hace 41 min",
-  },
-];
-
-const templates = [
-  "Gracias por escribirnos, te ayudamos en un momento.",
-  "Aqui tienes el enlace directo con toda la informacion.",
-  "Perfecto, ya escalamos tu caso al equipo de soporte.",
-  "Tenemos stock disponible, te comparto opciones ahora mismo.",
-];
+type InboxResponse = {
+  conversations: InboxItem[];
+  templates: string[];
+};
 
 export default function InboxPage() {
+  const [inboxItems, setInboxItems] = useState<InboxItem[]>([]);
+  const [templates, setTemplates] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newTemplate, setNewTemplate] = useState("");
+
+  async function loadInbox() {
+    setLoading(true);
+    try {
+      const data = await api<InboxResponse>("/workspace/inbox");
+      setInboxItems(data.conversations || []);
+      setTemplates(data.templates || []);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadInbox();
+  }, []);
+
+  async function addTemplate() {
+    const content = newTemplate.trim();
+    if (content.length < 4) return;
+
+    await api("/workspace/inbox/templates", {
+      method: "POST",
+      body: { content },
+    });
+
+    setNewTemplate("");
+    await loadInbox();
+  }
+
   return (
     <div className="space-y-6 teko-enter">
       <section className="rounded-[30px] border border-border bg-card/95 px-6 py-6 shadow-[0_20px_48px_rgba(73,57,27,0.1)]">
@@ -66,7 +64,11 @@ export default function InboxPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <Card title="Conversaciones" className="xl:col-span-2">
           <div className="space-y-2">
-            {inboxItems.map((item) => (
+            {loading ? (
+              <p className="text-sm text-muted text-center py-8">Cargando conversaciones...</p>
+            ) : inboxItems.length === 0 ? (
+              <p className="text-sm text-muted text-center py-8">No hay conversaciones por ahora.</p>
+            ) : inboxItems.map((item) => (
               <div key={item.id} className="rounded-2xl border border-border bg-background/80 px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold">
@@ -101,7 +103,9 @@ export default function InboxPage() {
 
         <Card title="Respuestas rapidas">
           <div className="space-y-2">
-            {templates.map((template) => (
+            {templates.length === 0 ? (
+              <p className="text-xs text-muted">Sin plantillas activas.</p>
+            ) : templates.map((template) => (
               <button
                 key={template}
                 className="w-full rounded-xl border border-border bg-background/80 text-left px-3 py-2.5 text-xs hover:bg-card transition-colors"
@@ -110,7 +114,18 @@ export default function InboxPage() {
               </button>
             ))}
           </div>
-          <button className="mt-4 w-full rounded-xl bg-accent text-white text-sm font-medium py-2.5 hover:opacity-90 transition-opacity">
+
+          <input
+            value={newTemplate}
+            onChange={(e) => setNewTemplate(e.target.value)}
+            placeholder="Nueva plantilla..."
+            className="mt-4 w-full rounded-xl border border-border bg-background/80 text-sm px-3 py-2.5 outline-none"
+          />
+
+          <button
+            onClick={addTemplate}
+            className="mt-3 w-full rounded-xl bg-accent text-white text-sm font-medium py-2.5 hover:opacity-90 transition-opacity"
+          >
             Crear nueva plantilla
           </button>
         </Card>

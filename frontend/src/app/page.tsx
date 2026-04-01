@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import Card, { StatCard } from "@/components/Card";
 import { getLoginUrl, formatNum, api } from "@/lib/api";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { InstagramProfile, FacebookPage } from "@/lib/types";
 
 type SocialTask = {
@@ -14,36 +14,13 @@ type SocialTask = {
   due: string;
 };
 
-const dailyTasks: SocialTask[] = [
-  {
-    id: "t1",
-    title: "Programar carrusel de producto",
-    owner: "Andrea",
-    tag: "Contenido",
-    due: "10:30",
-  },
-  {
-    id: "t2",
-    title: "Responder mensajes urgentes",
-    owner: "Luis",
-    tag: "Comunidad",
-    due: "11:15",
-  },
-  {
-    id: "t3",
-    title: "Revisar comentarios reportados",
-    owner: "Nora",
-    tag: "Moderacion",
-    due: "13:00",
-  },
-  {
-    id: "t4",
-    title: "Ajustar presupuesto campaña",
-    owner: "Marco",
-    tag: "Ads",
-    due: "15:40",
-  },
-];
+type DashboardWorkspaceData = {
+  tasks: SocialTask[];
+  metrics: {
+    completion: number;
+    response_minutes: number;
+  };
+};
 
 export default function DashboardPage() {
   const { status, loading } = useAuth();
@@ -92,6 +69,8 @@ function DashboardContent() {
   const { status } = useAuth();
   const [igProfile, setIgProfile] = useState<InstagramProfile | null>(null);
   const [fbPage, setFbPage] = useState<FacebookPage | null>(null);
+  const [dailyTasks, setDailyTasks] = useState<SocialTask[]>([]);
+  const [teamMetrics, setTeamMetrics] = useState({ completion: 0, response_minutes: 19 });
 
   useEffect(() => {
     if (status?.instagram.connected) {
@@ -104,13 +83,16 @@ function DashboardContent() {
         .then(setFbPage)
         .catch(() => {});
     }
-  }, [status]);
 
-  const completion = useMemo(() => {
-    const total = dailyTasks.length;
-    const done = 2;
-    return Math.round((done / total) * 100);
-  }, []);
+    api<DashboardWorkspaceData>("/workspace/dashboard")
+      .then((data) => {
+        setDailyTasks(data.tasks || []);
+        setTeamMetrics(data.metrics || { completion: 0, response_minutes: 19 });
+      })
+      .catch(() => {
+        setDailyTasks([]);
+      });
+  }, [status]);
 
   return (
     <div className="space-y-6 teko-enter">
@@ -170,7 +152,7 @@ function DashboardContent() {
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <Card title="Tareas del dia" className="xl:col-span-2">
           <div className="space-y-2">
-            {dailyTasks.map((task) => (
+            {dailyTasks.length > 0 ? dailyTasks.map((task) => (
               <div key={task.id} className="flex items-center justify-between rounded-2xl border border-border bg-background/80 px-4 py-3">
                 <div>
                   <p className="text-sm font-semibold">{task.title}</p>
@@ -180,7 +162,9 @@ function DashboardContent() {
                   {task.tag}
                 </span>
               </div>
-            ))}
+            )) : (
+              <p className="text-sm text-muted text-center py-5">No hay tareas programadas por ahora.</p>
+            )}
           </div>
         </Card>
 
@@ -188,12 +172,12 @@ function DashboardContent() {
           <div className="space-y-4">
             <div className="rounded-2xl p-4 bg-accent-light/70 border border-accent/10">
               <p className="text-xs text-muted">Cumplimiento diario</p>
-              <p className="text-3xl font-bold mt-1">{completion}%</p>
-              <p className="text-xs text-muted mt-1">+12% vs semana anterior</p>
+              <p className="text-3xl font-bold mt-1">{teamMetrics.completion}%</p>
+              <p className="text-xs text-muted mt-1">Basado en publicaciones pendientes y completadas.</p>
             </div>
             <div className="rounded-2xl p-4 bg-fb-light/70 border border-fb/10">
               <p className="text-xs text-muted">Tiempo medio de respuesta</p>
-              <p className="text-2xl font-bold mt-1">19 min</p>
+              <p className="text-2xl font-bold mt-1">{teamMetrics.response_minutes} min</p>
               <p className="text-xs text-muted mt-1">Objetivo: menor a 30 min</p>
             </div>
           </div>

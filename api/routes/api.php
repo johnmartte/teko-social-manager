@@ -6,6 +6,7 @@ use App\Http\Controllers\InstagramController;
 use App\Http\Controllers\ScheduledPostController;
 use App\Http\Controllers\SystemAuthController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\WorkspaceController;
 use App\Http\Middleware\EnsureFacebookToken;
 use App\Http\Middleware\EnsureInstagramToken;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/system/logout', [SystemAuthController::class, 'logout']);
     Route::patch('/auth/system/email', [SystemAuthController::class, 'updateEmail']);
     Route::patch('/auth/system/password', [SystemAuthController::class, 'updatePassword']);
+
+    Route::get('/workspace/dashboard', [WorkspaceController::class, 'dashboard']);
+    Route::get('/workspace/inbox', [WorkspaceController::class, 'inbox']);
+    Route::post('/workspace/inbox/templates', [WorkspaceController::class, 'addTemplate']);
+    Route::get('/workspace/automations', [WorkspaceController::class, 'automations']);
+    Route::patch('/workspace/automations/{automationRule}/toggle', [WorkspaceController::class, 'toggleAutomation']);
 });
 
 // File upload
