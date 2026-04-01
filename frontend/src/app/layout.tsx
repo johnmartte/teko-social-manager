@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import "react-datepicker/dist/react-datepicker.css";
 import { AuthProvider } from "@/context/AuthContext";
 import AppShell from "@/components/AppShell";
 

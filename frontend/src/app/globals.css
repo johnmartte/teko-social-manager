@@ -230,3 +230,13 @@ body {
 .react-datepicker__time-list {
   scrollbar-width: thin;
 }
+
+.react-datepicker-wrapper,
+.react-datepicker__input-container {
+  width: 100%;
+  display: block;
+}
+
+.react-datepicker-popper {
+  z-index: 70 !important;
+}
