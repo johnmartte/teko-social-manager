@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Services\MetaApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Throwable;
 
 class AuthController extends Controller
@@ -13,6 +15,8 @@ class AuthController extends Controller
     public function __construct(
         private MetaApiService $meta,
     ) {}
+
+    // ─── Meta OAuth ───────────────────────────────────────────────────────────
 
     public function login(): RedirectResponse
     {
@@ -30,10 +34,10 @@ class AuthController extends Controller
         try {
             $tokenData = $this->meta->exchangeCodeForToken($request->input('code'));
 
-            $igToken  = $tokenData['access_token'];
-            $igUserId = $tokenData['user_id'] ?? null;
-            $fbToken  = null;
-            $fbPageId = null;
+            $igToken    = $tokenData['access_token'];
+            $igUserId   = $tokenData['user_id'] ?? null;
+            $fbToken    = null;
+            $fbPageId   = null;
             $fbPageName = null;
 
             // Try to get Facebook page token
@@ -41,7 +45,7 @@ class AuthController extends Controller
                 $pages = $this->meta->getFacebookPages($igToken);
                 if (!empty($pages['data'])) {
                     $page = collect($pages['data'])
-                        ->first(fn (array $candidate) => !empty($candidate['instagram_business_account']['id']))
+                        ->first(fn (array $c) => !empty($c['instagram_business_account']['id']))
                         ?? $pages['data'][0];
 
                     $fbToken    = $page['access_token'];
@@ -51,17 +55,59 @@ class AuthController extends Controller
                     $igToken    = $page['access_token'];
                 }
             } catch (Throwable) {
-                // Facebook pages are optional
+                // Facebook pages optional
             }
 
-            $params = http_build_query(array_filter([
-                'auth'         => 'success',
-                'ig_token'     => $igToken,
-                'ig_user_id'   => $igUserId,
-                'fb_token'     => $fbToken,
-                'fb_page_id'   => $fbPageId,
-                'fb_page_name' => $fbPageName,
-            ]));
+            // ── Find or create User ──────────────────────────────────────────
+            $metaId = $igUserId ?? $fbPageId;
+
+            $user = User::firstOrCreate(
+                ['meta_id' => $metaId],
+                [
+                    'name'     => $fbPageName ?? "User {$metaId}",
+                    'email'    => "{$metaId}@meta.teko.internal",
+                    'password' => bcrypt(Str::uuid()),
+                ]
+            );
+
+            // Update name if we have better info now
+            if ($fbPageName && $user->name !== $fbPageName) {
+                $user->update(['name' => $fbPageName]);
+            }
+
+            // ── Store credentials in DB ──────────────────────────────────────
+            if ($igToken && $igUserId) {
+                $user->socialCredentials()->updateOrCreate(
+                    ['platform' => 'instagram'],
+                    [
+                        'access_token'   => $igToken,
+                        'meta_user_id'   => $igUserId,
+                        'meta_username'  => null,
+                    ]
+                );
+            }
+
+            if ($fbToken && $fbPageId) {
+                $user->socialCredentials()->updateOrCreate(
+                    ['platform' => 'facebook'],
+                    [
+                        'access_token'  => $fbToken,
+                        'meta_user_id'  => $fbPageId,
+                        'meta_username' => $fbPageName,
+                    ]
+                );
+            }
+
+            // ── Issue Sanctum token ──────────────────────────────────────────
+            // Revoke old tokens to keep sessions clean
+            $user->tokens()->delete();
+            $appToken = $user->createToken('teko-social')->plainTextToken;
+
+            $params = http_build_query([
+                'auth'      => 'success',
+                'app_token' => $appToken,
+                'user_name' => $user->name,
+            ]);
 
             return redirect("{$frontendUrl}?{$params}");
         } catch (Throwable $e) {
@@ -70,29 +116,85 @@ class AuthController extends Controller
         }
     }
 
+    // ─── Auth status (reads from DB if Sanctum, fallback headers) ─────────────
+
     public function status(Request $request): JsonResponse
     {
-        $igToken = $request->header('X-IG-Token');
-        $igUserId = $request->header('X-IG-User-Id');
-        $fbToken = $request->header('X-FB-Token');
-        $fbPageId = $request->header('X-FB-Page-Id');
+        $user = auth('sanctum')->user();
+
+        if ($user) {
+            $user->load('socialCredentials');
+            $ig = $user->socialCredential('instagram');
+            $fb = $user->socialCredential('facebook');
+
+            return response()->json([
+                'instagram' => [
+                    'connected' => $ig !== null,
+                    'userId'    => $ig?->meta_user_id,
+                ],
+                'facebook' => [
+                    'connected' => $fb !== null,
+                    'pageId'    => $fb?->meta_user_id,
+                    'pageName'  => $fb?->meta_username,
+                ],
+            ]);
+        }
+
+        // Fallback: read from headers (backward compat)
+        $igToken    = $request->header('X-IG-Token');
+        $igUserId   = $request->header('X-IG-User-Id');
+        $fbToken    = $request->header('X-FB-Token');
+        $fbPageId   = $request->header('X-FB-Page-Id');
         $fbPageName = $request->header('X-FB-Page-Name');
 
         return response()->json([
             'instagram' => [
                 'connected' => !empty($igToken) && !empty($igUserId),
-                'userId' => $igUserId ?: null,
+                'userId'    => $igUserId ?: null,
             ],
             'facebook' => [
                 'connected' => !empty($fbToken),
-                'pageId' => $fbPageId ?: null,
-                'pageName' => $fbPageName ?: null,
+                'pageId'    => $fbPageId ?: null,
+                'pageName'  => $fbPageName ?: null,
             ],
         ]);
     }
 
-    public function logout(): JsonResponse
+    public function me(Request $request): JsonResponse
     {
+        $user = auth('sanctum')->user();
+        if (!$user) {
+            return response()->json(['error' => 'No autenticado'], 401);
+        }
+
+        $user->load('socialCredentials');
+        $ig = $user->socialCredential('instagram');
+        $fb = $user->socialCredential('facebook');
+
+        return response()->json([
+            'user' => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+            ],
+            'instagram' => [
+                'connected' => $ig !== null,
+                'userId'    => $ig?->meta_user_id,
+            ],
+            'facebook' => [
+                'connected' => $fb !== null,
+                'pageId'    => $fb?->meta_user_id,
+                'pageName'  => $fb?->meta_username,
+            ],
+        ]);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $user = auth('sanctum')->user();
+        if ($user) {
+            $request->user()?->currentAccessToken()?->delete();
+        }
         return response()->json(['success' => true]);
     }
 }

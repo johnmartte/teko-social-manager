@@ -7,12 +7,11 @@ use App\Http\Controllers\ScheduledPostController;
 use App\Http\Controllers\SystemAuthController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\WorkspaceController;
-use App\Http\Middleware\EnsureFacebookToken;
-use App\Http\Middleware\EnsureInstagramToken;
 use Illuminate\Support\Facades\Route;
 
-// Auth status (no middleware needed)
+// Auth (no middleware required — Sanctum optional inside methods)
 Route::get('/auth/status', [AuthController::class, 'status']);
+Route::get('/auth/me', [AuthController::class, 'me']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 
 // System auth (email/password)
@@ -37,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/upload', [UploadController::class, 'upload']);
 
 // Instagram
-Route::prefix('instagram')->middleware(EnsureInstagramToken::class)->group(function () {
+Route::prefix('instagram')->middleware('social:instagram')->group(function () {
     Route::get('/profile', [InstagramController::class, 'profile']);
     Route::get('/media', [InstagramController::class, 'media']);
     Route::get('/insights', [InstagramController::class, 'insights']);
@@ -54,7 +53,7 @@ Route::prefix('instagram')->middleware(EnsureInstagramToken::class)->group(funct
 });
 
 // Facebook
-Route::prefix('facebook')->middleware(EnsureFacebookToken::class)->group(function () {
+Route::prefix('facebook')->middleware('social:facebook')->group(function () {
     Route::get('/pages', [FacebookController::class, 'pages']);
     Route::get('/page', [FacebookController::class, 'pageInfo']);
     Route::get('/page/posts', [FacebookController::class, 'posts']);
