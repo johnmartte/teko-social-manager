@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
 import ImageUpload from "@/components/ImageUpload";
 import { api, getApiBaseUrl } from "@/lib/api";
+import DatePicker from "react-datepicker";
 
 type Tab = "ig-photo" | "ig-reel" | "ig-carousel" | "fb-post" | "fb-photo";
 type Mode = "now" | "schedule" | "bulk";
@@ -19,6 +20,119 @@ type BulkItem = {
 };
 
 const UPLOAD_BATCH_SIZE = 3;
+
+type Option<T extends string> = {
+  value: T;
+  label: string;
+};
+
+function pad2(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+function toDateOnly(value: string): Date | null {
+  if (!value) return null;
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function fromDateOnly(value: Date | null): string {
+  if (!value) return "";
+  return `${value.getFullYear()}-${pad2(value.getMonth() + 1)}-${pad2(value.getDate())}`;
+}
+
+function toDateTime(value: string): Date | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function fromDateTime(value: Date | null): string {
+  if (!value) return "";
+  return `${value.getFullYear()}-${pad2(value.getMonth() + 1)}-${pad2(value.getDate())}T${pad2(value.getHours())}:${pad2(value.getMinutes())}`;
+}
+
+function toTimeDate(value: string): Date {
+  const base = new Date();
+  if (!value) {
+    base.setHours(10, 0, 0, 0);
+    return base;
+  }
+
+  const [hours, minutes] = value.split(":").map((part) => Number(part));
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    base.setHours(10, 0, 0, 0);
+    return base;
+  }
+
+  base.setHours(hours, minutes, 0, 0);
+  return base;
+}
+
+function fromTimeDate(value: Date | null): string {
+  if (!value) return "";
+  return `${pad2(value.getHours())}:${pad2(value.getMinutes())}`;
+}
+
+function FancySelect<T extends string>({
+  value,
+  onChange,
+  options,
+  disabled,
+}: {
+  value: T;
+  onChange: (next: T) => void;
+  options: Option<T>[];
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function onOutside(event: MouseEvent) {
+      if (!ref.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, []);
+
+  const activeLabel = options.find((opt) => opt.value === value)?.label || "Seleccionar";
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`ui-control flex items-center justify-between text-left ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+      >
+        <span>{activeLabel}</span>
+        <span className="text-muted text-xs">▾</span>
+      </button>
+
+      {open && !disabled && (
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+              className={`w-full px-3 py-2 text-sm text-left transition-colors ${opt.value === value ? "bg-accent text-white" : "hover:bg-background"}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function getUploadHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
@@ -196,15 +310,17 @@ export default function PublishPage() {
 // ─── Shared ScheduleInput ─────────────────────────────────────────────────────
 
 function ScheduleInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const min = new Date(Date.now() + 60_000).toISOString().slice(0, 16);
   return (
     <div className="space-y-1">
       <label className="text-xs font-medium text-muted">Fecha y hora de publicación</label>
-      <input
-        type="datetime-local"
-        min={min}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+      <DatePicker
+        selected={toDateTime(value)}
+        onChange={(date: Date | null) => onChange(fromDateTime(date))}
+        showTimeSelect
+        timeIntervals={5}
+        timeCaption="Hora"
+        minDate={new Date()}
+        dateFormat="dd/MM/yyyy h:mm aa"
         className="ui-control"
       />
     </div>
@@ -756,11 +872,11 @@ function BulkScheduler({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <label className="text-xs text-muted font-medium">Fecha inicio</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      min={new Date().toISOString().slice(0, 10)}
-                      onChange={(e) => setStartDate(e.target.value)}
+                    <DatePicker
+                      selected={toDateOnly(startDate)}
+                      onChange={(date: Date | null) => setStartDate(fromDateOnly(date))}
+                      minDate={new Date()}
+                      dateFormat="dd/MM/yyyy"
                       className="ui-control"
                     />
                   </div>
@@ -797,27 +913,27 @@ function BulkScheduler({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <label className="text-xs text-muted font-medium">Plataforma</label>
-                    <select
+                    <FancySelect
                       value={platform}
-                      onChange={(e) => setPlatform(e.target.value as BulkItem["platform"])}
-                      className="ui-control ui-select"
-                    >
-                      {igConnected && <option value="instagram">Instagram</option>}
-                      {fbConnected && <option value="facebook">Facebook</option>}
-                      {igConnected && fbConnected && <option value="both">Ambas</option>}
-                    </select>
+                      onChange={(next) => setPlatform(next as BulkItem["platform"])}
+                      options={[
+                        ...(igConnected ? [{ value: "instagram", label: "Instagram" }] : []),
+                        ...(fbConnected ? [{ value: "facebook", label: "Facebook" }] : []),
+                        ...(igConnected && fbConnected ? [{ value: "both", label: "Ambas" }] : []),
+                      ] as Option<BulkItem["platform"]>[]}
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-muted font-medium">Tipo</label>
-                    <select
+                    <FancySelect
                       value={type}
-                      onChange={(e) => setType(e.target.value as Exclude<BulkItem["type"], "text">)}
-                      className="ui-control ui-select"
-                    >
-                      <option value="photo">Foto</option>
-                      <option value="reel">Reel</option>
-                      <option value="carousel">Carrusel</option>
-                    </select>
+                      onChange={(next) => setType(next as Exclude<BulkItem["type"], "text">)}
+                      options={[
+                        { value: "photo", label: "Foto" },
+                        { value: "reel", label: "Reel" },
+                        { value: "carousel", label: "Carrusel" },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -833,11 +949,15 @@ function BulkScheduler({
                   {openSections.timing && (
                     <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
                       {timeSlots.map((slot, idx) => (
-                        <input
+                        <DatePicker
                           key={idx}
-                          type="time"
-                          value={slot}
-                          onChange={(e) => updateTimeSlot(idx, e.target.value)}
+                          selected={toTimeDate(slot)}
+                          onChange={(date: Date | null) => updateTimeSlot(idx, fromTimeDate(date))}
+                          showTimeSelect
+                          showTimeSelectOnly
+                          timeIntervals={15}
+                          timeCaption="Hora"
+                          dateFormat="h:mm aa"
                           className="ui-control"
                         />
                       ))}
@@ -1033,29 +1153,29 @@ function BulkScheduler({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-xs text-muted font-medium">Plataforma</label>
-                      <select
+                      <FancySelect
                         value={item.platform}
-                        onChange={(e) => updateItem(item.id, { platform: e.target.value as BulkItem["platform"] })}
-                        className="ui-control ui-select"
-                      >
-                        {igConnected && <option value="instagram">Instagram</option>}
-                        {fbConnected && <option value="facebook">Facebook</option>}
-                        {igConnected && fbConnected && <option value="both">Ambas</option>}
-                      </select>
+                        onChange={(next) => updateItem(item.id, { platform: next as BulkItem["platform"] })}
+                        options={[
+                          ...(igConnected ? [{ value: "instagram", label: "Instagram" }] : []),
+                          ...(fbConnected ? [{ value: "facebook", label: "Facebook" }] : []),
+                          ...(igConnected && fbConnected ? [{ value: "both", label: "Ambas" }] : []),
+                        ] as Option<BulkItem["platform"]>[]}
+                      />
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-xs text-muted font-medium">Tipo</label>
-                      <select
+                      <FancySelect
                         value={item.type}
-                        onChange={(e) => updateItem(item.id, { type: e.target.value as BulkItem["type"] })}
-                        className="ui-control ui-select"
-                      >
-                        <option value="photo">Foto</option>
-                        <option value="reel">Reel</option>
-                        <option value="carousel">Carrusel</option>
-                        {item.platform !== "instagram" && <option value="text">Solo texto</option>}
-                      </select>
+                        onChange={(next) => updateItem(item.id, { type: next as BulkItem["type"] })}
+                        options={[
+                          { value: "photo", label: "Foto" },
+                          { value: "reel", label: "Reel" },
+                          { value: "carousel", label: "Carrusel" },
+                          ...(item.platform !== "instagram" ? [{ value: "text", label: "Solo texto" }] : []),
+                        ] as Option<BulkItem["type"]>[]}
+                      />
                     </div>
                   </div>
 

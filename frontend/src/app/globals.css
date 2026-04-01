@@ -179,3 +179,54 @@ body {
   filter: saturate(0.4) contrast(1.25);
   cursor: pointer;
 }
+
+.react-datepicker {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 16px 28px rgba(31, 30, 26, 0.12);
+  overflow: hidden;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.react-datepicker__triangle {
+  display: none;
+}
+
+.react-datepicker__header {
+  background: color-mix(in oklab, var(--card) 84%, #fff 16%);
+  border-bottom: 1px solid var(--border);
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.react-datepicker__day,
+.react-datepicker__day-name,
+.react-datepicker__time-name {
+  color: var(--foreground);
+}
+
+.react-datepicker__day:hover,
+.react-datepicker__time-list-item:hover {
+  background: var(--card-hover);
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected,
+.react-datepicker__time-list-item--selected {
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+
+.react-datepicker__time-container {
+  border-left: 1px solid var(--border);
+}
+
+.react-datepicker__time-list {
+  scrollbar-width: thin;
+}
