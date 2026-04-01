@@ -1,11 +1,20 @@
 #!/bin/bash
 set -e
 
-echo "[start.sh] Running migrations..."
+cd /app
+
+echo "[start] Running migrations..."
 php artisan migrate --force
 
-echo "[start.sh] Caching config..."
+echo "[start] Caching config..."
 php artisan config:cache
 
-echo "[start.sh] Starting supervisord (web + scheduler)..."
-exec supervisord -n -c /app/supervisord.conf
+echo "[start] Launching scheduler loop in background..."
+# Run schedule:run every 60s in a loop — more reliable than schedule:work in containers
+(while true; do
+  php artisan schedule:run >> /tmp/scheduler.log 2>&1
+  sleep 60
+done) &
+
+echo "[start] Starting web server on port ${PORT:-8000}..."
+exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"
