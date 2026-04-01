@@ -388,8 +388,20 @@ function BulkScheduler({
   fbConnected: boolean;
   onToast: (type: "success" | "error", msg: string) => void;
 }) {
+  const [bulkMode, setBulkMode] = useState<"intelligent" | "manual">("intelligent");
   const [items, setItems] = useState<BulkItem[]>([newItem()]);
   const [submitting, setSubmitting] = useState(false);
+
+  const [startDate, setStartDate] = useState("");
+  const [totalDays, setTotalDays] = useState(15);
+  const [postsPerDay, setPostsPerDay] = useState(2);
+  const [timeSlots, setTimeSlots] = useState<string[]>(["10:00", "18:00"]);
+  const [platform, setPlatform] = useState<BulkItem["platform"]>(igConnected ? "instagram" : "facebook");
+  const [type, setType] = useState<Exclude<BulkItem["type"], "text">>("photo");
+  const [imagePool, setImagePool] = useState<string[]>([]);
+  const [sameCaptionForAll, setSameCaptionForAll] = useState(true);
+  const [globalCaption, setGlobalCaption] = useState("");
+  const [captionsByPost, setCaptionsByPost] = useState<string[]>([]);
 
   function newItem(): BulkItem {
     return {
@@ -445,6 +457,122 @@ function BulkScheduler({
     }
   }
 
+  function dayFromOffset(base: Date, offset: number): Date {
+    const next = new Date(base);
+    next.setDate(base.getDate() + offset);
+    return next;
+  }
+
+  function formatYMD(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  function asScheduledAt(date: Date, hhmm: string): string {
+    return `${formatYMD(date)}T${hhmm}`;
+  }
+
+  function updateTimeSlot(index: number, value: string) {
+    setTimeSlots((prev) => prev.map((slot, i) => (i === index ? value : slot)));
+  }
+
+  function syncTimeSlots(count: number) {
+    const safeCount = Math.min(Math.max(count, 1), 8);
+    setPostsPerDay(safeCount);
+    setTimeSlots((prev) => {
+      if (prev.length === safeCount) return prev;
+      if (prev.length > safeCount) return prev.slice(0, safeCount);
+      const additions = Array.from({ length: safeCount - prev.length }, (_, i) => {
+        const hour = 10 + ((prev.length + i) % 10);
+        return `${String(hour).padStart(2, "0")}:00`;
+      });
+      return [...prev, ...additions];
+    });
+  }
+
+  const totalPosts = totalDays * postsPerDay;
+
+  function ensureCaptionSlots(required: number) {
+    setCaptionsByPost((prev) => {
+      if (prev.length === required) return prev;
+      if (prev.length > required) return prev.slice(0, required);
+      return [...prev, ...Array.from({ length: required - prev.length }, () => "")];
+    });
+  }
+
+  async function scheduleIntelligent() {
+    if (!startDate) {
+      onToast("error", "Selecciona una fecha de inicio.");
+      return;
+    }
+
+    if (imagePool.filter(Boolean).length < totalPosts) {
+      onToast("error", `Debes cargar al menos ${totalPosts} imagen(es).`);
+      return;
+    }
+
+    if (!sameCaptionForAll && captionsByPost.length < totalPosts) {
+      onToast("error", "Completa los captions individuales o activa el caption global.");
+      return;
+    }
+
+    const baseDate = new Date(`${startDate}T00:00:00`);
+    const now = new Date();
+    const cleanImages = imagePool.filter(Boolean);
+
+    let ok = 0;
+    let fail = 0;
+    let mediaIndex = 0;
+
+    setSubmitting(true);
+    try {
+      for (let day = 0; day < totalDays; day++) {
+        const date = dayFromOffset(baseDate, day);
+        for (let slot = 0; slot < postsPerDay; slot++) {
+          const scheduledAt = asScheduledAt(date, timeSlots[slot]);
+          const scheduledDate = new Date(scheduledAt);
+
+          if (scheduledDate <= now) {
+            fail++;
+            continue;
+          }
+
+          const caption = sameCaptionForAll
+            ? globalCaption
+            : captionsByPost[day * postsPerDay + slot] || "";
+
+          try {
+            await api("/scheduled-posts", {
+              method: "POST",
+              body: {
+                platform,
+                type,
+                caption: caption || undefined,
+                media_urls: [cleanImages[mediaIndex]],
+                scheduled_at: scheduledAt,
+              },
+            });
+            ok++;
+          } catch {
+            fail++;
+          }
+
+          mediaIndex++;
+        }
+      }
+    } finally {
+      setSubmitting(false);
+    }
+
+    if (fail === 0) {
+      onToast("success", `${ok} post(s) programados correctamente en modo inteligente.`);
+    } else {
+      onToast("error", `${ok} programados, ${fail} fallaron.`);
+    }
+  }
+
   const canSubmit =
     !submitting &&
     items.every(
@@ -453,31 +581,92 @@ function BulkScheduler({
         (i.type === "text" || i.mediaUrls.some(Boolean))
     );
 
+  const canSubmitIntelligent =
+    !submitting &&
+    startDate &&
+    totalDays > 0 &&
+    postsPerDay > 0 &&
+    timeSlots.length === postsPerDay &&
+    timeSlots.every(Boolean) &&
+    imagePool.filter(Boolean).length >= totalPosts;
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted">
-        Programa múltiples posts a la vez. Cada uno se publicará en la fecha y hora indicada.
-      </p>
+      <div className="flex gap-1 bg-card border border-border rounded-xl p-1 w-fit">
+        <button
+          type="button"
+          onClick={() => setBulkMode("intelligent")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            bulkMode === "intelligent" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+          }`}
+        >
+          Inteligente
+        </button>
+        <button
+          type="button"
+          onClick={() => setBulkMode("manual")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            bulkMode === "manual" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+          }`}
+        >
+          Manual
+        </button>
+      </div>
 
-      {items.map((item, idx) => (
-        <Card key={item.id}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">Post {idx + 1}</span>
-              {items.length > 1 && (
-                <button onClick={() => removeItem(item.id)} className="text-xs text-red-400 hover:text-red-600">
-                  Eliminar
-                </button>
-              )}
+      {bulkMode === "intelligent" ? (
+        <Card title="Programador inteligente (por rango)">
+          <div className="space-y-4">
+            <p className="text-sm text-muted">
+              Define rango de días, cantidad diaria y horarios. Luego sube todas las imágenes y se programan automáticamente.
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-1">
+                <label className="text-xs text-muted font-medium">Fecha inicio</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted font-medium">Días</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={totalDays}
+                  onChange={(e) => setTotalDays(Math.min(Math.max(Number(e.target.value || 1), 1), 60))}
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted font-medium">Posts por día</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={8}
+                  value={postsPerDay}
+                  onChange={(e) => syncTimeSlots(Number(e.target.value || 1))}
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted font-medium">Total a programar</label>
+                <div className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm font-semibold">
+                  {totalPosts} post(s)
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Platform */}
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-xs text-muted font-medium">Plataforma</label>
                 <select
-                  value={item.platform}
-                  onChange={(e) => updateItem(item.id, { platform: e.target.value as BulkItem["platform"] })}
+                  value={platform}
+                  onChange={(e) => setPlatform(e.target.value as BulkItem["platform"])}
                   className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
                 >
                   {igConnected && <option value="instagram">Instagram</option>}
@@ -485,66 +674,207 @@ function BulkScheduler({
                   {igConnected && fbConnected && <option value="both">Ambas</option>}
                 </select>
               </div>
-
-              {/* Type */}
               <div className="space-y-1">
                 <label className="text-xs text-muted font-medium">Tipo</label>
                 <select
-                  value={item.type}
-                  onChange={(e) => updateItem(item.id, { type: e.target.value as BulkItem["type"] })}
+                  value={type}
+                  onChange={(e) => setType(e.target.value as Exclude<BulkItem["type"], "text">)}
                   className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
                 >
                   <option value="photo">Foto</option>
                   <option value="reel">Reel</option>
                   <option value="carousel">Carrusel</option>
-                  {item.platform !== "instagram" && <option value="text">Solo texto</option>}
                 </select>
               </div>
             </div>
 
-            {/* Media */}
-            {item.type !== "text" && (
-              <ImageUpload
-                value={item.mediaUrls[0] || ""}
-                onChange={(u) => updateItem(item.id, { mediaUrls: [u] })}
-                accept={item.type === "reel" ? "video/*" : "image/*"}
-                label={item.type === "reel" ? "video" : "imagen"}
-                accentColor="#e1306c"
-              />
-            )}
+            <div className="space-y-2">
+              <label className="text-xs text-muted font-medium">Horas por día</label>
+              <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
+                {timeSlots.map((slot, idx) => (
+                  <input
+                    key={idx}
+                    type="time"
+                    value={slot}
+                    onChange={(e) => updateTimeSlot(idx, e.target.value)}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                  />
+                ))}
+              </div>
+            </div>
 
-            {/* Caption */}
-            <textarea
-              placeholder="Caption / mensaje..."
-              value={item.caption}
-              onChange={(e) => updateItem(item.id, { caption: e.target.value })}
-              rows={2}
-              className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent resize-none"
-            />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  id="same-caption"
+                  type="checkbox"
+                  checked={sameCaptionForAll}
+                  onChange={(e) => setSameCaptionForAll(e.target.checked)}
+                />
+                <label htmlFor="same-caption" className="text-sm text-muted">
+                  Usar la misma descripción para todos los posts
+                </label>
+              </div>
 
-            {/* Date */}
-            <ScheduleInput
-              value={item.scheduledAt}
-              onChange={(v) => updateItem(item.id, { scheduledAt: v })}
-            />
+              {sameCaptionForAll ? (
+                <textarea
+                  placeholder="Descripción global (opcional)..."
+                  value={globalCaption}
+                  onChange={(e) => setGlobalCaption(e.target.value)}
+                  rows={3}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent resize-none"
+                />
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => ensureCaptionSlots(totalPosts)}
+                    className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
+                  >
+                    Preparar {totalPosts} descripciones
+                  </button>
+                  <div className="max-h-64 overflow-auto space-y-2 pr-1">
+                    {Array.from({ length: totalPosts }).map((_, i) => (
+                      <textarea
+                        key={i}
+                        placeholder={`Descripción post #${i + 1}`}
+                        value={captionsByPost[i] || ""}
+                        onChange={(e) => {
+                          const next = [...captionsByPost];
+                          next[i] = e.target.value;
+                          setCaptionsByPost(next);
+                        }}
+                        rows={2}
+                        className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs outline-none"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs text-muted">
+                Carga imágenes: {imagePool.filter(Boolean).length}/{totalPosts}
+              </p>
+              <div className="max-h-96 overflow-auto space-y-3 pr-1">
+                {Array.from({ length: totalPosts }).map((_, i) => (
+                  <div key={i} className="space-y-1">
+                    <span className="text-xs text-muted">Imagen post #{i + 1}</span>
+                    <ImageUpload
+                      value={imagePool[i] || ""}
+                      onChange={(url) => {
+                        const next = [...imagePool];
+                        next[i] = url;
+                        setImagePool(next);
+                      }}
+                      accept={type === "reel" ? "video/*" : "image/*"}
+                      label={type === "reel" ? "video" : "imagen"}
+                      accentColor="#e1306c"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={scheduleIntelligent}
+              disabled={!canSubmitIntelligent}
+              className="w-full py-3 bg-accent text-white rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+            >
+              {submitting ? "Programando..." : `Programar ${totalPosts} post(s)`}
+            </button>
           </div>
         </Card>
-      ))}
+      ) : (
+        <>
+          <p className="text-sm text-muted">
+            Programa múltiples posts a la vez. Cada uno se publicará en la fecha y hora indicada.
+          </p>
 
-      <button
-        onClick={addItem}
-        className="w-full py-3 border border-dashed border-border rounded-xl text-sm text-muted hover:text-foreground hover:border-foreground/20 transition-colors"
-      >
-        + Agregar otro post
-      </button>
+          {items.map((item, idx) => (
+            <Card key={item.id}>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">Post {idx + 1}</span>
+                  {items.length > 1 && (
+                    <button onClick={() => removeItem(item.id)} className="text-xs text-red-400 hover:text-red-600">
+                      Eliminar
+                    </button>
+                  )}
+                </div>
 
-      <button
-        onClick={scheduleAll}
-        disabled={!canSubmit}
-        className="w-full py-3 bg-accent text-white rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
-      >
-        {submitting ? "Programando..." : `Programar ${items.length} post(s)`}
-      </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted font-medium">Plataforma</label>
+                    <select
+                      value={item.platform}
+                      onChange={(e) => updateItem(item.id, { platform: e.target.value as BulkItem["platform"] })}
+                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                    >
+                      {igConnected && <option value="instagram">Instagram</option>}
+                      {fbConnected && <option value="facebook">Facebook</option>}
+                      {igConnected && fbConnected && <option value="both">Ambas</option>}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted font-medium">Tipo</label>
+                    <select
+                      value={item.type}
+                      onChange={(e) => updateItem(item.id, { type: e.target.value as BulkItem["type"] })}
+                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                    >
+                      <option value="photo">Foto</option>
+                      <option value="reel">Reel</option>
+                      <option value="carousel">Carrusel</option>
+                      {item.platform !== "instagram" && <option value="text">Solo texto</option>}
+                    </select>
+                  </div>
+                </div>
+
+                {item.type !== "text" && (
+                  <ImageUpload
+                    value={item.mediaUrls[0] || ""}
+                    onChange={(u) => updateItem(item.id, { mediaUrls: [u] })}
+                    accept={item.type === "reel" ? "video/*" : "image/*"}
+                    label={item.type === "reel" ? "video" : "imagen"}
+                    accentColor="#e1306c"
+                  />
+                )}
+
+                <textarea
+                  placeholder="Caption / mensaje..."
+                  value={item.caption}
+                  onChange={(e) => updateItem(item.id, { caption: e.target.value })}
+                  rows={2}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent resize-none"
+                />
+
+                <ScheduleInput
+                  value={item.scheduledAt}
+                  onChange={(v) => updateItem(item.id, { scheduledAt: v })}
+                />
+              </div>
+            </Card>
+          ))}
+
+          <button
+            onClick={addItem}
+            className="w-full py-3 border border-dashed border-border rounded-xl text-sm text-muted hover:text-foreground hover:border-foreground/20 transition-colors"
+          >
+            + Agregar otro post
+          </button>
+
+          <button
+            onClick={scheduleAll}
+            disabled={!canSubmit}
+            className="w-full py-3 bg-accent text-white rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+          >
+            {submitting ? "Programando..." : `Programar ${items.length} post(s)`}
+          </button>
+        </>
+      )}
     </div>
   );
 }
