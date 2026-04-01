@@ -6,6 +6,7 @@ use App\Http\Controllers\ScheduledPostController;
 use App\Models\ScheduledPost;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -25,24 +26,31 @@ class PublishDuePosts
      */
     public function terminate(Request $request, Response $response): void
     {
-        // Quick check — avoid heavy queries on every request
-        $due = ScheduledPost::where('status', 'pending')
-            ->where('scheduled_at', '<=', now())
-            ->limit(5)
-            ->get();
+        try {
+            // Quick check — avoid heavy queries on every request
+            $due = ScheduledPost::where('status', 'pending')
+                ->where('scheduled_at', '<=', now())
+                ->limit(5)
+                ->get();
 
-        if ($due->isEmpty()) {
-            return;
-        }
-
-        $controller = app(ScheduledPostController::class);
-
-        foreach ($due as $post) {
-            try {
-                $controller->publishNow($post);
-            } catch (\Throwable $e) {
-                // publishNow already updates status to 'failed'
+            if ($due->isEmpty()) {
+                return;
             }
+
+            $controller = app(ScheduledPostController::class);
+
+            foreach ($due as $post) {
+                try {
+                    $controller->publishNow($post);
+                } catch (\Throwable $e) {
+                    // publishNow already updates status to 'failed'
+                }
+            }
+        } catch (\Throwable $e) {
+            // Never break the original HTTP request in terminate phase.
+            Log::warning('PublishDuePosts terminate failed', [
+                'message' => $e->getMessage(),
+            ]);
         }
     }
 }
