@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
 import ImageUpload from "@/components/ImageUpload";
-import { api } from "@/lib/api";
+import { api, getApiBaseUrl } from "@/lib/api";
 
 type Tab = "ig-photo" | "ig-reel" | "ig-carousel" | "fb-post" | "fb-photo";
 type Mode = "now" | "schedule" | "bulk";
@@ -17,6 +17,41 @@ type BulkItem = {
   mediaUrls: string[];
   scheduledAt: string;
 };
+
+const UPLOAD_BATCH_SIZE = 3;
+
+function getUploadHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const headers: Record<string, string> = {};
+  const ig = localStorage.getItem("ig_token");
+  const igUser = localStorage.getItem("ig_user_id");
+  const fb = localStorage.getItem("fb_token");
+  const fbPage = localStorage.getItem("fb_page_id");
+  if (ig) headers["X-IG-Token"] = ig;
+  if (igUser) headers["X-IG-User-Id"] = igUser;
+  if (fb) headers["X-FB-Token"] = fb;
+  if (fbPage) headers["X-FB-Page-Id"] = fbPage;
+  return headers;
+}
+
+async function uploadMedia(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${getApiBaseUrl()}/api/upload`, {
+    method: "POST",
+    headers: getUploadHeaders(),
+    body: formData,
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data?.url) {
+    throw new Error(data?.error || data?.message || "Error al subir archivo");
+  }
+
+  return String(data.url);
+}
 
 export default function PublishPage() {
   const { status } = useAuth();
@@ -398,10 +433,13 @@ function BulkScheduler({
   const [timeSlots, setTimeSlots] = useState<string[]>(["10:00", "18:00"]);
   const [platform, setPlatform] = useState<BulkItem["platform"]>(igConnected ? "instagram" : "facebook");
   const [type, setType] = useState<Exclude<BulkItem["type"], "text">>("photo");
+  const [uploadMode, setUploadMode] = useState<"individual" | "massive">("massive");
   const [imagePool, setImagePool] = useState<string[]>([]);
   const [sameCaptionForAll, setSameCaptionForAll] = useState(true);
   const [globalCaption, setGlobalCaption] = useState("");
   const [captionsByPost, setCaptionsByPost] = useState<string[]>([]);
+  const [uploadingPool, setUploadingPool] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   function newItem(): BulkItem {
     return {
@@ -500,6 +538,73 @@ function BulkScheduler({
       if (prev.length > required) return prev.slice(0, required);
       return [...prev, ...Array.from({ length: required - prev.length }, () => "")];
     });
+  }
+
+  function fillFirstEmptySlots(current: string[], incoming: string[], limit: number): string[] {
+    const next = Array.from({ length: limit }, (_, index) => current[index] || "");
+    let cursor = 0;
+
+    for (let i = 0; i < next.length && cursor < incoming.length; i++) {
+      if (!next[i]) {
+        next[i] = incoming[cursor];
+        cursor++;
+      }
+    }
+
+    return next;
+  }
+
+  async function handleMassiveUpload(files: FileList | null) {
+    if (!files?.length) return;
+
+    const queue = Array.from(files);
+    setUploadingPool(true);
+    setUploadProgress(0);
+
+    const uploaded: string[] = [];
+    let failures = 0;
+    let processed = 0;
+
+    for (let i = 0; i < queue.length; i += UPLOAD_BATCH_SIZE) {
+      const batch = queue.slice(i, i + UPLOAD_BATCH_SIZE);
+
+      const batchResults = await Promise.all(
+        batch.map(async (file) => {
+          try {
+            const url = await uploadMedia(file);
+            return { ok: true as const, url };
+          } catch {
+            return { ok: false as const };
+          } finally {
+            processed++;
+            setUploadProgress(Math.round((processed / queue.length) * 100));
+          }
+        })
+      );
+
+      for (const result of batchResults) {
+        if (result.ok) {
+          uploaded.push(result.url);
+        } else {
+          failures++;
+        }
+      }
+    }
+
+    setImagePool((prev) => fillFirstEmptySlots(prev, uploaded, totalPosts));
+    setUploadingPool(false);
+
+    if (uploaded.length > 0 && failures === 0) {
+      onToast("success", `${uploaded.length} archivo(s) subidos en cola.`);
+      return;
+    }
+
+    if (uploaded.length > 0 && failures > 0) {
+      onToast("error", `${uploaded.length} subidos, ${failures} fallaron.`);
+      return;
+    }
+
+    onToast("error", "No se pudo subir ningún archivo.");
   }
 
   async function scheduleIntelligent() {
@@ -757,24 +862,78 @@ function BulkScheduler({
               <p className="text-xs text-muted">
                 Carga imágenes: {imagePool.filter(Boolean).length}/{totalPosts}
               </p>
-              <div className="max-h-96 overflow-auto space-y-3 pr-1">
-                {Array.from({ length: totalPosts }).map((_, i) => (
-                  <div key={i} className="space-y-1">
-                    <span className="text-xs text-muted">Imagen post #{i + 1}</span>
-                    <ImageUpload
-                      value={imagePool[i] || ""}
-                      onChange={(url) => {
-                        const next = [...imagePool];
-                        next[i] = url;
-                        setImagePool(next);
-                      }}
-                      accept={type === "reel" ? "video/*" : "image/*"}
-                      label={type === "reel" ? "video" : "imagen"}
-                      accentColor="#e1306c"
-                    />
-                  </div>
-                ))}
+              <div className="flex gap-1 bg-card border border-border rounded-xl p-1 w-fit">
+                <button
+                  type="button"
+                  onClick={() => setUploadMode("massive")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    uploadMode === "massive" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  Subida masiva
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUploadMode("individual")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    uploadMode === "individual" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  Subida individual
+                </button>
               </div>
+
+              {uploadMode === "massive" ? (
+                <div className="space-y-3 rounded-xl border border-border bg-background p-4">
+                  <p className="text-xs text-muted">
+                    Selecciona múltiples archivos y el sistema los subirá en turnos de {UPLOAD_BATCH_SIZE} para evitar bloqueos.
+                  </p>
+                  <input
+                    type="file"
+                    multiple
+                    accept={type === "reel" ? "video/*" : "image/*"}
+                    onChange={(event) => {
+                      void handleMassiveUpload(event.target.files);
+                      event.target.value = "";
+                    }}
+                    className="w-full text-xs"
+                  />
+                  {uploadingPool ? (
+                    <div className="space-y-1">
+                      <div className="h-2 w-full rounded-full bg-border overflow-hidden">
+                        <div className="h-full bg-accent transition-all" style={{ width: `${uploadProgress}%` }} />
+                      </div>
+                      <p className="text-xs text-muted">Subiendo en cola... {uploadProgress}%</p>
+                    </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setImagePool([])}
+                    className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
+                  >
+                    Limpiar selección
+                  </button>
+                </div>
+              ) : (
+                <div className="max-h-96 overflow-auto space-y-3 pr-1">
+                  {Array.from({ length: totalPosts }).map((_, i) => (
+                    <div key={i} className="space-y-1">
+                      <span className="text-xs text-muted">Imagen post #{i + 1}</span>
+                      <ImageUpload
+                        value={imagePool[i] || ""}
+                        onChange={(url) => {
+                          const next = [...imagePool];
+                          next[i] = url;
+                          setImagePool(next);
+                        }}
+                        accept={type === "reel" ? "video/*" : "image/*"}
+                        label={type === "reel" ? "video" : "imagen"}
+                        accentColor="#e1306c"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button

@@ -19,6 +19,10 @@ function resolveApiUrl(): string {
 
 const API_URL = resolveApiUrl();
 
+export function getApiBaseUrl(): string {
+  return API_URL;
+}
+
 type FetchOptions = {
   method?: string;
   body?: unknown;
