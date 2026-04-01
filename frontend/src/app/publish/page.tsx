@@ -457,6 +457,11 @@ function BulkScheduler({
   const [captionsByPost, setCaptionsByPost] = useState<string[]>([]);
   const [uploadingPool, setUploadingPool] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [openSections, setOpenSections] = useState({
+    timing: true,
+    captions: true,
+    uploads: true,
+  });
 
   function newItem(): BulkItem {
     return {
@@ -531,6 +536,10 @@ function BulkScheduler({
 
   function updateTimeSlot(index: number, value: string) {
     setTimeSlots((prev) => prev.map((slot, i) => (i === index ? value : slot)));
+  }
+
+  function toggleSection(section: "timing" | "captions" | "uploads") {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   }
 
   function syncTimeSlots(count: number) {
@@ -813,147 +822,181 @@ function BulkScheduler({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs text-muted font-medium">Horas por día</label>
-                  <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
-                    {timeSlots.map((slot, idx) => (
-                      <input
-                        key={idx}
-                        type="time"
-                        value={slot}
-                        onChange={(e) => updateTimeSlot(idx, e.target.value)}
-                        className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
-                      />
-                    ))}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection("timing")}
+                    className="w-full flex items-center justify-between rounded-xl border border-border bg-card/70 px-3 py-2 text-left"
+                  >
+                    <span className="text-xs text-muted font-medium">Horas por día</span>
+                    <span className="text-xs text-muted">{openSections.timing ? "Ocultar" : "Mostrar"}</span>
+                  </button>
+                  {openSections.timing && (
+                    <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+                      {timeSlots.map((slot, idx) => (
+                        <input
+                          key={idx}
+                          type="time"
+                          value={slot}
+                          onChange={(e) => updateTimeSlot(idx, e.target.value)}
+                          className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm outline-none"
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-4 rounded-2xl border border-border bg-background/60 p-4">
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="same-caption"
-                      type="checkbox"
-                      checked={sameCaptionForAll}
-                      onChange={(e) => setSameCaptionForAll(e.target.checked)}
-                    />
-                    <label htmlFor="same-caption" className="text-sm text-muted">
-                      Usar la misma descripción para todos los posts
-                    </label>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection("captions")}
+                    className="w-full flex items-center justify-between rounded-xl border border-border bg-card/70 px-3 py-2 text-left"
+                  >
+                    <span className="text-xs text-muted font-medium">Descripciones</span>
+                    <span className="text-xs text-muted">{openSections.captions ? "Ocultar" : "Mostrar"}</span>
+                  </button>
 
-                  {sameCaptionForAll ? (
-                    <textarea
-                      placeholder="Descripción global (opcional)..."
-                      value={globalCaption}
-                      onChange={(e) => setGlobalCaption(e.target.value)}
-                      rows={3}
-                      className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent resize-none"
-                    />
-                  ) : (
-                    <div className="space-y-2">
-                      <button
-                        type="button"
-                        onClick={() => ensureCaptionSlots(totalPosts)}
-                        className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
-                      >
-                        Preparar {totalPosts} descripciones
-                      </button>
-                      <div className="max-h-64 overflow-auto space-y-2 pr-1">
-                        {Array.from({ length: totalPosts }).map((_, i) => (
-                          <textarea
-                            key={i}
-                            placeholder={`Descripción post #${i + 1}`}
-                            value={captionsByPost[i] || ""}
-                            onChange={(e) => {
-                              const next = [...captionsByPost];
-                              next[i] = e.target.value;
-                              setCaptionsByPost(next);
-                            }}
-                            rows={2}
-                            className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs outline-none"
-                          />
-                        ))}
+                  {openSections.captions && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="same-caption"
+                          type="checkbox"
+                          checked={sameCaptionForAll}
+                          onChange={(e) => setSameCaptionForAll(e.target.checked)}
+                        />
+                        <label htmlFor="same-caption" className="text-sm text-muted">
+                          Usar la misma descripción para todos los posts
+                        </label>
                       </div>
-                    </div>
+
+                      {sameCaptionForAll ? (
+                        <textarea
+                          placeholder="Descripción global (opcional)..."
+                          value={globalCaption}
+                          onChange={(e) => setGlobalCaption(e.target.value)}
+                          rows={3}
+                          className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent resize-none"
+                        />
+                      ) : (
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            onClick={() => ensureCaptionSlots(totalPosts)}
+                            className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
+                          >
+                            Preparar {totalPosts} descripciones
+                          </button>
+                          <div className="max-h-64 overflow-auto space-y-2 pr-1">
+                            {Array.from({ length: totalPosts }).map((_, i) => (
+                              <textarea
+                                key={i}
+                                placeholder={`Descripción post #${i + 1}`}
+                                value={captionsByPost[i] || ""}
+                                onChange={(e) => {
+                                  const next = [...captionsByPost];
+                                  next[i] = e.target.value;
+                                  setCaptionsByPost(next);
+                                }}
+                                rows={2}
+                                className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs outline-none"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs text-muted">
-                    Carga imágenes: {imagePool.filter(Boolean).length}/{totalPosts}
-                  </p>
-                  <div className="flex gap-1 bg-card border border-border rounded-xl p-1 w-fit">
-                    <button
-                      type="button"
-                      onClick={() => setUploadMode("massive")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        uploadMode === "massive" ? "bg-accent text-white" : "text-muted hover:text-foreground"
-                      }`}
-                    >
-                      Subida masiva
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUploadMode("individual")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        uploadMode === "individual" ? "bg-accent text-white" : "text-muted hover:text-foreground"
-                      }`}
-                    >
-                      Subida individual
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection("uploads")}
+                    className="w-full flex items-center justify-between rounded-xl border border-border bg-card/70 px-3 py-2 text-left"
+                  >
+                    <span className="text-xs text-muted font-medium">
+                      Carga de archivos ({imagePool.filter(Boolean).length}/{totalPosts})
+                    </span>
+                    <span className="text-xs text-muted">{openSections.uploads ? "Ocultar" : "Mostrar"}</span>
+                  </button>
 
-                  {uploadMode === "massive" ? (
-                    <div className="space-y-3 rounded-xl border border-border bg-background p-4">
-                      <p className="text-xs text-muted">
-                        Selecciona múltiples archivos y el sistema los subirá en turnos de {UPLOAD_BATCH_SIZE} para evitar bloqueos.
-                      </p>
-                      <input
-                        type="file"
-                        multiple
-                        accept={type === "reel" ? "video/*" : "image/*"}
-                        onChange={(event) => {
-                          void handleMassiveUpload(event.target.files);
-                          event.target.value = "";
-                        }}
-                        className="w-full text-xs"
-                      />
-                      {uploadingPool ? (
-                        <div className="space-y-1">
-                          <div className="h-2 w-full rounded-full bg-border overflow-hidden">
-                            <div className="h-full bg-accent transition-all" style={{ width: `${uploadProgress}%` }} />
-                          </div>
-                          <p className="text-xs text-muted">Subiendo en cola... {uploadProgress}%</p>
-                        </div>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => setImagePool([])}
-                        className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
-                      >
-                        Limpiar selección
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="max-h-96 overflow-auto space-y-3 pr-1">
-                      {Array.from({ length: totalPosts }).map((_, i) => (
-                        <div key={i} className="space-y-1">
-                          <span className="text-xs text-muted">Imagen post #{i + 1}</span>
-                          <ImageUpload
-                            value={imagePool[i] || ""}
-                            onChange={(url) => {
-                              const next = [...imagePool];
-                              next[i] = url;
-                              setImagePool(next);
-                            }}
+                  {openSections.uploads && (
+                    <>
+                      <div className="flex gap-1 bg-card border border-border rounded-xl p-1 w-fit">
+                        <button
+                          type="button"
+                          onClick={() => setUploadMode("massive")}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            uploadMode === "massive" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+                          }`}
+                        >
+                          Subida masiva
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUploadMode("individual")}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            uploadMode === "individual" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+                          }`}
+                        >
+                          Subida individual
+                        </button>
+                      </div>
+
+                      {uploadMode === "massive" ? (
+                        <div className="space-y-3 rounded-xl border border-border bg-background p-4">
+                          <p className="text-xs text-muted">
+                            Selecciona múltiples archivos y el sistema los subirá en turnos de {UPLOAD_BATCH_SIZE} para evitar bloqueos.
+                          </p>
+                          <input
+                            type="file"
+                            multiple
                             accept={type === "reel" ? "video/*" : "image/*"}
-                            label={type === "reel" ? "video" : "imagen"}
-                            accentColor="#e1306c"
+                            onChange={(event) => {
+                              void handleMassiveUpload(event.target.files);
+                              event.target.value = "";
+                            }}
+                            className="w-full text-xs"
                           />
+                          {uploadingPool ? (
+                            <div className="space-y-1">
+                              <div className="h-2 w-full rounded-full bg-border overflow-hidden">
+                                <div className="h-full bg-accent transition-all" style={{ width: `${uploadProgress}%` }} />
+                              </div>
+                              <p className="text-xs text-muted">Subiendo en cola... {uploadProgress}%</p>
+                            </div>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => setImagePool([])}
+                            className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
+                          >
+                            Limpiar selección
+                          </button>
                         </div>
-                      ))}
-                    </div>
+                      ) : (
+                        <div className="max-h-96 overflow-auto space-y-3 pr-1">
+                          {Array.from({ length: totalPosts }).map((_, i) => (
+                            <div key={i} className="space-y-1">
+                              <span className="text-xs text-muted">Imagen post #{i + 1}</span>
+                              <ImageUpload
+                                value={imagePool[i] || ""}
+                                onChange={(url) => {
+                                  const next = [...imagePool];
+                                  next[i] = url;
+                                  setImagePool(next);
+                                }}
+                                accept={type === "reel" ? "video/*" : "image/*"}
+                                label={type === "reel" ? "video" : "imagen"}
+                                accentColor="#e1306c"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
