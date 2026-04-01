@@ -1,0 +1,6 @@
+[deploy]
+healthcheckPath = "/api/auth/status"
+healthcheckTimeout = 30
+
+[[deploy.volumeMounts]]
+mountPath = "/app/database"
