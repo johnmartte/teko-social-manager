@@ -3,8 +3,13 @@ set -e
 
 cd /app
 
+# Ensure the SQLite file exists (volume starts empty)
+echo "[start] Ensuring database file exists..."
+mkdir -p /app/database
+touch /app/database/database.sqlite
+
 echo "[start] Running migrations..."
-php artisan migrate --force
+php artisan migrate --force 2>&1
 
 echo "[start] Caching config..."
 php artisan config:cache
