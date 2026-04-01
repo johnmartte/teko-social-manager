@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
+import CustomSelect from "@/components/CustomSelect";
 import { api, formatNum } from "@/lib/api";
 import type { FacebookPage, FacebookPost, InsightMetric } from "@/lib/types";
 
@@ -89,15 +90,15 @@ export default function FacebookPageView() {
       <Card
         title="Estadísticas"
         action={
-          <select
+          <CustomSelect
             value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            className="text-xs bg-background border border-border rounded-lg px-3 py-1.5 outline-none"
-          >
-            <option value="day">Hoy</option>
-            <option value="week">Semana</option>
-            <option value="month">Mes</option>
-          </select>
+            onChange={setPeriod}
+            options={[
+              { value: "day", label: "Hoy" },
+              { value: "week", label: "Semana" },
+              { value: "month", label: "Mes" },
+            ]}
+          />
         }
       >
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
