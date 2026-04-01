@@ -1,13 +1,11 @@
 #!/bin/bash
 set -e
 
-cd /app
-
-echo "Running migrations..."
+echo "[start.sh] Running migrations..."
 php artisan migrate --force
 
-echo "Caching config..."
+echo "[start.sh] Caching config..."
 php artisan config:cache
 
-echo "Starting supervisord..."
-exec supervisord -c /app/supervisord.conf
+echo "[start.sh] Starting supervisord (web + scheduler)..."
+exec supervisord -n -c /app/supervisord.conf
