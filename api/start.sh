@@ -11,6 +11,11 @@ touch /app/database/database.sqlite
 echo "[start] Running migrations..."
 php artisan migrate --force 2>&1
 
+if [ "${SEED_SYSTEM_USER:-false}" = "true" ]; then
+	echo "[start] Seeding system user..."
+	php artisan db:seed --class=Database\\Seeders\\ProductionSystemUserSeeder --force 2>&1
+fi
+
 echo "[start] Caching config..."
 php artisan config:cache
 
