@@ -5,28 +5,9 @@ import { api } from "@/lib/api";
 import { ScheduledPost } from "@/lib/types";
 import Card from "@/components/Card";
 
-const PLATFORM_COLOR: Record<string, string> = {
-  instagram: "#e1306c",
-  facebook: "#1877f2",
-  both: "#7c3aed",
-};
-
-const PLATFORM_LABEL: Record<string, string> = {
-  instagram: "Instagram",
-  facebook: "Facebook",
-  both: "Ambas",
-};
-
-const STATUS_COLOR: Record<string, string> = {
-  pending: "#e8a126",
-  published: "#22c55e",
-  failed: "#ef4444",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendiente",
-  published: "Publicado",
-  failed: "Fallido",
+type PlannerMeta = {
+  platforms: Record<string, { label: string; color: string }>;
+  statuses: Record<string, { label: string; color: string }>;
 };
 
 type DetailModal = {
@@ -42,6 +23,18 @@ export default function PlannerPage() {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
+  const [meta, setMeta] = useState<PlannerMeta>({
+    platforms: {
+      instagram: { label: "Instagram", color: "#e1306c" },
+      facebook: { label: "Facebook", color: "#1877f2" },
+      both: { label: "Ambas", color: "#7c3aed" },
+    },
+    statuses: {
+      pending: { label: "Pendiente", color: "#e8a126" },
+      published: { label: "Publicado", color: "#22c55e" },
+      failed: { label: "Fallido", color: "#ef4444" },
+    },
+  });
 
   async function loadPosts() {
     setLoading(true);
@@ -57,6 +50,9 @@ export default function PlannerPage() {
 
   useEffect(() => {
     loadPosts();
+    api<PlannerMeta>("/workspace/planner/meta")
+      .then(setMeta)
+      .catch(() => {});
   }, []);
 
   async function handlePublishNow(post: ScheduledPost) {
@@ -216,7 +212,7 @@ export default function PlannerPage() {
 
           {Object.entries(grouped).map(([date, dayPosts]) => (
             <div key={date}>
-              <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3 capitalize">
+              <h2 className="text-xs font-semibold text-muted capitalize tracking-wider mb-3">
                 {date}
               </h2>
               <div className="space-y-3">
@@ -264,11 +260,11 @@ export default function PlannerPage() {
                         <span
                           className="text-[11px] px-2 py-0.5 rounded-full font-medium"
                           style={{
-                            backgroundColor: `${PLATFORM_COLOR[post.platform]}20`,
-                            color: PLATFORM_COLOR[post.platform],
+                            backgroundColor: `${meta.platforms[post.platform]?.color || "#6b7280"}20`,
+                            color: meta.platforms[post.platform]?.color || "#6b7280",
                           }}
                         >
-                          {PLATFORM_LABEL[post.platform]}
+                          {meta.platforms[post.platform]?.label || post.platform}
                         </span>
                         <span className="text-[11px] text-muted capitalize">{post.type}</span>
                       </div>
@@ -278,11 +274,11 @@ export default function PlannerPage() {
                     <span
                       className="shrink-0 text-[11px] px-2.5 py-1 rounded-full font-medium"
                       style={{
-                        backgroundColor: `${STATUS_COLOR[post.status]}20`,
-                        color: STATUS_COLOR[post.status],
+                        backgroundColor: `${meta.statuses[post.status]?.color || "#6b7280"}20`,
+                        color: meta.statuses[post.status]?.color || "#6b7280",
                       }}
                     >
-                      {STATUS_LABEL[post.status]}
+                      {meta.statuses[post.status]?.label || post.status}
                     </span>
                   </button>
                 ))}
@@ -317,18 +313,24 @@ export default function PlannerPage() {
             <div className="flex gap-2">
               <span
                 className="text-xs px-3 py-1.5 rounded-full font-medium"
-                style={{ backgroundColor: `${PLATFORM_COLOR[modal.post.platform]}20`, color: PLATFORM_COLOR[modal.post.platform] }}
+                style={{
+                  backgroundColor: `${meta.platforms[modal.post.platform]?.color || "#6b7280"}20`,
+                  color: meta.platforms[modal.post.platform]?.color || "#6b7280",
+                }}
               >
-                {PLATFORM_LABEL[modal.post.platform]}
+                {meta.platforms[modal.post.platform]?.label || modal.post.platform}
               </span>
               <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-background border border-border capitalize">
                 {modal.post.type}
               </span>
               <span
                 className="text-xs px-3 py-1.5 rounded-full font-medium"
-                style={{ backgroundColor: `${STATUS_COLOR[modal.post.status]}20`, color: STATUS_COLOR[modal.post.status] }}
+                style={{
+                  backgroundColor: `${meta.statuses[modal.post.status]?.color || "#6b7280"}20`,
+                  color: meta.statuses[modal.post.status]?.color || "#6b7280",
+                }}
               >
-                {STATUS_LABEL[modal.post.status]}
+                {meta.statuses[modal.post.status]?.label || modal.post.status}
               </span>
             </div>
 

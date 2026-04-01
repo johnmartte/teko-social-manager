@@ -58,6 +58,48 @@ class WorkspaceController extends Controller
                 'completion' => $completion,
                 'response_minutes' => $avgResponseMinutes < 0 ? 0 : $avgResponseMinutes,
             ],
+            'quick_actions' => [
+                [
+                    'href' => '/publish',
+                    'label' => 'Publicador multiformato',
+                    'hint' => 'Foto, reel, carrusel y post',
+                    'color' => '#e1306c',
+                ],
+                [
+                    'href' => '/planner',
+                    'label' => 'Planner editorial',
+                    'hint' => 'Calendario y pipeline de contenido',
+                    'color' => '#e8a126',
+                ],
+                [
+                    'href' => '/inbox',
+                    'label' => 'Inbox unificado',
+                    'hint' => 'Mensajes y menciones en una vista',
+                    'color' => '#1877f2',
+                ],
+                [
+                    'href' => '/automations',
+                    'label' => 'Automatizaciones',
+                    'hint' => 'Reglas para horario y moderacion',
+                    'color' => '#22c55e',
+                ],
+            ],
+        ]);
+    }
+
+    public function plannerMeta(): JsonResponse
+    {
+        return response()->json([
+            'platforms' => [
+                'instagram' => ['label' => 'Instagram', 'color' => '#e1306c'],
+                'facebook' => ['label' => 'Facebook', 'color' => '#1877f2'],
+                'both' => ['label' => 'Ambas', 'color' => '#7c3aed'],
+            ],
+            'statuses' => [
+                'pending' => ['label' => 'Pendiente', 'color' => '#e8a126'],
+                'published' => ['label' => 'Publicado', 'color' => '#22c55e'],
+                'failed' => ['label' => 'Fallido', 'color' => '#ef4444'],
+            ],
         ]);
     }
 

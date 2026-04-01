@@ -20,6 +20,12 @@ type DashboardWorkspaceData = {
     completion: number;
     response_minutes: number;
   };
+  quick_actions?: Array<{
+    href: string;
+    label: string;
+    hint: string;
+    color: string;
+  }>;
 };
 
 export default function DashboardPage() {
@@ -71,6 +77,7 @@ function DashboardContent() {
   const [fbPage, setFbPage] = useState<FacebookPage | null>(null);
   const [dailyTasks, setDailyTasks] = useState<SocialTask[]>([]);
   const [teamMetrics, setTeamMetrics] = useState({ completion: 0, response_minutes: 19 });
+  const [quickActions, setQuickActions] = useState<DashboardWorkspaceData["quick_actions"]>([]);
 
   useEffect(() => {
     if (status?.instagram.connected) {
@@ -88,6 +95,7 @@ function DashboardContent() {
       .then((data) => {
         setDailyTasks(data.tasks || []);
         setTeamMetrics(data.metrics || { completion: 0, response_minutes: 19 });
+        setQuickActions(data.quick_actions || []);
       })
       .catch(() => {
         setDailyTasks([]);
@@ -210,10 +218,19 @@ function DashboardContent() {
 
       <Card title="Herramientas de administracion social">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 teko-stagger">
-          <QuickAction href="/publish" label="Publicador multiformato" hint="Foto, reel, carrusel y post" color="#e1306c" />
-          <QuickAction href="/planner" label="Planner editorial" hint="Calendario y pipeline de contenido" color="#e8a126" />
-          <QuickAction href="/inbox" label="Inbox unificado" hint="Mensajes y menciones en una vista" color="#1877f2" />
-          <QuickAction href="/automations" label="Automatizaciones" hint="Reglas para horario y moderacion" color="#22c55e" />
+          {quickActions && quickActions.length > 0 ? quickActions.map((action) => (
+            <QuickAction
+              key={action.href}
+              href={action.href}
+              label={action.label}
+              hint={action.hint}
+              color={action.color}
+            />
+          )) : (
+            <p className="text-sm text-muted col-span-4 text-center py-6">
+              Sin herramientas disponibles por ahora.
+            </p>
+          )}
         </div>
       </Card>
     </div>
