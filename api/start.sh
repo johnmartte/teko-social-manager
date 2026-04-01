@@ -9,12 +9,25 @@ php artisan migrate --force
 echo "[start] Caching config..."
 php artisan config:cache
 
-echo "[start] Launching scheduler loop in background..."
-# Run schedule:run every 60s in a loop — more reliable than schedule:work in containers
+# Trap signals so both children get cleaned up
+cleanup() {
+  echo "[start] Shutting down..."
+  kill "$SCHED_PID" 2>/dev/null || true
+  kill "$WEB_PID" 2>/dev/null || true
+  exit 0
+}
+trap cleanup SIGTERM SIGINT
+
+echo "[start] Launching scheduler loop..."
 (while true; do
-  php artisan schedule:run >> /tmp/scheduler.log 2>&1
+  php artisan schedule:run --verbose --no-interaction 2>&1
   sleep 60
 done) &
+SCHED_PID=$!
 
 echo "[start] Starting web server on port ${PORT:-8000}..."
-exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"
+php artisan serve --host=0.0.0.0 --port="${PORT:-8000}" &
+WEB_PID=$!
+
+# Wait for the web server — if it dies, the container should restart
+wait $WEB_PID
