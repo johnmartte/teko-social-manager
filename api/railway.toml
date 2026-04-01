@@ -1,6 +1,7 @@
 [deploy]
 healthcheckPath = "/api/auth/status"
 healthcheckTimeout = 30
+startCommand = "php artisan migrate --force && php artisan config:cache && (php artisan schedule:work &) && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"
 
 [[deploy.volumeMounts]]
 mountPath = "/app/database"
