@@ -157,7 +157,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return;
       } catch {
-        // Token may be stale — fall through to header/storage path
+        // Token is stale (DB was wiped on redeploy, etc.) — clear it
+        // so we don't keep retrying /auth/me in an infinite loop.
+        localStorage.removeItem("app_token");
+        localStorage.removeItem("app_user");
       }
     }
 
