@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["php84", "php84Extensions.pdo_sqlite", "php84Extensions.mbstring", "php84Extensions.xml", "php84Extensions.curl", "php84Extensions.zip", "php84Extensions.bcmath", "php84Extensions.tokenizer", "php84Extensions.ctype", "php84Extensions.fileinfo", "composer"]
+nixPkgs = ["php84", "php84Extensions.pdo_sqlite", "php84Extensions.mbstring", "php84Extensions.xml", "php84Extensions.curl", "php84Extensions.zip", "php84Extensions.bcmath", "php84Extensions.tokenizer", "php84Extensions.ctype", "php84Extensions.fileinfo", "composer", "supervisor"]
 
 [phases.install]
 cmds = ["composer install --optimize-autoloader --no-dev --no-interaction"]
@@ -8,8 +8,9 @@ cmds = ["composer install --optimize-autoloader --no-dev --no-interaction"]
 cmds = [
   "mkdir -p storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache storage/app/public/uploads",
   "chmod -R 777 storage bootstrap/cache",
-  "php artisan storage:link --force"
+  "php artisan storage:link --force",
+  "chmod +x /app/start.sh"
 ]
 
 [start]
-cmd = "php artisan migrate --force && php artisan config:cache && (php artisan schedule:work &) && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"
+cmd = "bash /app/start.sh"
