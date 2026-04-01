@@ -71,3 +71,28 @@ Route::get('/scheduled-posts', [ScheduledPostController::class, 'index']);
 Route::post('/scheduled-posts', [ScheduledPostController::class, 'store']);
 Route::delete('/scheduled-posts/{scheduledPost}', [ScheduledPostController::class, 'destroy']);
 Route::post('/scheduled-posts/{scheduledPost}/publish', [ScheduledPostController::class, 'publish']);
+
+// Debug — remove after diagnosis
+Route::get('/debug/scheduled-posts', function () {
+    $posts = \App\Models\ScheduledPost::orderByDesc('id')->take(10)->get()->map(fn($p) => [
+        'id'           => $p->id,
+        'platform'     => $p->platform,
+        'type'         => $p->type,
+        'status'       => $p->status,
+        'scheduled_at' => $p->scheduled_at?->toIso8601String(),
+        'server_now'   => now()->toIso8601String(),
+        'is_due'       => $p->scheduled_at <= now(),
+        'has_ig_token' => !empty($p->ig_token),
+        'has_ig_uid'   => !empty($p->ig_user_id),
+        'has_fb_token' => !empty($p->fb_token),
+        'has_fb_pid'   => !empty($p->fb_page_id),
+        'error'        => $p->error_message,
+    ]);
+    return response()->json(['server_now' => now()->toIso8601String(), 'posts' => $posts]);
+});
+
+Route::post('/debug/run-scheduler', function () {
+    \Illuminate\Support\Facades\Artisan::call('posts:publish-scheduled');
+    $output = \Illuminate\Support\Facades\Artisan::output();
+    return response()->json(['output' => $output]);
+});
