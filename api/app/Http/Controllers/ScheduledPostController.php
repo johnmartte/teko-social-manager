@@ -78,8 +78,8 @@ class ScheduledPostController extends Controller
 
     public function publish(ScheduledPost $scheduledPost): \Illuminate\Http\JsonResponse
     {
-        if (in_array($scheduledPost->status, ['published', 'publishing'])) {
-            return response()->json(['error' => 'Ya fue publicado o está en proceso'], 422);
+        if ($scheduledPost->status === 'published') {
+            return response()->json(['error' => 'Ya fue publicado'], 422);
         }
 
         try {
