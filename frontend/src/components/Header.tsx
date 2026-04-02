@@ -2,9 +2,11 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { getLoginUrl } from "@/lib/api";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function Header() {
   const { status, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const igConnected = status?.instagram.connected;
   const fbConnected = status?.facebook.connected;
@@ -35,6 +37,33 @@ export default function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="inline-flex items-center gap-2 text-xs px-3.5 py-2.5 rounded-xl border border-border bg-card/92 hover:bg-card transition-colors"
+          aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          title={isDark ? "Modo claro" : "Modo oscuro"}
+        >
+          {isDark ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2" />
+              <path d="M12 20v2" />
+              <path d="m4.93 4.93 1.41 1.41" />
+              <path d="m17.66 17.66 1.41 1.41" />
+              <path d="M2 12h2" />
+              <path d="M20 12h2" />
+              <path d="m6.34 17.66-1.41 1.41" />
+              <path d="m19.07 4.93-1.41 1.41" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9" />
+            </svg>
+          )}
+          <span className="hidden sm:inline">{isDark ? "Claro" : "Oscuro"}</span>
+        </button>
+
         {/* Status badges */}
         <div className="flex items-center gap-2">
           <span
