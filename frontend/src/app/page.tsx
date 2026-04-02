@@ -5,6 +5,7 @@ import Card, { StatCard } from "@/components/Card";
 import { getLoginUrl, formatNum, api } from "@/lib/api";
 import { useEffect, useState } from "react";
 import type { InstagramProfile, FacebookPage } from "@/lib/types";
+import SocialLogo from "@/components/SocialLogo";
 
 type SocialTask = {
   id: string;
@@ -195,7 +196,6 @@ function DashboardContent() {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <AccountPreviewCard
           title="Instagram"
-          colorClass="from-accent to-[#f9ac36]"
           handle={igProfile?.username ? `@${igProfile.username}` : "Cuenta conectada"}
           primary={formatNum(igProfile?.followers_count)}
           primaryLabel="Seguidores"
@@ -206,7 +206,6 @@ function DashboardContent() {
 
         <AccountPreviewCard
           title="Facebook"
-          colorClass="from-fb to-[#41adff]"
           handle={fbPage?.name || "Pagina conectada"}
           primary={formatNum(fbPage?.fan_count)}
           primaryLabel="Me gusta"
@@ -248,7 +247,6 @@ function DotIcon({ color }: { color: string }) {
 
 function AccountPreviewCard({
   title,
-  colorClass,
   handle,
   primary,
   primaryLabel,
@@ -257,7 +255,6 @@ function AccountPreviewCard({
   description,
 }: {
   title: string;
-  colorClass: string;
   handle: string;
   primary: string;
   primaryLabel: string;
@@ -265,12 +262,11 @@ function AccountPreviewCard({
   secondaryLabel: string;
   description: string;
 }) {
+  const platform = title.toLowerCase() === "facebook" ? "facebook" : "instagram";
   return (
     <Card>
       <div className="flex items-center gap-4">
-        <div className={`w-14 h-14 rounded-2xl bg-linear-to-br ${colorClass} text-white font-bold text-xl flex items-center justify-center shadow-[0_14px_26px_rgba(42,36,18,0.2)]`}>
-          {title[0]}
-        </div>
+        <SocialLogo platform={platform} size="md" />
         <div>
           <p className="font-semibold">{title}</p>
           <p className="text-xs text-muted">{handle}</p>

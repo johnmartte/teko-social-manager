@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
 import { getLoginUrl } from "@/lib/api";
+import SocialLogo from "@/components/SocialLogo";
 
 export default function SettingsPage() {
   const { status, user, logout, updateEmail, updatePassword } = useAuth();
@@ -88,13 +89,7 @@ export default function SettingsPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex items-center justify-between p-4 bg-background rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-accent-light flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e1306c" strokeWidth="2">
-                      <rect x="2" y="2" width="20" height="20" rx="5" />
-                      <circle cx="12" cy="12" r="5" />
-                      <circle cx="17.5" cy="6.5" r="1.5" fill="#e1306c" />
-                    </svg>
-                  </div>
+                  <SocialLogo platform="instagram" size="sm" />
                   <div>
                     <p className="text-sm font-medium">Instagram</p>
                     <p className="text-xs text-muted">
@@ -113,11 +108,7 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between p-4 bg-background rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-fb-light flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877f2">
-                      <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
-                    </svg>
-                  </div>
+                  <SocialLogo platform="facebook" size="sm" />
                   <div>
                     <p className="text-sm font-medium">Facebook</p>
                     <p className="text-xs text-muted">
