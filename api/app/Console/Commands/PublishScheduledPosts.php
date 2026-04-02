@@ -13,16 +13,20 @@ class PublishScheduledPosts extends Command
 
     public function handle(ScheduledPostController $controller): void
     {
-        $due = ScheduledPost::where('status', 'pending')
+        // Atomically claim due posts by setting status to 'publishing'
+        // This prevents duplicate publishes if the command runs concurrently
+        $claimed = ScheduledPost::where('status', 'pending')
             ->where('scheduled_at', '<=', now())
-            ->get();
+            ->update(['status' => 'publishing']);
 
-        if ($due->isEmpty()) {
+        if ($claimed === 0) {
             $this->line('No posts due.');
             return;
         }
 
-        foreach ($due as $post) {
+        $posts = ScheduledPost::where('status', 'publishing')->get();
+
+        foreach ($posts as $post) {
             try {
                 $controller->publishNow($post);
                 $this->info("Published post #{$post->id}");

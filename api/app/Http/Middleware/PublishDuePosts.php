@@ -11,8 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * "Poor man's cron" — after every response, check for scheduled posts
  * that are due and fire a background process to publish them.
- * Uses popen() so it doesn't block the main PHP thread (artisan serve
- * is single-threaded — blocking here would freeze ALL requests).
+ * Uses a simple file lock to prevent multiple concurrent publishes.
  */
 class PublishDuePosts
 {
@@ -21,13 +20,16 @@ class PublishDuePosts
         return $next($request);
     }
 
-    /**
-     * Runs AFTER the response has been sent to the client.
-     */
     public function terminate(Request $request, Response $response): void
     {
         try {
-            // Quick DB check — lightweight, ~1ms
+            $lockFile = storage_path('app/publish.lock');
+
+            // If lock file exists and is less than 2 minutes old, skip
+            if (file_exists($lockFile) && (time() - filemtime($lockFile)) < 120) {
+                return;
+            }
+
             $hasDue = ScheduledPost::where('status', 'pending')
                 ->where('scheduled_at', '<=', now())
                 ->exists();
@@ -36,7 +38,10 @@ class PublishDuePosts
                 return;
             }
 
-            // Fire the artisan command in background — does NOT block
+            // Create/touch lock file BEFORE dispatching
+            file_put_contents($lockFile, (string) time());
+
+            // Fire in background
             $cmd = 'php ' . base_path('artisan') . ' posts:publish-scheduled > /dev/null 2>&1 &';
             pclose(popen($cmd, 'r'));
 
