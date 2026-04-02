@@ -238,7 +238,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={emailLoading}
-              className="text-xs px-4 py-2.5 rounded-xl bg-foreground text-white font-medium disabled:opacity-65"
+              className="text-xs px-4 py-2.5 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-65"
             >
               {emailLoading ? "Actualizando..." : "Actualizar correo"}
             </button>
@@ -278,7 +278,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={passwordLoading}
-              className="text-xs px-4 py-2.5 rounded-xl bg-foreground text-white font-medium disabled:opacity-65"
+              className="text-xs px-4 py-2.5 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-65"
             >
               {passwordLoading ? "Actualizando..." : "Actualizar contraseña"}
             </button>
