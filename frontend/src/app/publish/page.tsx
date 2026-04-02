@@ -30,6 +30,13 @@ function pad2(value: number): string {
   return String(value).padStart(2, "0");
 }
 
+/** Convert a local datetime string → UTC ISO so the backend never misinterprets timezone. */
+function toUTCISO(localDatetime: string): string {
+  if (!localDatetime) return localDatetime;
+  const d = new Date(localDatetime);
+  return isNaN(d.getTime()) ? localDatetime : d.toISOString();
+}
+
 function toDateOnly(value: string): Date | null {
   if (!value) return null;
   const parsed = new Date(`${value}T00:00:00`);
@@ -192,14 +199,6 @@ export default function PublishPage() {
     } finally {
       setSubmitting(false);
     }
-  }
-
-  // Convert datetime-local string (local time) → UTC ISO so the backend
-  // never misinterprets the timezone.
-  function toUTCISO(localDatetime: string): string {
-    if (!localDatetime) return localDatetime;
-    const d = new Date(localDatetime);
-    return isNaN(d.getTime()) ? localDatetime : d.toISOString();
   }
 
   async function handleSchedule(scheduleBody: {
@@ -627,7 +626,7 @@ function BulkScheduler({
             type: item.type,
             caption: item.caption || undefined,
             media_urls: urls.length ? urls : undefined,
-            scheduled_at: item.scheduledAt,
+            scheduled_at: toUTCISO(item.scheduledAt),
           },
         });
         ok++;
