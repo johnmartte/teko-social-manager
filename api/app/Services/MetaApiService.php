@@ -162,6 +162,8 @@ class MetaApiService
             throw new \RuntimeException("Instagram container error: {$msg}");
         }
 
+        $this->waitForContainerReady((string) $container['id'], $token);
+
         return $this->publishContainerWithRetry($userId, $token, (string) $container['id']);
     }
 
