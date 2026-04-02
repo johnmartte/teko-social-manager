@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\PublishDuePosts;
 use App\Http\Middleware\ResolveSocialCredentials;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,7 +14,6 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
-        $middleware->appendToGroup('api', PublishDuePosts::class);
         $middleware->alias([
             'social' => ResolveSocialCredentials::class,
         ]);

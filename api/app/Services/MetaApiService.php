@@ -162,17 +162,7 @@ class MetaApiService
             throw new \RuntimeException("Instagram container error: {$msg}");
         }
 
-        $publish = Http::post("{$this->igApi}/{$userId}/media_publish", [
-            'creation_id' => $container['id'],
-            'access_token' => $token,
-        ])->json();
-
-        if (empty($publish['id'])) {
-            $msg = $publish['error']['message'] ?? json_encode($publish);
-            throw new \RuntimeException("Instagram publish error: {$msg}");
-        }
-
-        return $publish;
+        return $this->publishContainerWithRetry($userId, $token, (string) $container['id']);
     }
 
     public function publishReel(string $userId, string $token, string $videoUrl, string $caption = ''): array
@@ -189,17 +179,9 @@ class MetaApiService
             throw new \RuntimeException("Instagram container error: {$msg}");
         }
 
-        $publish = Http::post("{$this->igApi}/{$userId}/media_publish", [
-            'creation_id' => $container['id'],
-            'access_token' => $token,
-        ])->json();
+        $this->waitForContainerReady((string) $container['id'], $token);
 
-        if (empty($publish['id'])) {
-            $msg = $publish['error']['message'] ?? json_encode($publish);
-            throw new \RuntimeException("Instagram publish error: {$msg}");
-        }
-
-        return $publish;
+        return $this->publishContainerWithRetry($userId, $token, (string) $container['id']);
     }
 
     public function publishCarousel(string $userId, string $token, array $imageUrls, string $caption = ''): array
@@ -230,17 +212,58 @@ class MetaApiService
             throw new \RuntimeException("Instagram carousel error: {$msg}");
         }
 
-        $publish = Http::post("{$this->igApi}/{$userId}/media_publish", [
-            'creation_id' => $carousel['id'],
-            'access_token' => $token,
-        ])->json();
+        $this->waitForContainerReady((string) $carousel['id'], $token);
 
-        if (empty($publish['id'])) {
-            $msg = $publish['error']['message'] ?? json_encode($publish);
-            throw new \RuntimeException("Instagram carousel publish error: {$msg}");
+        return $this->publishContainerWithRetry($userId, $token, (string) $carousel['id']);
+    }
+
+    private function waitForContainerReady(string $creationId, string $token, int $maxAttempts = 12): void
+    {
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $status = Http::get("{$this->igApi}/{$creationId}", [
+                'fields' => 'status_code,status',
+                'access_token' => $token,
+            ])->json();
+
+            $code = strtoupper((string) ($status['status_code'] ?? $status['status'] ?? ''));
+
+            if (in_array($code, ['FINISHED', 'PUBLISHED'], true)) {
+                return;
+            }
+
+            if (in_array($code, ['ERROR', 'EXPIRED'], true)) {
+                $msg = $status['error']['message'] ?? json_encode($status);
+                throw new \RuntimeException("Instagram container status error: {$msg}");
+            }
+
+            usleep(2_000_000);
+        }
+    }
+
+    private function publishContainerWithRetry(string $userId, string $token, string $creationId, int $maxAttempts = 6): array
+    {
+        $lastMessage = 'Unknown Instagram publish error';
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $publish = Http::post("{$this->igApi}/{$userId}/media_publish", [
+                'creation_id' => $creationId,
+                'access_token' => $token,
+            ])->json();
+
+            if (!empty($publish['id'])) {
+                return $publish;
+            }
+
+            $lastMessage = (string) ($publish['error']['message'] ?? json_encode($publish));
+
+            if (stripos($lastMessage, 'Media ID is not available') === false) {
+                throw new \RuntimeException("Instagram publish error: {$lastMessage}");
+            }
+
+            usleep(2_000_000);
         }
 
-        return $publish;
+        throw new \RuntimeException("Instagram publish error: {$lastMessage}");
     }
 
     public function getComments(string $mediaId, string $token): array
