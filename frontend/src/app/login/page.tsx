@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 
 function SpiralIcon() {
   return (
@@ -50,6 +51,7 @@ function EyeIcon({ visible }: { visible: boolean }) {
 
 export default function LoginPage() {
   const { loginWithEmail } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -78,6 +80,15 @@ export default function LoginPage() {
 
   return (
     <section className="relative min-h-screen w-full overflow-hidden">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="absolute right-5 top-5 z-20 inline-flex items-center gap-2 rounded-xl border border-white/30 bg-black/20 px-3 py-2 text-xs text-white backdrop-blur-md hover:bg-black/30"
+        aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+      >
+        {isDark ? "Claro" : "Oscuro"}
+      </button>
+
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/imagenes/wallpaperflare.com_wallpaper%20(6).jpg')" }}
