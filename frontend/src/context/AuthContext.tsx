@@ -14,14 +14,7 @@ import { api } from "@/lib/api";
 const RAILWAY_API_URL = "https://teko-social-manager-production.up.railway.app";
 
 function resolveApiUrl(): string {
-  const envApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  if (typeof window === "undefined") return envApiUrl;
-  const isLocalFrontend =
-    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  if (!isLocalFrontend && /localhost|127\.0\.0\.1/.test(envApiUrl)) {
-    return RAILWAY_API_URL;
-  }
-  return envApiUrl;
+  return process.env.NEXT_PUBLIC_API_URL || RAILWAY_API_URL;
 }
 
 const API_URL = resolveApiUrl();
