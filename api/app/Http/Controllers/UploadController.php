@@ -40,7 +40,8 @@ class UploadController extends Controller
             $scheme = $request->header('X-Forwarded-Proto', 'https');
             $baseUrl = "{$scheme}://{$host}";
         }
-        $url = rtrim($baseUrl, '/') . '/api/uploads/' . $filename;
+        // Use /uploads/ (served directly from public/ via symlink, no Laravel middleware)
+        $url = rtrim($baseUrl, '/') . '/uploads/' . $filename;
 
         return response()->json(['url' => $url]);
     }

@@ -61,6 +61,11 @@ if [ "${SEED_SYSTEM_USER:-false}" = "true" ]; then
     " 2>&1 || echo "[start] Warning: system user seed failed."
 fi
 
-echo "[start] Starting web server on port ${PORT:-8000} with multiple workers..."
+# ── Symlink uploads into public/ so they're served directly ─────────
+# This bypasses Laravel's middleware stack — Instagram can fetch images
+# without going through the app's routing.
+ln -sfn /data/uploads /app/public/uploads
+
+echo "[start] Starting web server on port ${PORT:-8000}..."
 export PHP_CLI_SERVER_WORKERS=4
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"
