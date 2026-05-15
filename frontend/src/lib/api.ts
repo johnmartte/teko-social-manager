@@ -57,7 +57,11 @@ export async function api<T = unknown>(
 }
 
 export function getLoginUrl(): string {
-  return `${API_URL}/auth/login`;
+  const base = `${API_URL}/auth/login`;
+  if (typeof window === "undefined") return base;
+  const token = localStorage.getItem("app_token");
+  if (!token) return base;
+  return `${base}?link_token=${encodeURIComponent(token)}`;
 }
 
 export function formatNum(n: number | null | undefined): string {

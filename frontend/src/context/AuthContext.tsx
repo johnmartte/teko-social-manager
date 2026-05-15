@@ -224,12 +224,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     localStorage.removeItem("app_token");
     localStorage.removeItem("app_user");
-    // Also clear legacy header tokens
-    localStorage.removeItem("ig_token");
-    localStorage.removeItem("ig_user_id");
-    localStorage.removeItem("fb_token");
-    localStorage.removeItem("fb_page_id");
-    localStorage.removeItem("fb_page_name");
     setStatus(null);
     setUser(null);
     window.location.href = "/login";

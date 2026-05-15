@@ -20,14 +20,20 @@ class MetaApiService
 
     // ─── AUTH ─────────────────────────────────────────────
 
-    public function getAuthUrl(): string
+    public function getAuthUrl(?string $state = null): string
     {
-        $params = \http_build_query([
+        $query = [
             'client_id' => config('meta.app_id'),
             'redirect_uri' => config('meta.redirect_uri'),
             'scope' => \implode(',', config('meta.instagram_scopes')),
             'response_type' => 'code',
-        ]);
+        ];
+
+        if ($state) {
+            $query['state'] = $state;
+        }
+
+        $params = \http_build_query($query);
 
         if ($this->oauthProvider === 'facebook') {
             return "https://www.facebook.com/" . config('meta.graph_api_version', 'v20.0') . "/dialog/oauth?{$params}";

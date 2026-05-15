@@ -18,9 +18,10 @@ class AuthController extends Controller
 
     // ─── Meta OAuth ───────────────────────────────────────────────────────────
 
-    public function login(): RedirectResponse
+    public function login(Request $request): RedirectResponse
     {
-        return redirect($this->meta->getAuthUrl());
+        $state = $request->query('link_token');
+        return redirect($this->meta->getAuthUrl($state));
     }
 
     public function callback(Request $request): RedirectResponse
@@ -58,21 +59,38 @@ class AuthController extends Controller
                 // Facebook pages optional
             }
 
-            // ── Find or create User ──────────────────────────────────────────
+            // ── Find existing user via link_token, or create one ────────────
             $metaId = $igUserId ?? $fbPageId;
+            $user = null;
 
-            $user = User::firstOrCreate(
-                ['meta_id' => $metaId],
-                [
-                    'name'     => $fbPageName ?? "User {$metaId}",
-                    'email'    => "{$metaId}@meta.teko.internal",
-                    'password' => bcrypt(Str::uuid()),
-                ]
-            );
+            // If a logged-in user initiated the OAuth, link to that user
+            $linkToken = $request->input('state');
+            if ($linkToken) {
+                $personalToken = \Laravel\Sanctum\PersonalAccessToken::findToken($linkToken);
+                if ($personalToken) {
+                    $user = $personalToken->tokenable;
+                    // Store meta_id on the user for future reference
+                    if ($metaId && !$user->meta_id) {
+                        $user->update(['meta_id' => $metaId]);
+                    }
+                }
+            }
 
-            // Update name if we have better info now
-            if ($fbPageName && $user->name !== $fbPageName) {
-                $user->update(['name' => $fbPageName]);
+            // Fallback: find by meta_id or create new user
+            if (!$user) {
+                $user = User::firstOrCreate(
+                    ['meta_id' => $metaId],
+                    [
+                        'name'     => $fbPageName ?? "User {$metaId}",
+                        'email'    => "{$metaId}@meta.teko.internal",
+                        'password' => bcrypt(Str::uuid()),
+                    ]
+                );
+
+                // Update name if we have better info now
+                if ($fbPageName && $user->name !== $fbPageName) {
+                    $user->update(['name' => $fbPageName]);
+                }
             }
 
             // ── Store credentials in DB ──────────────────────────────────────
