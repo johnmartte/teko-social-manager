@@ -4,4 +4,4 @@ healthcheckTimeout = 30
 startCommand = "bash /app/start.sh"
 
 [[deploy.volumeMounts]]
-mountPath = "/app/database"
+mountPath = "/data"

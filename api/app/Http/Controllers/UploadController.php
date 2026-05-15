@@ -8,6 +8,16 @@ use Illuminate\Support\Str;
 
 class UploadController extends Controller
 {
+    private function uploadsDir(): string
+    {
+        // Use persistent volume on Railway, fallback to database/uploads locally
+        $dir = is_dir('/data') ? '/data/uploads' : database_path('uploads');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        return $dir;
+    }
+
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
@@ -18,13 +28,7 @@ class UploadController extends Controller
         $extension = $file->getClientOriginalExtension();
         $filename = Str::uuid() . '.' . $extension;
 
-        // Store in the persistent volume directory
-        $uploadDir = database_path('uploads');
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
-        $file->move($uploadDir, $filename);
+        $file->move($this->uploadsDir(), $filename);
 
         // Build public URL
         $baseUrl = config('app.url') ?: $request->getSchemeAndHttpHost();
@@ -35,7 +39,7 @@ class UploadController extends Controller
 
     public function serve(string $filename)
     {
-        $path = database_path('uploads/' . basename($filename));
+        $path = $this->uploadsDir() . '/' . basename($filename);
 
         if (!file_exists($path)) {
             abort(404);
