@@ -40,4 +40,8 @@ return [
         'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
     ],
 
+    'imgbb' => [
+        'api_key' => env('IMGBB_API_KEY'),
+    ],
+
 ];
