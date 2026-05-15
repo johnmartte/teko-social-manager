@@ -11,27 +11,42 @@ touch /app/database/database.sqlite
 # Force the DB path
 export DB_DATABASE=/app/database/database.sqlite
 
-# ── ALWAYS clear any cached config from the build step ───────────────
-# Railpack may cache config during build; we must clear it so
-# artisan picks up the runtime DB_DATABASE we just set.
+echo "[start] DB_DATABASE=${DB_DATABASE}"
+
+# ── Clear any cached config from the build step ─────────────────────
 rm -f /app/bootstrap/cache/config.php
-rm -f /app/bootstrap/cache/*.php
+rm -f /app/bootstrap/cache/routes-v7.php
+rm -f /app/bootstrap/cache/services.php
+rm -f /app/bootstrap/cache/packages.php
 
-echo "[start] Running migrations (DB: ${DB_DATABASE})..."
-php artisan migrate --force 2>&1
-
-# Double-check: if users table is still missing, run fresh
-php -r "
+# ── Run migrations ──────────────────────────────────────────────────
+# Always use migrate:fresh if the users table doesn't exist,
+# because a previous failed deploy may have recorded migrations
+# in the migrations table without actually creating the tables.
+echo "[start] Checking if users table exists..."
+USERS_EXISTS=$(php -r "
     require 'vendor/autoload.php';
-    \$app = require 'bootstrap/app.php';
-    \$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-    if (!\Illuminate\Support\Facades\Schema::hasTable('users')) {
-        echo '[start] Tables missing, running migrate:fresh...' . PHP_EOL;
-        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
-        echo \Illuminate\Support\Facades\Artisan::output();
-    } else {
-        echo '[start] Tables OK (' . \App\Models\User::count() . ' users)' . PHP_EOL;
-    }
+    \$db = new SQLite3('/app/database/database.sqlite');
+    \$result = \$db->querySingle(\"SELECT name FROM sqlite_master WHERE type='table' AND name='users'\");
+    echo \$result ? 'yes' : 'no';
+" 2>/dev/null || echo "no")
+
+if [ "$USERS_EXISTS" = "yes" ]; then
+    echo "[start] Tables exist, running normal migrate..."
+    php artisan migrate --force 2>&1
+else
+    echo "[start] Tables missing, running migrate:fresh..."
+    php artisan migrate:fresh --force 2>&1
+fi
+
+# Verify
+php -r "
+    \$db = new SQLite3('/app/database/database.sqlite');
+    \$result = \$db->query(\"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name\");
+    echo '[start] Tables: ';
+    \$tables = [];
+    while (\$row = \$result->fetchArray()) { \$tables[] = \$row['name']; }
+    echo implode(', ', \$tables) . PHP_EOL;
 "
 
 # ── Seed system user if configured ──────────────────────────────────
@@ -50,6 +65,6 @@ if [ "${SEED_SYSTEM_USER:-false}" = "true" ]; then
     " 2>&1 || echo "[start] Warning: system user seed failed."
 fi
 
-# ── Do NOT cache config — it causes DB path issues on Railway ───────
+# ── Start server (no config:cache to avoid DB path issues) ──────────
 echo "[start] Starting web server on port ${PORT:-8000}..."
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"
