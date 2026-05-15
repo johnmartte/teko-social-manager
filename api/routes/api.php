@@ -51,12 +51,12 @@ Route::get('/debug/db', function () {
 
 Route::post('/debug/migrate', function () {
     try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
         $output = \Illuminate\Support\Facades\Artisan::output();
         $tables = \Illuminate\Support\Facades\Schema::getTableListing();
         return response()->json(['output' => $output, 'tables' => $tables]);
     } catch (\Throwable $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
+        return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
     }
 });
 
