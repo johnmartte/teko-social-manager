@@ -17,63 +17,34 @@ class UploadController extends Controller
 
         $file = $request->file('file');
 
-        // ── Try imgbb for images (Instagram needs a CDN URL) ────────────
-        $imgbbKey = config('services.imgbb.api_key');
-        $isImage = str_starts_with($file->getMimeType(), 'image/');
+        // ── Cloudinary upload ───────────────────────────────────────────
+        $cloudName = config('services.cloudinary.cloud_name');
+        $uploadPreset = config('services.cloudinary.upload_preset');
 
-        if ($imgbbKey && $isImage) {
-            $base64 = base64_encode(file_get_contents($file->getRealPath()));
-
-            $response = Http::asForm()->post('https://api.imgbb.com/1/upload', [
-                'key' => $imgbbKey,
-                'image' => $base64,
-                'name' => Str::uuid()->toString(),
-            ]);
-
-            $data = $response->json();
-
-            if ($response->ok() && !empty($data['data']['url'])) {
-                return response()->json(['url' => $data['data']['url']]);
-            }
-
-            // Fall through to local storage if imgbb fails
+        if (!$cloudName || !$uploadPreset) {
+            return response()->json([
+                'error' => 'Cloudinary no está configurado. Agrega CLOUDINARY_CLOUD_NAME y CLOUDINARY_UPLOAD_PRESET en las variables de entorno.',
+            ], 500);
         }
 
-        // ── Fallback: store locally ─────────────────────────────────────
-        $extension = $file->getClientOriginalExtension();
-        $filename = Str::uuid() . '.' . $extension;
+        $isVideo = str_starts_with($file->getMimeType(), 'video/');
+        $resourceType = $isVideo ? 'video' : 'image';
 
-        $dir = is_dir('/data') ? '/data/uploads' : database_path('uploads');
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-        $file->move($dir, $filename);
-
-        $baseUrl = config('app.url');
-        if (!$baseUrl || $baseUrl === 'http://localhost') {
-            $host = $request->header('X-Forwarded-Host')
-                 ?? $request->header('Host')
-                 ?? $request->getHost();
-            $scheme = $request->header('X-Forwarded-Proto', 'https');
-            $baseUrl = "{$scheme}://{$host}";
-        }
-        $url = rtrim($baseUrl, '/') . '/uploads/' . $filename;
-
-        return response()->json(['url' => $url]);
-    }
-
-    public function serve(string $filename)
-    {
-        $dir = is_dir('/data') ? '/data/uploads' : database_path('uploads');
-        $path = $dir . '/' . basename($filename);
-
-        if (!file_exists($path)) {
-            abort(404);
-        }
-
-        return response()->file($path, [
-            'Content-Type' => mime_content_type($path),
-            'Cache-Control' => 'public, max-age=31536000',
+        $response = Http::attach(
+            'file',
+            file_get_contents($file->getRealPath()),
+            $file->getClientOriginalName()
+        )->post("https://api.cloudinary.com/v1_1/{$cloudName}/{$resourceType}/upload", [
+            'upload_preset' => $uploadPreset,
         ]);
+
+        $data = $response->json();
+
+        if ($response->failed() || empty($data['secure_url'])) {
+            $msg = $data['error']['message'] ?? 'Error al subir a Cloudinary';
+            return response()->json(['error' => $msg], 500);
+        }
+
+        return response()->json(['url' => $data['secure_url']]);
     }
 }
