@@ -14,8 +14,41 @@ Route::get('/auth/status', [AuthController::class, 'status']);
 Route::get('/auth/me', [AuthController::class, 'me']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+// Diagnostic endpoint (temporary)
+Route::get('/debug/db', function () {
+    try {
+        $tables = \Illuminate\Support\Facades\Schema::getTableListing();
+        $usersCount = \App\Models\User::count();
+        return response()->json([
+            'tables' => $tables,
+            'users_count' => $usersCount,
+            'db_path' => config('database.connections.sqlite.database'),
+            'db_exists' => file_exists(config('database.connections.sqlite.database')),
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+});
+
 // System auth (email/password)
 Route::post('/auth/system/register', [SystemAuthController::class, 'register']);
+Route::post('/debug/register', function (\Illuminate\Http\Request $request) {
+    try {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email', 'max:180', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8'],
+        ]);
+        $user = \App\Models\User::create($validated);
+        $token = $user->createToken('teko-frontend')->plainTextToken;
+        return response()->json(['ok' => true, 'user_id' => $user->id, 'token' => substr($token, 0, 10) . '...']);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()], 500);
+    }
+});
 Route::post('/auth/system/login', [SystemAuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/system/me', [SystemAuthController::class, 'me']);
