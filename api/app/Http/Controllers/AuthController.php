@@ -69,9 +69,23 @@ class AuthController extends Controller
                 $personalToken = \Laravel\Sanctum\PersonalAccessToken::findToken($linkToken);
                 if ($personalToken) {
                     $user = $personalToken->tokenable;
-                    // Store meta_id on the user for future reference
-                    if ($metaId && !$user->meta_id) {
-                        $user->update(['meta_id' => $metaId]);
+
+                    // If another user already has this meta_id, migrate their
+                    // social credentials to the logged-in user and clear the old one
+                    if ($metaId) {
+                        $existingMetaUser = User::where('meta_id', $metaId)
+                            ->where('id', '!=', $user->id)
+                            ->first();
+
+                        if ($existingMetaUser) {
+                            // Move social credentials to the logged-in user
+                            $existingMetaUser->socialCredentials()->update(['user_id' => $user->id]);
+                            $existingMetaUser->update(['meta_id' => null]);
+                        }
+
+                        if (!$user->meta_id) {
+                            $user->update(['meta_id' => $metaId]);
+                        }
                     }
                 }
             }
