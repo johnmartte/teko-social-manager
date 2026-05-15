@@ -4,8 +4,9 @@ set -e
 cd /app
 
 # Ensure the SQLite file exists (volume starts empty)
-echo "[start] Ensuring database file exists..."
+echo "[start] Ensuring database file and uploads directory exist..."
 mkdir -p /app/database
+mkdir -p /app/database/uploads
 touch /app/database/database.sqlite
 
 echo "[start] Running migrations..."

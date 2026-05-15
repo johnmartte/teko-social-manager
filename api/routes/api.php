@@ -32,8 +32,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/workspace/automations/{automationRule}/toggle', [WorkspaceController::class, 'toggleAutomation']);
 });
 
-// File upload
+// File upload & serve
 Route::post('/upload', [UploadController::class, 'upload']);
+Route::get('/uploads/{filename}', [UploadController::class, 'serve'])->where('filename', '[a-zA-Z0-9\-\.]+');
 
 // Instagram
 Route::prefix('instagram')->middleware('social:instagram')->group(function () {

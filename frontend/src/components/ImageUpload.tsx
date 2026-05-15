@@ -16,10 +16,12 @@ type Props = {
 function getTokenHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
   const headers: Record<string, string> = {};
+  const appToken = localStorage.getItem("app_token");
   const ig = localStorage.getItem("ig_token");
   const igUser = localStorage.getItem("ig_user_id");
   const fb = localStorage.getItem("fb_token");
   const fbPage = localStorage.getItem("fb_page_id");
+  if (appToken) headers["Authorization"] = `Bearer ${appToken}`;
   if (ig) headers["X-IG-Token"] = ig;
   if (igUser) headers["X-IG-User-Id"] = igUser;
   if (fb) headers["X-FB-Token"] = fb;
