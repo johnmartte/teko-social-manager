@@ -31,6 +31,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   loading: boolean;
   refresh: () => void;
+  registerWithEmail: (name: string, email: string, password: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   updateEmail: (newEmail: string, currentPassword: string) => Promise<void>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
@@ -43,6 +44,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   loading: true,
   refresh: () => {},
+  registerWithEmail: async () => {},
   loginWithEmail: async () => {},
   updateEmail: async () => {},
   updatePassword: async () => {},
@@ -167,6 +169,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void fetchStatus();
   }, [fetchStatus]);
 
+  const registerWithEmail = useCallback(async (name: string, email: string, password: string) => {
+    const data = await postSystemAuth<{ token: string; user: AppUser }>(
+      "/auth/system/register",
+      { name, email, password }
+    );
+    localStorage.setItem("app_token", data.token);
+    localStorage.setItem("app_user", JSON.stringify(data.user));
+    setUser(data.user);
+    await fetchStatus();
+  }, [fetchStatus]);
+
   const loginWithEmail = useCallback(async (email: string, password: string) => {
     const data = await postSystemAuth<{ token: string; user: AppUser }>(
       "/auth/system/login",
@@ -269,6 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         loading,
         refresh,
+        registerWithEmail,
         loginWithEmail,
         updateEmail,
         updatePassword,

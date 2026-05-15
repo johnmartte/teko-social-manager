@@ -50,9 +50,10 @@ function EyeIcon({ visible }: { visible: boolean }) {
   );
 }
 
-export default function LoginPage() {
-  const { loginWithEmail } = useAuth();
+export default function RegisterPage() {
+  const { registerWithEmail } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -60,8 +61,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   const canSubmit = useMemo(() => {
-    return email.trim().length > 4 && password.trim().length >= 8;
-  }, [email, password]);
+    return name.trim().length >= 2 && email.trim().length > 4 && password.trim().length >= 8;
+  }, [name, email, password]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -69,10 +70,10 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await loginWithEmail(email.trim(), password);
+      await registerWithEmail(name.trim(), email.trim(), password);
       window.location.href = "/";
     } catch (err) {
-      const message = err instanceof Error ? err.message : "No se pudo iniciar sesion";
+      const message = err instanceof Error ? err.message : "No se pudo crear la cuenta";
       setError(message);
     } finally {
       setSubmitting(false);
@@ -104,15 +105,28 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-[37px] leading-none font-semibold text-center tracking-[-0.02em]">
-            Inicia con tu email
+            Crea tu cuenta
           </h1>
 
           <p className="text-center text-sm text-white/80 mt-3 mb-6 leading-6">
-            Inicia sesion de forma segura usando tus credenciales personales de acceso.
-            Recuerda no compartirlas con nadie
+            Registrate para empezar a gestionar tus redes sociales desde un solo lugar
           </p>
 
           <form onSubmit={onSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm text-white/90 mb-1.5">Nombre</label>
+              <input
+                type="text"
+                placeholder="Tu nombre"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="h-11 w-full rounded-[9px] border border-white/32 bg-white/18 px-3 text-[15px] text-white placeholder:text-white/55 outline-none focus:border-white/65"
+                autoComplete="name"
+                required
+                minLength={2}
+              />
+            </div>
+
             <div>
               <label className="block text-sm text-white/90 mb-1.5">Email</label>
               <input
@@ -131,11 +145,11 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="********"
+                  placeholder="Minimo 8 caracteres"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   className="h-11 w-full rounded-[9px] border border-white/32 bg-white/18 px-3 pr-11 text-[15px] text-white placeholder:text-white/55 outline-none focus:border-white/65"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   required
                   minLength={8}
                 />
@@ -157,21 +171,14 @@ export default function LoginPage() {
               disabled={!canSubmit || submitting}
               className="mt-3 h-11 w-full rounded-[9px] bg-[#222533] text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {submitting ? "Ingresando..." : "Iniciar Sesion"}
+              {submitting ? "Creando cuenta..." : "Crear Cuenta"}
             </button>
           </form>
 
-          <button
-            type="button"
-            className="mt-6 w-full text-center text-white/65 hover:text-white/80 text-sm"
-          >
-            Olvidaste tu contrasena?
-          </button>
-
-          <p className="mt-3 text-center text-sm text-white/65">
-            No tienes cuenta?{" "}
-            <Link href="/register" className="text-white/90 hover:text-white underline underline-offset-2">
-              Registrate
+          <p className="mt-6 text-center text-sm text-white/65">
+            Ya tienes cuenta?{" "}
+            <Link href="/login" className="text-white/90 hover:text-white underline underline-offset-2">
+              Inicia sesion
             </Link>
           </p>
         </div>
