@@ -11,30 +11,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { loading, isAuthenticated } = useAuth();
 
-  const isLoginRoute = pathname === "/login";
+  const isAuthRoute = pathname === "/login" || pathname === "/register";
 
   useEffect(() => {
     if (loading) return;
 
-    if (!isAuthenticated && !isLoginRoute) {
+    if (!isAuthenticated && !isAuthRoute) {
       router.replace("/login");
       return;
     }
 
-    if (isAuthenticated && isLoginRoute) {
+    if (isAuthenticated && isAuthRoute) {
       router.replace("/");
     }
-  }, [isAuthenticated, isLoginRoute, loading, router]);
+  }, [isAuthenticated, isAuthRoute, loading, router]);
 
   if (loading) {
     return <div className="min-h-screen" />;
   }
 
-  if (!isAuthenticated && !isLoginRoute) {
+  if (!isAuthenticated && !isAuthRoute) {
     return <div className="min-h-screen" />;
   }
 
-  if (isLoginRoute) {
+  if (isAuthRoute) {
     return <main className="min-h-screen w-full">{children}</main>;
   }
 
