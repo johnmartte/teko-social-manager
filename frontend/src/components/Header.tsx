@@ -89,15 +89,8 @@ export default function Header() {
           </span>
         </div>
 
-        {/* Auth button */}
-        {anyConnected ? (
-          <button
-            onClick={logout}
-            className="text-xs px-4 py-2 rounded-xl border border-border bg-card/92 text-muted hover:text-foreground hover:border-foreground/20 transition-colors"
-          >
-            Cerrar sesión
-          </button>
-        ) : (
+        {/* Auth buttons */}
+        {!anyConnected && (
           <a
             href={getLoginUrl()}
             className="text-xs px-4 py-2 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity shadow-[0_8px_20px_rgba(225,48,108,0.35)]"
@@ -105,6 +98,12 @@ export default function Header() {
             Conectar cuentas
           </a>
         )}
+        <button
+          onClick={logout}
+          className="text-xs px-4 py-2 rounded-xl border border-border bg-card/92 text-muted hover:text-foreground hover:border-foreground/20 transition-colors"
+        >
+          Cerrar sesión
+        </button>
 
         {/* Avatar */}
         <div className="w-10 h-10 rounded-2xl bg-sidebar flex items-center justify-center shadow-[0_12px_24px_rgba(16,130,255,0.25)] overflow-hidden p-1.5">
