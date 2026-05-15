@@ -17,19 +17,46 @@ Route::post('/auth/logout', [AuthController::class, 'logout']);
 // Diagnostic endpoint (temporary)
 Route::get('/debug/db', function () {
     try {
-        $tables = \Illuminate\Support\Facades\Schema::getTableListing();
-        $usersCount = \App\Models\User::count();
+        $dbPath = config('database.connections.sqlite.database');
+        $envDb = env('DB_DATABASE', 'NOT SET');
+        $getenv = getenv('DB_DATABASE') ?: 'NOT SET';
+        $fileExists = file_exists($dbPath);
+        $fileSize = $fileExists ? filesize($dbPath) : 0;
+        $writable = $fileExists ? is_writable($dbPath) : false;
+
+        $tables = [];
+        try {
+            $tables = \Illuminate\Support\Facades\Schema::getTableListing();
+        } catch (\Throwable $e) {
+            $tables = ['error' => $e->getMessage()];
+        }
+
         return response()->json([
+            'config_db_path' => $dbPath,
+            'env_DB_DATABASE' => $envDb,
+            'getenv_DB_DATABASE' => $getenv,
+            'database_path_helper' => database_path('database.sqlite'),
+            'file_exists' => $fileExists,
+            'file_size' => $fileSize,
+            'writable' => $writable,
             'tables' => $tables,
-            'users_count' => $usersCount,
-            'db_path' => config('database.connections.sqlite.database'),
-            'db_exists' => file_exists(config('database.connections.sqlite.database')),
+            'cached_config_exists' => file_exists(base_path('bootstrap/cache/config.php')),
         ]);
     } catch (\Throwable $e) {
         return response()->json([
             'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
         ], 500);
+    }
+});
+
+Route::post('/debug/migrate', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $output = \Illuminate\Support\Facades\Artisan::output();
+        $tables = \Illuminate\Support\Facades\Schema::getTableListing();
+        return response()->json(['output' => $output, 'tables' => $tables]);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
     }
 });
 
