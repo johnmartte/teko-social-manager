@@ -30,8 +30,16 @@ class UploadController extends Controller
 
         $file->move($this->uploadsDir(), $filename);
 
-        // Build public URL
-        $baseUrl = config('app.url') ?: $request->getSchemeAndHttpHost();
+        // Build public URL — use APP_URL, or reconstruct from proxy headers
+        $baseUrl = config('app.url');
+        if (!$baseUrl || $baseUrl === 'http://localhost') {
+            // Behind Railway's proxy: use the forwarded host
+            $host = $request->header('X-Forwarded-Host')
+                 ?? $request->header('Host')
+                 ?? $request->getHost();
+            $scheme = $request->header('X-Forwarded-Proto', 'https');
+            $baseUrl = "{$scheme}://{$host}";
+        }
         $url = rtrim($baseUrl, '/') . '/api/uploads/' . $filename;
 
         return response()->json(['url' => $url]);
