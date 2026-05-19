@@ -149,17 +149,14 @@ class MetaApiService
         $since = $now->copy()->subDays(28)->timestamp;
         $until = $now->timestamp;
 
-        $metricSets = [
-            'impressions,reach,follower_count,profile_views',
-            'impressions,reach,follower_count',
-            'reach,follower_count',
-            'reach',
-        ];
+        // Fetch each metric individually so one failure doesn't block others
+        $metrics = ['reach', 'impressions', 'follower_count', 'profile_views'];
+        $allData = [];
 
-        // Try with 28-day date range
-        foreach ($metricSets as $metrics) {
+        foreach ($metrics as $metric) {
+            // Try with date range first
             $response = Http::get("{$this->igApi}/{$userId}/insights", [
-                'metric' => $metrics,
+                'metric' => $metric,
                 'period' => 'day',
                 'since'  => $since,
                 'until'  => $until,
@@ -168,27 +165,26 @@ class MetaApiService
 
             $data = $response->json();
 
-            if (!isset($data['error'])) {
-                return $data;
+            if (!isset($data['error']) && !empty($data['data'])) {
+                $allData = array_merge($allData, $data['data']);
+                continue;
             }
-        }
 
-        // Fallback: no date range (returns default ~2 days)
-        foreach ($metricSets as $metrics) {
+            // Fallback: no date range
             $response = Http::get("{$this->igApi}/{$userId}/insights", [
-                'metric' => $metrics,
+                'metric' => $metric,
                 'period' => 'day',
                 'access_token' => $token,
             ]);
 
             $data = $response->json();
 
-            if (!isset($data['error'])) {
-                return $data;
+            if (!isset($data['error']) && !empty($data['data'])) {
+                $allData = array_merge($allData, $data['data']);
             }
         }
 
-        return $data ?? ['data' => []];
+        return ['data' => $allData];
     }
 
     /**
@@ -485,15 +481,12 @@ class MetaApiService
         $since = $now->copy()->subDays(28)->timestamp;
         $until = $now->timestamp;
 
-        $metricSets = [
-            'page_impressions,page_reach,page_fans,page_views_total,page_post_engagements',
-            'page_impressions,page_reach,page_fans',
-            'page_impressions,page_reach',
-        ];
+        $metrics = ['page_impressions', 'page_reach', 'page_fans', 'page_views_total', 'page_post_engagements'];
+        $allData = [];
 
-        foreach ($metricSets as $metrics) {
+        foreach ($metrics as $metric) {
             $response = Http::get("{$this->fbApi}/{$pageId}/insights", [
-                'metric' => $metrics,
+                'metric' => $metric,
                 'period' => $period,
                 'since'  => $since,
                 'until'  => $until,
@@ -502,12 +495,26 @@ class MetaApiService
 
             $data = $response->json();
 
-            if (!isset($data['error'])) {
-                return $data;
+            if (!isset($data['error']) && !empty($data['data'])) {
+                $allData = array_merge($allData, $data['data']);
+                continue;
+            }
+
+            // Fallback without dates
+            $response = Http::get("{$this->fbApi}/{$pageId}/insights", [
+                'metric' => $metric,
+                'period' => $period,
+                'access_token' => $pageToken,
+            ]);
+
+            $data = $response->json();
+
+            if (!isset($data['error']) && !empty($data['data'])) {
+                $allData = array_merge($allData, $data['data']);
             }
         }
 
-        return $data ?? ['data' => []];
+        return ['data' => $allData];
     }
 
     public function deletePost(string $postId, string $pageToken): array

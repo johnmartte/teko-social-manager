@@ -281,14 +281,14 @@ export default function InsightsPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Card title="Alcance (30 dias)" color="#e1306c">
               {reachData.length > 0 ? (
-                <ChartArea data={reachData} color="#e1306c" />
+                <ChartArea data={reachData} color="#e1306c" label="Alcance" />
               ) : (
                 <NoData />
               )}
             </Card>
             <Card title="Impresiones (30 dias)" color="#405de6">
               {impressionsData.length > 0 ? (
-                <ChartArea data={impressionsData} color="#405de6" />
+                <ChartArea data={impressionsData} color="#405de6" label="Impresiones" />
               ) : (
                 <NoData />
               )}
@@ -299,14 +299,14 @@ export default function InsightsPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Card title="Crecimiento de seguidores" color="#833ab4">
               {followerData.length > 0 ? (
-                <ChartArea data={followerData} color="#833ab4" />
+                <ChartArea data={followerData} color="#833ab4" label="Seguidores" />
               ) : (
                 <NoData />
               )}
             </Card>
             <Card title="Visitas al perfil" color="#f56040">
               {profileViewsData.length > 0 ? (
-                <ChartArea data={profileViewsData} color="#f56040" />
+                <ChartArea data={profileViewsData} color="#f56040" label="Visitas" />
               ) : (
                 <NoData />
               )}
@@ -534,35 +534,55 @@ function SummaryCard({ label, value, color }: { label: string; value: number | n
   );
 }
 
-function ChartArea({ data, color }: { data: { date: string; value: number }[]; color: string }) {
+let chartIdCounter = 0;
+
+function ChartArea({ data, color, label }: { data: { date: string; value: number }[]; color: string; label?: string }) {
+  const gradId = `grad-${color.replace("#", "")}-${++chartIdCounter}`;
   return (
-    <div className="h-48">
+    <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data}>
+        <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <defs>
-            <linearGradient id={`grad-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-              <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={color} stopOpacity={0.03} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #eee)" />
-          <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-          <YAxis tick={{ fontSize: 11 }} width={45} tickFormatter={(v) => formatNum(v)} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 10, fill: "#999" }}
+            interval={Math.max(0, Math.floor(data.length / 7) - 1)}
+            axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fontSize: 11, fill: "#999" }}
+            width={50}
+            tickFormatter={(v) => formatNum(v)}
+            axisLine={false}
+            tickLine={false}
+          />
           <Tooltip
             contentStyle={{
-              background: "var(--color-card, #fff)",
-              border: "1px solid var(--color-border, #eee)",
+              background: "rgba(30,30,35,0.95)",
+              border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: 12,
-              fontSize: 12,
+              fontSize: 13,
+              color: "#fff",
+              padding: "8px 14px",
             }}
-            formatter={(v) => [formatNum(v as number), ""]}
+            formatter={(v) => [Number(v).toLocaleString(), label || ""]}
+            labelStyle={{ color: "#999", fontSize: 11, marginBottom: 4 }}
           />
           <Area
             type="monotone"
             dataKey="value"
             stroke={color}
-            strokeWidth={2}
-            fill={`url(#grad-${color.replace("#", "")})`}
+            strokeWidth={2.5}
+            fill={`url(#${gradId})`}
+            dot={false}
+            activeDot={{ r: 5, fill: color, stroke: "#fff", strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>
