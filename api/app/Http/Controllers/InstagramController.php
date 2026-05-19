@@ -38,6 +38,20 @@ class InstagramController extends Controller
         );
     }
 
+    public function audience(Request $request): JsonResponse
+    {
+        return response()->json(
+            $this->meta->getInstagramAudience($request->attributes->get('ig_user_id'), $request->attributes->get('ig_token'))
+        );
+    }
+
+    public function onlineFollowers(Request $request): JsonResponse
+    {
+        return response()->json(
+            $this->meta->getInstagramOnlineFollowers($request->attributes->get('ig_user_id'), $request->attributes->get('ig_token'))
+        );
+    }
+
     public function mediaInsights(Request $request, string $mediaId): JsonResponse
     {
         return response()->json(

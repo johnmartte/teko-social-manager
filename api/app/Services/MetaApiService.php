@@ -138,42 +138,88 @@ class MetaApiService
         ])->json();
     }
 
+    /**
+     * Get account-level insights (reach, impressions, follower_count, profile_views).
+     * Requests 30 days of daily data so the frontend can chart trends.
+     */
     public function getInstagramInsights(string $userId, string $token, string $period = 'day'): array
     {
-        // Try the newer metrics first (API v18+), fall back to legacy
-        $response = Http::get("{$this->igApi}/{$userId}/insights", [
-            'metric' => 'impressions,reach,profile_views,follower_count',
-            'period' => $period,
-            'access_token' => $token,
-        ]);
+        $since = now()->subDays(30)->startOfDay()->timestamp;
+        $until = now()->endOfDay()->timestamp;
 
-        $data = $response->json();
+        // Try all core metrics together first
+        $metricSets = [
+            'impressions,reach,follower_count,profile_views',
+            'impressions,reach,follower_count',
+            'reach,follower_count',
+            'reach',
+        ];
 
-        // If legacy metrics fail, try with supported period/metric combos
-        if (isset($data['error'])) {
-            // follower_count only works with 'day' period
-            $metrics = match ($period) {
-                'day' => 'impressions,reach,follower_count',
-                default => 'impressions,reach',
-            };
-
+        foreach ($metricSets as $metrics) {
             $response = Http::get("{$this->igApi}/{$userId}/insights", [
                 'metric' => $metrics,
-                'period' => $period,
+                'period' => 'day',
+                'since'  => $since,
+                'until'  => $until,
                 'access_token' => $token,
             ]);
 
             $data = $response->json();
 
-            // Last resort: try total_interactions which works on newer API
-            if (isset($data['error'])) {
-                $response = Http::get("{$this->igApi}/{$userId}/insights", [
-                    'metric' => 'reach,follower_count',
-                    'period' => 'day',
-                    'access_token' => $token,
-                ]);
-                $data = $response->json();
+            if (!isset($data['error'])) {
+                return $data;
             }
+        }
+
+        return $data ?? ['data' => []];
+    }
+
+    /**
+     * Get audience demographics: gender-age, city, country, locale.
+     * These use period=lifetime.
+     */
+    public function getInstagramAudience(string $userId, string $token): array
+    {
+        $metricSets = [
+            'audience_gender_age,audience_city,audience_country,audience_locale',
+            'audience_gender_age,audience_city,audience_country',
+            'audience_gender_age,audience_city',
+            'audience_gender_age',
+        ];
+
+        foreach ($metricSets as $metrics) {
+            $response = Http::get("{$this->igApi}/{$userId}/insights", [
+                'metric' => $metrics,
+                'period' => 'lifetime',
+                'access_token' => $token,
+            ]);
+
+            $data = $response->json();
+
+            if (!isset($data['error'])) {
+                return $data;
+            }
+        }
+
+        return $data ?? ['data' => []];
+    }
+
+    /**
+     * Get online_followers (hourly activity breakdown for each day).
+     * Uses period=lifetime.
+     */
+    public function getInstagramOnlineFollowers(string $userId, string $token): array
+    {
+        $response = Http::get("{$this->igApi}/{$userId}/insights", [
+            'metric' => 'online_followers',
+            'period' => 'lifetime',
+            'access_token' => $token,
+        ]);
+
+        $data = $response->json();
+
+        if (isset($data['error'])) {
+            return ['data' => []];
         }
 
         return $data;
@@ -181,10 +227,28 @@ class MetaApiService
 
     public function getMediaInsights(string $mediaId, string $token): array
     {
-        return Http::get("{$this->igApi}/{$mediaId}/insights", [
-            'metric' => 'impressions,reach,engagement,saved',
-            'access_token' => $token,
-        ])->json();
+        // Try multiple metric sets — some metrics may not be available for all media types
+        $metricSets = [
+            'impressions,reach,saved,likes,comments,shares',
+            'impressions,reach,engagement,saved',
+            'impressions,reach,saved',
+            'impressions,reach',
+        ];
+
+        foreach ($metricSets as $metrics) {
+            $response = Http::get("{$this->igApi}/{$mediaId}/insights", [
+                'metric' => $metrics,
+                'access_token' => $token,
+            ]);
+
+            $data = $response->json();
+
+            if (!isset($data['error'])) {
+                return $data;
+            }
+        }
+
+        return $data ?? ['data' => []];
     }
 
     public function publishPhoto(string $userId, string $token, string $imageUrl, string $caption = ''): array
@@ -400,11 +464,32 @@ class MetaApiService
 
     public function getPageInsights(string $pageId, string $pageToken, string $period = 'day'): array
     {
-        return Http::get("{$this->fbApi}/{$pageId}/insights", [
-            'metric' => 'page_impressions,page_reach,page_fans,page_views_total,page_post_engagements',
-            'period' => $period,
-            'access_token' => $pageToken,
-        ])->json();
+        $since = now()->subDays(30)->startOfDay()->timestamp;
+        $until = now()->endOfDay()->timestamp;
+
+        $metricSets = [
+            'page_impressions,page_reach,page_fans,page_views_total,page_post_engagements',
+            'page_impressions,page_reach,page_fans',
+            'page_impressions,page_reach',
+        ];
+
+        foreach ($metricSets as $metrics) {
+            $response = Http::get("{$this->fbApi}/{$pageId}/insights", [
+                'metric' => $metrics,
+                'period' => $period,
+                'since'  => $since,
+                'until'  => $until,
+                'access_token' => $pageToken,
+            ]);
+
+            $data = $response->json();
+
+            if (!isset($data['error'])) {
+                return $data;
+            }
+        }
+
+        return $data ?? ['data' => []];
     }
 
     public function deletePost(string $postId, string $pageToken): array
