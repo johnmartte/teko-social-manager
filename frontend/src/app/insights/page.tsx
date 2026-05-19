@@ -106,6 +106,10 @@ const IG_LABELS: Record<string, string> = {
   phone_call_clicks: "Clics en telefono",
   get_directions_clicks: "Clics en direcciones",
   text_message_clicks: "Clics en mensajes",
+  total_likes: "Likes totales",
+  total_comments: "Comentarios totales",
+  total_interactions: "Interacciones",
+  posts_count: "Posts analizados",
 };
 
 const IG_COLORS: Record<string, string> = {
@@ -118,10 +122,14 @@ const IG_COLORS: Record<string, string> = {
   phone_call_clicks: "#6c5ce7",
   get_directions_clicks: "#f77737",
   text_message_clicks: "#fd79a8",
+  total_likes: "#ed4956",
+  total_comments: "#0095f6",
+  total_interactions: "#5851db",
+  posts_count: "#00b894",
 };
 
 // Metrics where we show latest value instead of total
-const CUMULATIVE_METRICS = new Set(["follower_count"]);
+const CUMULATIVE_METRICS = new Set(["follower_count", "total_likes", "total_comments", "total_interactions", "posts_count"]);
 
 /* ── Component ──────────────────────────────────────────────── */
 
@@ -278,14 +286,16 @@ export default function InsightsPage() {
             </div>
           )}
 
-          {/* Trend charts - 2 per row, only for metrics with data */}
-          {igChartMetrics.length > 0 && (
+          {/* Trend charts - 2 per row, only for metrics with multiple data points */}
+          {igChartMetrics.filter((m) => m.data.length > 1).length > 0 && (
             <div className="grid gap-6 lg:grid-cols-2">
-              {igChartMetrics.map((m) => (
-                <Card key={m.name} title={m.label} color={m.color}>
-                  <ChartArea data={m.data} color={m.color} label={m.label} />
-                </Card>
-              ))}
+              {igChartMetrics
+                .filter((m) => m.data.length > 1)
+                .map((m) => (
+                  <Card key={m.name} title={m.label} color={m.color}>
+                    <ChartArea data={m.data} color={m.color} label={m.label} />
+                  </Card>
+                ))}
             </div>
           )}
 

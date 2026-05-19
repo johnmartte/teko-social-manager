@@ -144,54 +144,97 @@ class MetaApiService
      */
     public function getInstagramInsights(string $userId, string $token, string $period = 'day'): array
     {
-        // Meta API allows max 30 days (2592000s). Use 28 days to stay safe.
         $now   = now();
         $since = $now->copy()->subDays(28)->timestamp;
         $until = $now->timestamp;
 
-        // Fetch each metric individually so one failure doesn't block others
-        $metrics = [
-            'reach',
-            'impressions',
-            'follower_count',
-            'profile_views',
-            'website_clicks',
-            'email_contacts',
-            'phone_call_clicks',
-            'get_directions_clicks',
-            'text_message_clicks',
-        ];
         $allData = [];
 
-        foreach ($metrics as $metric) {
-            // Try with date range first
-            $response = Http::get("{$this->igApi}/{$userId}/insights", [
-                'metric' => $metric,
-                'period' => 'day',
-                'since'  => $since,
-                'until'  => $until,
-                'access_token' => $token,
-            ]);
+        // ── 1. Time-series metrics (v18+ requires metric_type) ──────────
+        $timeSeriesMetrics = ['reach', 'impressions', 'follower_count', 'profile_views'];
 
-            $data = $response->json();
+        foreach ($timeSeriesMetrics as $metric) {
+            // Try with metric_type=time_series (v18+ format)
+            $attempts = [
+                ['metric' => $metric, 'period' => 'day', 'metric_type' => 'time_series', 'since' => $since, 'until' => $until, 'access_token' => $token],
+                ['metric' => $metric, 'period' => 'day', 'since' => $since, 'until' => $until, 'access_token' => $token],
+                ['metric' => $metric, 'period' => 'day', 'metric_type' => 'time_series', 'access_token' => $token],
+                ['metric' => $metric, 'period' => 'day', 'access_token' => $token],
+            ];
 
-            if (!isset($data['error']) && !empty($data['data'])) {
-                $allData = array_merge($allData, $data['data']);
-                continue;
+            foreach ($attempts as $params) {
+                $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
+                $data = $response->json();
+
+                if (!isset($data['error']) && !empty($data['data'])) {
+                    $allData = array_merge($allData, $data['data']);
+                    break;
+                }
             }
+        }
 
-            // Fallback: no date range
-            $response = Http::get("{$this->igApi}/{$userId}/insights", [
-                'metric' => $metric,
-                'period' => 'day',
-                'access_token' => $token,
-            ]);
+        // ── 2. Total-value metrics (clicks, contacts, etc.) ─────────────
+        $totalMetrics = ['website_clicks', 'email_contacts', 'phone_call_clicks', 'get_directions_clicks', 'text_message_clicks'];
 
-            $data = $response->json();
+        foreach ($totalMetrics as $metric) {
+            $attempts = [
+                ['metric' => $metric, 'period' => 'day', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'access_token' => $token],
+                ['metric' => $metric, 'period' => 'day', 'since' => $since, 'until' => $until, 'access_token' => $token],
+                ['metric' => $metric, 'period' => 'day', 'access_token' => $token],
+            ];
 
-            if (!isset($data['error']) && !empty($data['data'])) {
-                $allData = array_merge($allData, $data['data']);
+            foreach ($attempts as $params) {
+                $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
+                $data = $response->json();
+
+                if (!isset($data['error']) && !empty($data['data'])) {
+                    $allData = array_merge($allData, $data['data']);
+                    break;
+                }
             }
+        }
+
+        // ── 3. Compute engagement stats from recent media ───────────────
+        try {
+            $media = $this->getInstagramMedia($userId, $token, 25);
+            if (!empty($media['data'])) {
+                $totalLikes = 0;
+                $totalComments = 0;
+                $postCount = count($media['data']);
+
+                foreach ($media['data'] as $post) {
+                    $totalLikes += $post['like_count'] ?? 0;
+                    $totalComments += $post['comments_count'] ?? 0;
+                }
+
+                // Add synthetic metrics from media data
+                $allData[] = [
+                    'name' => 'total_likes',
+                    'period' => 'lifetime',
+                    'title' => 'Total Likes',
+                    'values' => [['value' => $totalLikes, 'end_time' => $now->toIso8601String()]],
+                ];
+                $allData[] = [
+                    'name' => 'total_comments',
+                    'period' => 'lifetime',
+                    'title' => 'Total Comentarios',
+                    'values' => [['value' => $totalComments, 'end_time' => $now->toIso8601String()]],
+                ];
+                $allData[] = [
+                    'name' => 'total_interactions',
+                    'period' => 'lifetime',
+                    'title' => 'Interacciones',
+                    'values' => [['value' => $totalLikes + $totalComments, 'end_time' => $now->toIso8601String()]],
+                ];
+                $allData[] = [
+                    'name' => 'posts_count',
+                    'period' => 'lifetime',
+                    'title' => 'Posts analizados',
+                    'values' => [['value' => $postCount, 'end_time' => $now->toIso8601String()]],
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Media stats are optional
         }
 
         return ['data' => $allData];
