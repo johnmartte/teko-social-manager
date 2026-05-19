@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
 import { api, formatNum } from "@/lib/api";
@@ -34,6 +34,14 @@ type OnlineFollowersMetric = {
   total_value?: any;
 };
 
+/* ── Time periods ──────────────────────────────────────────── */
+
+const TIME_PERIODS = [
+  { label: "7 dias", days: 7 },
+  { label: "14 dias", days: 14 },
+  { label: "28 dias", days: 28 },
+] as const;
+
 /* ── Helpers ────────────────────────────────────────────────── */
 
 const COLORS = [
@@ -47,11 +55,6 @@ function shortDate(iso: string) {
   return `${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-/**
- * Parse gender/age data from either:
- * - Legacy format: { "M.25-34": 100, "F.18-24": 200 }
- * - v18+ format: total_value.breakdowns[].results[] with dimension_values ["age","gender"]
- */
 function parseGenderAge(audienceData: AudienceMetric[]) {
   const ageGroups: Record<string, { male: number; female: number; unknown: number }> = {};
   let totalMale = 0;
@@ -59,13 +62,11 @@ function parseGenderAge(audienceData: AudienceMetric[]) {
   let totalUnknown = 0;
 
   for (const metric of audienceData) {
-    // v18+ format: total_value.breakdowns
     if (metric.total_value?.breakdowns) {
       for (const bd of metric.total_value.breakdowns) {
         for (const result of bd.results || []) {
           const dims = result.dimension_values || [];
           const val = result.value || 0;
-          // dims could be ["18-24", "M"] or ["M", "18-24"] depending on breakdown order
           let age = "", gender = "";
           for (const d of dims) {
             if (d === "M" || d === "F" || d === "U") gender = d;
@@ -78,9 +79,7 @@ function parseGenderAge(audienceData: AudienceMetric[]) {
           else { ageGroups[age].unknown += val; totalUnknown += val; }
         }
       }
-    }
-    // Legacy format: values[0].value = { "M.25-34": 100 }
-    else if (metric.values?.[0]?.value && typeof metric.values[0].value === "object") {
+    } else if (metric.values?.[0]?.value && typeof metric.values[0].value === "object") {
       const raw = metric.values[0].value as Record<string, number>;
       for (const [key, val] of Object.entries(raw)) {
         const [gender, age] = key.split(".");
@@ -93,13 +92,11 @@ function parseGenderAge(audienceData: AudienceMetric[]) {
     }
   }
 
-  if (totalMale + totalFemale + totalUnknown === 0) return null;
-
+  const total = totalMale + totalFemale + totalUnknown;
   const ageData = Object.entries(ageGroups)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([age, v]) => ({ age, male: v.male, female: v.female, unknown: v.unknown }));
 
-  const total = totalMale + totalFemale + totalUnknown;
   const genderData = [
     { name: "Mujeres", value: totalFemale, pct: total ? Math.round((totalFemale / total) * 100) : 0 },
     { name: "Hombres", value: totalMale, pct: total ? Math.round((totalMale / total) * 100) : 0 },
@@ -111,14 +108,10 @@ function parseGenderAge(audienceData: AudienceMetric[]) {
   return { ageData, genderData, total };
 }
 
-/**
- * Parse location data from either legacy or v18+ format
- */
 function parseLocations(audienceData: AudienceMetric[], limit = 10) {
   const locations: Record<string, number> = {};
 
   for (const metric of audienceData) {
-    // v18+ format
     if (metric.total_value?.breakdowns) {
       for (const bd of metric.total_value.breakdowns) {
         for (const result of bd.results || []) {
@@ -126,9 +119,7 @@ function parseLocations(audienceData: AudienceMetric[], limit = 10) {
           locations[name] = (locations[name] || 0) + (result.value || 0);
         }
       }
-    }
-    // Legacy format
-    else if (metric.values?.[0]?.value && typeof metric.values[0].value === "object") {
+    } else if (metric.values?.[0]?.value && typeof metric.values[0].value === "object") {
       const raw = metric.values[0].value as Record<string, number>;
       for (const [name, val] of Object.entries(raw)) {
         locations[name] = (locations[name] || 0) + val;
@@ -145,7 +136,6 @@ function parseLocations(audienceData: AudienceMetric[], limit = 10) {
 function parseOnlineFollowers(data: OnlineFollowersMetric[]) {
   if (!data.length) return [];
 
-  // v18+ format: total_value.breakdowns
   const metric = data[0];
   if (metric.total_value?.breakdowns) {
     const results = metric.total_value.breakdowns[0]?.results || [];
@@ -157,7 +147,6 @@ function parseOnlineFollowers(data: OnlineFollowersMetric[]) {
       .sort((a: { hour: string }, b: { hour: string }) => a.hour.localeCompare(b.hour));
   }
 
-  // Legacy format: values[].value = { "0": 100, "1": 200, ... }
   const latest = metric.values?.[metric.values.length - 1]?.value;
   if (!latest || typeof latest !== "object") return [];
 
@@ -209,7 +198,6 @@ const IG_COLORS: Record<string, string> = {
   posts_count: "#00b894",
 };
 
-// Metrics where we show latest value instead of total
 const CUMULATIVE_METRICS = new Set(["follower_count", "total_likes", "total_comments", "posts_count"]);
 
 /* ── Component ──────────────────────────────────────────────── */
@@ -222,66 +210,46 @@ export default function InsightsPage() {
   const [onlineData, setOnlineData] = useState<OnlineFollowersMetric[]>([]);
   const [fbInsights, setFbInsights] = useState<InsightMetric[]>([]);
   const [loading, setLoading] = useState(true);
-  const [debugErrors, setDebugErrors] = useState<string[]>([]);
+  const [selectedDays, setSelectedDays] = useState(28);
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     if (!status) return;
     setLoading(true);
-    const errors: string[] = [];
     const promises: Promise<void>[] = [];
 
     if (status.instagram.connected) {
       promises.push(
-        api<{ data: InsightMetric[]; error?: string }>("/instagram/insights")
-          .then((r) => {
-            console.log("IG insights response:", JSON.stringify(r));
-            setIgInsights(r.data || []);
-            if (r.error) errors.push(`insights: ${r.error}`);
-          })
-          .catch((e) => { errors.push(`insights fetch: ${e.message}`); })
+        api<{ data: InsightMetric[] }>(`/instagram/insights?days=${selectedDays}`)
+          .then((r) => setIgInsights(r.data || []))
+          .catch(() => setIgInsights([]))
       );
       promises.push(
-        api<{ data: AudienceMetric[]; _debug_errors?: string[] }>("/instagram/audience")
-          .then((r) => {
-            console.log("IG audience response:", JSON.stringify(r));
-            if (r._debug_errors?.length) {
-              console.warn("Audience debug errors:", r._debug_errors);
-              r._debug_errors.forEach((e) => errors.push(`audience: ${e}`));
-            }
-            setAudience((r.data || []) as AudienceMetric[]);
-          })
-          .catch((e) => { errors.push(`audience fetch: ${e.message}`); })
+        api<{ data: AudienceMetric[] }>("/instagram/audience")
+          .then((r) => setAudience((r.data || []) as AudienceMetric[]))
+          .catch(() => setAudience([]))
       );
       promises.push(
         api<{ data: OnlineFollowersMetric[] }>("/instagram/online-followers")
-          .then((r) => {
-            console.log("IG online response:", JSON.stringify(r));
-            setOnlineData((r.data || []) as OnlineFollowersMetric[]);
-          })
-          .catch((e) => { errors.push(`online: ${e.message}`); })
+          .then((r) => setOnlineData((r.data || []) as OnlineFollowersMetric[]))
+          .catch(() => setOnlineData([]))
       );
     }
 
     if (status.facebook.connected) {
       promises.push(
         api<{ data: InsightMetric[] }>("/facebook/page/insights?period=day")
-          .then((r) => {
-            console.log("FB insights response:", JSON.stringify(r));
-            setFbInsights(r.data || []);
-          })
-          .catch((e) => { errors.push(`fb insights: ${e.message}`); })
+          .then((r) => setFbInsights(r.data || []))
+          .catch(() => setFbInsights([]))
       );
     }
 
-    Promise.all(promises).finally(() => {
-      setDebugErrors(errors);
-      setLoading(false);
-    });
-  }, [status]);
+    Promise.all(promises).finally(() => setLoading(false));
+  }, [status, selectedDays]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   /* ── Derived data ──────────────────────────────────── */
 
-  // Build chart data dynamically for ALL metrics that have values
   const igChartMetrics = useMemo(() => {
     return igInsights
       .filter((m) => m.values && m.values.length > 0)
@@ -300,11 +268,11 @@ export default function InsightsPage() {
   }, [igInsights]);
 
   const genderAgeRaw = useMemo(() => {
-    // Find gender/age data from either v18+ or legacy format
     const genderAgeMetrics = audience.filter((a) =>
       a.name === "audience_gender_age" ||
       a.name === "follower_demographics" ||
       a.name === "reached_audience_demographics" ||
+      a.name === "engaged_audience_demographics" ||
       (a._breakdown === "age,gender")
     );
     if (!genderAgeMetrics.length) return null;
@@ -346,28 +314,58 @@ export default function InsightsPage() {
     );
   }
 
+  // Whether we have real demographic data or not
+  const hasGenderData = genderAgeRaw !== null && genderAgeRaw.total > 0;
+  const hasCityData = cityData.length > 0;
+  const hasCountryData = countryData.length > 0;
+  const hasOnlineData = onlineFollowers.length > 0;
+
+  // Placeholder empty age data for chart
+  const emptyAgeData = [
+    { age: "13-17", male: 0, female: 0, unknown: 0 },
+    { age: "18-24", male: 0, female: 0, unknown: 0 },
+    { age: "25-34", male: 0, female: 0, unknown: 0 },
+    { age: "35-44", male: 0, female: 0, unknown: 0 },
+    { age: "45-54", male: 0, female: 0, unknown: 0 },
+    { age: "55-64", male: 0, female: 0, unknown: 0 },
+    { age: "65+", male: 0, female: 0, unknown: 0 },
+  ];
+  const emptyGenderData = [
+    { name: "Mujeres", value: 0, pct: 0 },
+    { name: "Hombres", value: 0, pct: 0 },
+  ];
+
   return (
     <div className="space-y-6 max-w-7xl">
-      <div>
-        <h1 className="text-2xl font-bold">Estadisticas</h1>
-        <p className="text-sm text-muted mt-1">Analisis detallado de tus redes sociales (ultimos 30 dias).</p>
-      </div>
-
-      {debugErrors.length > 0 && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-          <p className="text-xs font-bold text-red-400 mb-1">Debug - Errores API:</p>
-          {debugErrors.map((e, i) => (
-            <p key={i} className="text-xs text-red-300">{e}</p>
+      {/* ── Header + Time filter ──────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Estadisticas</h1>
+          <p className="text-sm text-muted mt-1">Analisis detallado de tus redes sociales.</p>
+        </div>
+        <div className="flex gap-1 bg-card/80 border border-border rounded-xl p-1">
+          {TIME_PERIODS.map((tp) => (
+            <button
+              key={tp.days}
+              onClick={() => setSelectedDays(tp.days)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                selectedDays === tp.days
+                  ? "bg-[#e1306c] text-white shadow-sm"
+                  : "text-muted hover:text-foreground hover:bg-white/5"
+              }`}
+            >
+              {tp.label}
+            </button>
           ))}
         </div>
-      )}
+      </div>
 
       {/* ── Instagram ────────────────────────────────── */}
       {igConnected && (
         <>
-          {/* Summary cards - show all available metrics */}
+          {/* Summary cards */}
           {igChartMetrics.length > 0 && (
-            <div className={`grid grid-cols-2 gap-4 ${igChartMetrics.length >= 4 ? "sm:grid-cols-4" : `sm:grid-cols-${Math.min(igChartMetrics.length, 4)}`}`}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {igChartMetrics.map((m) => (
                 <SummaryCard
                   key={m.name}
@@ -379,7 +377,15 @@ export default function InsightsPage() {
             </div>
           )}
 
-          {/* Trend charts - 2 per row, only for metrics with multiple data points */}
+          {igChartMetrics.length === 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {["Alcance", "Seguidores", "Visitas al perfil", "Interacciones"].map((label) => (
+                <SummaryCard key={label} label={label} value={0} color="#e1306c" />
+              ))}
+            </div>
+          )}
+
+          {/* Trend charts */}
           {igChartMetrics.filter((m) => m.data.length > 1).length > 0 && (
             <div className="grid gap-6 lg:grid-cols-2">
               {igChartMetrics
@@ -392,22 +398,22 @@ export default function InsightsPage() {
             </div>
           )}
 
-          {igChartMetrics.length === 0 && (
-            <Card title="Instagram" color="#e1306c">
-              <NoData />
-            </Card>
-          )}
+          {/* ── Demographics (always visible) ────────── */}
+          <h2 className="text-lg font-bold mt-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#c13584]" />
+            Audiencia
+          </h2>
 
-          {/* Gender + Age demographics */}
-          {genderAgeRaw && (
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card title="Genero de la audiencia" color="#c13584">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Gender */}
+            <Card title="Genero de la audiencia" color="#c13584">
+              {hasGenderData ? (
                 <div className="flex items-center justify-center gap-8 py-2">
                   <div className="w-40 h-40">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={genderAgeRaw.genderData}
+                          data={genderAgeRaw!.genderData}
                           dataKey="value"
                           nameKey="name"
                           cx="50%"
@@ -416,7 +422,7 @@ export default function InsightsPage() {
                           outerRadius={65}
                           paddingAngle={3}
                         >
-                          {genderAgeRaw.genderData.map((_, i) => (
+                          {genderAgeRaw!.genderData.map((_, i) => (
                             <Cell key={i} fill={["#e1306c", "#405de6", "#999"][i]} />
                           ))}
                         </Pie>
@@ -424,113 +430,132 @@ export default function InsightsPage() {
                     </ResponsiveContainer>
                   </div>
                   <div className="space-y-2">
-                    {genderAgeRaw.genderData.map((g, i) => (
+                    {genderAgeRaw!.genderData.map((g, i) => (
                       <div key={g.name} className="flex items-center gap-2">
-                        <span
-                          className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: ["#e1306c", "#405de6", "#999"][i] }}
-                        />
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: ["#e1306c", "#405de6", "#999"][i] }} />
                         <span className="text-sm font-medium">{g.pct}%</span>
                         <span className="text-xs text-muted">{g.name}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-              </Card>
-
-              <Card title="Edad de la audiencia" color="#5851db">
-                <div className="h-52">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={genderAgeRaw.ageData} barGap={2}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #eee)" />
-                      <XAxis dataKey="age" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} width={40} />
-                      <Tooltip
-                        contentStyle={{
-                          background: "var(--color-card, #fff)",
-                          border: "1px solid var(--color-border, #eee)",
-                          borderRadius: 12,
-                          fontSize: 12,
-                        }}
-                      />
-                      <Bar dataKey="female" name="Mujeres" fill="#e1306c" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="male" name="Hombres" fill="#405de6" radius={[4, 4, 0, 0]} />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                    </BarChart>
-                  </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center gap-8 py-2">
+                  <div className="w-40 h-40">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={emptyGenderData} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={65}>
+                          <Cell fill="#333" />
+                          <Cell fill="#444" />
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="space-y-2">
+                    {emptyGenderData.map((g, i) => (
+                      <div key={g.name} className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: ["#e1306c", "#405de6"][i] }} />
+                        <span className="text-sm font-medium">0%</span>
+                        <span className="text-xs text-muted">{g.name}</span>
+                      </div>
+                    ))}
+                    <p className="text-[10px] text-muted/60 mt-1">Sin datos suficientes</p>
+                  </div>
                 </div>
-              </Card>
-            </div>
-          )}
+              )}
+            </Card>
 
-          {/* Locations */}
-          {(cityData.length > 0 || countryData.length > 0) && (
-            <div className="grid gap-6 lg:grid-cols-2">
-              {cityData.length > 0 && (
-                <Card title="Principales ciudades" color="#00b894">
-                  <div className="space-y-2">
-                    {cityData.map((c, i) => {
-                      const max = cityData[0].value;
-                      return (
-                        <div key={c.name} className="flex items-center gap-3">
-                          <span className="text-xs text-muted w-5 text-right">{i + 1}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-medium truncate">{c.name}</span>
-                              <span className="text-xs text-muted ml-2">{formatNum(c.value)}</span>
-                            </div>
-                            <div className="h-1.5 bg-background rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${(c.value / max) * 100}%`,
-                                  backgroundColor: COLORS[i % COLORS.length],
-                                }}
-                              />
-                            </div>
+            {/* Age */}
+            <Card title="Edad de la audiencia" color="#5851db">
+              <div className="h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hasGenderData ? genderAgeRaw!.ageData : emptyAgeData} barGap={2}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #eee)" />
+                    <XAxis dataKey="age" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} width={40} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(30,30,35,0.95)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 12,
+                        fontSize: 12,
+                        color: "#fff",
+                      }}
+                    />
+                    <Bar dataKey="female" name="Mujeres" fill="#e1306c" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="male" name="Hombres" fill="#405de6" radius={[4, 4, 0, 0]} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {!hasGenderData && <p className="text-[10px] text-muted/60 text-center">Sin datos suficientes</p>}
+            </Card>
+          </div>
+
+          {/* Locations (always visible) */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card title="Principales ciudades" color="#00b894">
+              {hasCityData ? (
+                <div className="space-y-2">
+                  {cityData.map((c, i) => {
+                    const max = cityData[0].value;
+                    return (
+                      <div key={c.name} className="flex items-center gap-3">
+                        <span className="text-xs text-muted w-5 text-right">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium truncate">{c.name}</span>
+                            <span className="text-xs text-muted ml-2">{formatNum(c.value)}</span>
+                          </div>
+                          <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${(c.value / max) * 100}%`, backgroundColor: COLORS[i % COLORS.length] }}
+                            />
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </Card>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState label="No hay datos de ciudades disponibles" />
               )}
-              {countryData.length > 0 && (
-                <Card title="Principales paises" color="#0984e3">
-                  <div className="space-y-2">
-                    {countryData.map((c, i) => {
-                      const max = countryData[0].value;
-                      return (
-                        <div key={c.name} className="flex items-center gap-3">
-                          <span className="text-xs text-muted w-5 text-right">{i + 1}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-medium truncate">{c.name}</span>
-                              <span className="text-xs text-muted ml-2">{formatNum(c.value)}</span>
-                            </div>
-                            <div className="h-1.5 bg-background rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${(c.value / max) * 100}%`,
-                                  backgroundColor: COLORS[i % COLORS.length],
-                                }}
-                              />
-                            </div>
+            </Card>
+            <Card title="Principales paises" color="#0984e3">
+              {hasCountryData ? (
+                <div className="space-y-2">
+                  {countryData.map((c, i) => {
+                    const max = countryData[0].value;
+                    return (
+                      <div key={c.name} className="flex items-center gap-3">
+                        <span className="text-xs text-muted w-5 text-right">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium truncate">{c.name}</span>
+                            <span className="text-xs text-muted ml-2">{formatNum(c.value)}</span>
+                          </div>
+                          <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${(c.value / max) * 100}%`, backgroundColor: COLORS[i % COLORS.length] }}
+                            />
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </Card>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState label="No hay datos de paises disponibles" />
               )}
-            </div>
-          )}
+            </Card>
+          </div>
 
-          {/* Online followers / activity hours */}
-          {onlineFollowers.length > 0 && (
-            <Card title="Actividad de seguidores por hora" color="#6c5ce7">
-              <p className="text-xs text-muted mb-3">Cuando tus seguidores estan mas activos (hora local).</p>
+          {/* Online followers (always visible) */}
+          <Card title="Actividad de seguidores por hora" color="#6c5ce7">
+            <p className="text-xs text-muted mb-3">Cuando tus seguidores estan mas activos (hora local).</p>
+            {hasOnlineData ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={onlineFollowers}>
@@ -539,10 +564,11 @@ export default function InsightsPage() {
                     <YAxis tick={{ fontSize: 11 }} width={45} />
                     <Tooltip
                       contentStyle={{
-                        background: "var(--color-card, #fff)",
-                        border: "1px solid var(--color-border, #eee)",
+                        background: "rgba(30,30,35,0.95)",
+                        border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: 12,
                         fontSize: 12,
+                        color: "#fff",
                       }}
                       formatter={(v) => [formatNum(v as number), "Seguidores activos"]}
                     />
@@ -550,8 +576,10 @@ export default function InsightsPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </Card>
-          )}
+            ) : (
+              <EmptyState label="No hay datos de actividad disponibles" />
+            )}
+          </Card>
         </>
       )}
 
@@ -579,7 +607,6 @@ export default function InsightsPage() {
             )}
           </div>
 
-          {/* Facebook trend charts */}
           {fbInsights.length > 0 && (
             <div className="grid gap-6 lg:grid-cols-2">
               {fbInsights.filter(m => m.values?.length > 1).slice(0, 4).map((m) => (
@@ -612,7 +639,7 @@ function SummaryCard({ label, value, color }: { label: string; value: number | n
   return (
     <div className="bg-card/95 rounded-2xl border border-border p-4 shadow-sm">
       <p className="text-2xl font-bold" style={{ color }}>
-        {formatNum(value)}
+        {formatNum(value ?? 0)}
       </p>
       <p className="text-xs text-muted mt-1">{label}</p>
     </div>
@@ -675,6 +702,13 @@ function ChartArea({ data, color, label }: { data: { date: string; value: number
   );
 }
 
-function NoData() {
-  return <p className="text-sm text-muted text-center py-8">Sin datos disponibles para este periodo.</p>;
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-8 gap-2">
+      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+        <span className="text-lg text-muted/40">0</span>
+      </div>
+      <p className="text-xs text-muted/60">{label}</p>
+    </div>
+  );
 }

@@ -142,10 +142,11 @@ class MetaApiService
      * Get account-level insights (reach, impressions, follower_count, profile_views).
      * Requests 30 days of daily data so the frontend can chart trends.
      */
-    public function getInstagramInsights(string $userId, string $token, string $period = 'day'): array
+    public function getInstagramInsights(string $userId, string $token, string $period = 'day', int $days = 28): array
     {
+        $days  = min(max($days, 1), 28); // clamp 1–28
         $now   = now();
-        $since = $now->copy()->subDays(28)->timestamp;
+        $since = $now->copy()->subDays($days)->timestamp;
         $until = $now->timestamp;
 
         $allData = [];

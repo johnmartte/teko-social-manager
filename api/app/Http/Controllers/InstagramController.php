@@ -32,9 +32,10 @@ class InstagramController extends Controller
     public function insights(Request $request): JsonResponse
     {
         $period = $request->input('period', 'day');
+        $days = (int) $request->input('days', 28);
 
         try {
-            $data = $this->meta->getInstagramInsights($request->attributes->get('ig_user_id'), $request->attributes->get('ig_token'), $period);
+            $data = $this->meta->getInstagramInsights($request->attributes->get('ig_user_id'), $request->attributes->get('ig_token'), $period, $days);
             return response()->json($data);
         } catch (\Throwable $e) {
             \Log::error('Instagram insights error: ' . $e->getMessage());
