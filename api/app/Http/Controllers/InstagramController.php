@@ -33,9 +33,13 @@ class InstagramController extends Controller
     {
         $period = $request->input('period', 'day');
 
-        return response()->json(
-            $this->meta->getInstagramInsights($request->attributes->get('ig_user_id'), $request->attributes->get('ig_token'), $period)
-        );
+        try {
+            $data = $this->meta->getInstagramInsights($request->attributes->get('ig_user_id'), $request->attributes->get('ig_token'), $period);
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            \Log::error('Instagram insights error: ' . $e->getMessage());
+            return response()->json(['data' => [], 'error' => $e->getMessage()]);
+        }
     }
 
     public function audience(Request $request): JsonResponse

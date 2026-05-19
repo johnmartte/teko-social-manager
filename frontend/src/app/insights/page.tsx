@@ -106,39 +106,57 @@ export default function InsightsPage() {
   const [onlineData, setOnlineData] = useState<OnlineFollowersMetric[]>([]);
   const [fbInsights, setFbInsights] = useState<InsightMetric[]>([]);
   const [loading, setLoading] = useState(true);
+  const [debugErrors, setDebugErrors] = useState<string[]>([]);
 
   useEffect(() => {
     if (!status) return;
     setLoading(true);
+    const errors: string[] = [];
     const promises: Promise<void>[] = [];
 
     if (status.instagram.connected) {
       promises.push(
-        api<{ data: InsightMetric[] }>("/instagram/insights")
-          .then((r) => setIgInsights(r.data || []))
-          .catch(() => {})
+        api<{ data: InsightMetric[]; error?: string }>("/instagram/insights")
+          .then((r) => {
+            console.log("IG insights response:", JSON.stringify(r));
+            setIgInsights(r.data || []);
+            if (r.error) errors.push(`insights: ${r.error}`);
+          })
+          .catch((e) => { errors.push(`insights fetch: ${e.message}`); })
       );
       promises.push(
         api<{ data: AudienceMetric[] }>("/instagram/audience")
-          .then((r) => setAudience((r.data || []) as AudienceMetric[]))
-          .catch(() => {})
+          .then((r) => {
+            console.log("IG audience response:", JSON.stringify(r));
+            setAudience((r.data || []) as AudienceMetric[]);
+          })
+          .catch((e) => { errors.push(`audience: ${e.message}`); })
       );
       promises.push(
         api<{ data: OnlineFollowersMetric[] }>("/instagram/online-followers")
-          .then((r) => setOnlineData((r.data || []) as OnlineFollowersMetric[]))
-          .catch(() => {})
+          .then((r) => {
+            console.log("IG online response:", JSON.stringify(r));
+            setOnlineData((r.data || []) as OnlineFollowersMetric[]);
+          })
+          .catch((e) => { errors.push(`online: ${e.message}`); })
       );
     }
 
     if (status.facebook.connected) {
       promises.push(
         api<{ data: InsightMetric[] }>("/facebook/page/insights?period=day")
-          .then((r) => setFbInsights(r.data || []))
-          .catch(() => {})
+          .then((r) => {
+            console.log("FB insights response:", JSON.stringify(r));
+            setFbInsights(r.data || []);
+          })
+          .catch((e) => { errors.push(`fb insights: ${e.message}`); })
       );
     }
 
-    Promise.all(promises).finally(() => setLoading(false));
+    Promise.all(promises).finally(() => {
+      setDebugErrors(errors);
+      setLoading(false);
+    });
   }, [status]);
 
   /* ── Derived data ──────────────────────────────────── */
@@ -238,6 +256,15 @@ export default function InsightsPage() {
         <h1 className="text-2xl font-bold">Estadisticas</h1>
         <p className="text-sm text-muted mt-1">Analisis detallado de tus redes sociales (ultimos 30 dias).</p>
       </div>
+
+      {debugErrors.length > 0 && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+          <p className="text-xs font-bold text-red-400 mb-1">Debug - Errores API:</p>
+          {debugErrors.map((e, i) => (
+            <p key={i} className="text-xs text-red-300">{e}</p>
+          ))}
+        </div>
+      )}
 
       {/* ── Instagram ────────────────────────────────── */}
       {igConnected && (

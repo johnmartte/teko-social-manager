@@ -155,6 +155,7 @@ class MetaApiService
             'reach',
         ];
 
+        // First try with since/until for 30 days of data
         foreach ($metricSets as $metrics) {
             $response = Http::get("{$this->igApi}/{$userId}/insights", [
                 'metric' => $metrics,
@@ -169,6 +170,25 @@ class MetaApiService
             if (!isset($data['error'])) {
                 return $data;
             }
+
+            \Log::warning("IG insights error (with dates, metrics={$metrics}): " . json_encode($data['error'] ?? $data));
+        }
+
+        // Fallback: try WITHOUT since/until (returns default ~2 days)
+        foreach ($metricSets as $metrics) {
+            $response = Http::get("{$this->igApi}/{$userId}/insights", [
+                'metric' => $metrics,
+                'period' => 'day',
+                'access_token' => $token,
+            ]);
+
+            $data = $response->json();
+
+            if (!isset($data['error'])) {
+                return $data;
+            }
+
+            \Log::warning("IG insights error (no dates, metrics={$metrics}): " . json_encode($data['error'] ?? $data));
         }
 
         return $data ?? ['data' => []];
