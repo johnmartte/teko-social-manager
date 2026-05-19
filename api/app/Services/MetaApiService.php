@@ -242,32 +242,31 @@ class MetaApiService
 
     /**
      * Get audience demographics: gender-age, city, country, locale.
-     * These use period=lifetime.
+     * These use period=lifetime. Each metric fetched individually for v18+ compat.
      */
     public function getInstagramAudience(string $userId, string $token): array
     {
-        $metricSets = [
-            'audience_gender_age,audience_city,audience_country,audience_locale',
-            'audience_gender_age,audience_city,audience_country',
-            'audience_gender_age,audience_city',
-            'audience_gender_age',
-        ];
+        $metrics = ['audience_gender_age', 'audience_city', 'audience_country', 'audience_locale'];
+        $allData = [];
 
-        foreach ($metricSets as $metrics) {
-            $response = Http::get("{$this->igApi}/{$userId}/insights", [
-                'metric' => $metrics,
-                'period' => 'lifetime',
-                'access_token' => $token,
-            ]);
+        foreach ($metrics as $metric) {
+            $attempts = [
+                ['metric' => $metric, 'period' => 'lifetime', 'metric_type' => 'total_value', 'access_token' => $token],
+                ['metric' => $metric, 'period' => 'lifetime', 'access_token' => $token],
+            ];
 
-            $data = $response->json();
+            foreach ($attempts as $params) {
+                $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
+                $data = $response->json();
 
-            if (!isset($data['error'])) {
-                return $data;
+                if (!isset($data['error']) && !empty($data['data'])) {
+                    $allData = array_merge($allData, $data['data']);
+                    break;
+                }
             }
         }
 
-        return $data ?? ['data' => []];
+        return ['data' => $allData];
     }
 
     /**
@@ -276,19 +275,21 @@ class MetaApiService
      */
     public function getInstagramOnlineFollowers(string $userId, string $token): array
     {
-        $response = Http::get("{$this->igApi}/{$userId}/insights", [
-            'metric' => 'online_followers',
-            'period' => 'lifetime',
-            'access_token' => $token,
-        ]);
+        $attempts = [
+            ['metric' => 'online_followers', 'period' => 'lifetime', 'metric_type' => 'total_value', 'access_token' => $token],
+            ['metric' => 'online_followers', 'period' => 'lifetime', 'access_token' => $token],
+        ];
 
-        $data = $response->json();
+        foreach ($attempts as $params) {
+            $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
+            $data = $response->json();
 
-        if (isset($data['error'])) {
-            return ['data' => []];
+            if (!isset($data['error']) && !empty($data['data'])) {
+                return $data;
+            }
         }
 
-        return $data;
+        return ['data' => []];
     }
 
     public function getMediaInsights(string $mediaId, string $token): array
