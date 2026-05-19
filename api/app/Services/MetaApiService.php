@@ -140,11 +140,43 @@ class MetaApiService
 
     public function getInstagramInsights(string $userId, string $token, string $period = 'day'): array
     {
-        return Http::get("{$this->igApi}/{$userId}/insights", [
+        // Try the newer metrics first (API v18+), fall back to legacy
+        $response = Http::get("{$this->igApi}/{$userId}/insights", [
             'metric' => 'impressions,reach,profile_views,follower_count',
             'period' => $period,
             'access_token' => $token,
-        ])->json();
+        ]);
+
+        $data = $response->json();
+
+        // If legacy metrics fail, try with supported period/metric combos
+        if (isset($data['error'])) {
+            // follower_count only works with 'day' period
+            $metrics = match ($period) {
+                'day' => 'impressions,reach,follower_count',
+                default => 'impressions,reach',
+            };
+
+            $response = Http::get("{$this->igApi}/{$userId}/insights", [
+                'metric' => $metrics,
+                'period' => $period,
+                'access_token' => $token,
+            ]);
+
+            $data = $response->json();
+
+            // Last resort: try total_interactions which works on newer API
+            if (isset($data['error'])) {
+                $response = Http::get("{$this->igApi}/{$userId}/insights", [
+                    'metric' => 'reach,follower_count',
+                    'period' => 'day',
+                    'access_token' => $token,
+                ]);
+                $data = $response->json();
+            }
+        }
+
+        return $data;
     }
 
     public function getMediaInsights(string $mediaId, string $token): array
