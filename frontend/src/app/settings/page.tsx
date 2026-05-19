@@ -7,7 +7,8 @@ import { getLoginUrl } from "@/lib/api";
 import SocialLogo from "@/components/SocialLogo";
 
 export default function SettingsPage() {
-  const { status, user, logout, updateEmail, updatePassword } = useAuth();
+  const { status, user, disconnectSocial, updateEmail, updatePassword } = useAuth();
+  const [disconnecting, setDisconnecting] = useState(false);
 
   const [email, setEmail] = useState(user?.email ?? "");
   const [emailPassword, setEmailPassword] = useState("");
@@ -135,10 +136,29 @@ export default function SettingsPage() {
               >
                 {igConnected || fbConnected ? "Reconectar cuentas" : "Conectar cuentas"}
               </a>
-              {(igConnected || fbConnected) && (
+              {igConnected && (
                 <button
-                  onClick={logout}
-                  className="text-xs px-4 py-2.5 rounded-xl border border-border text-muted hover:text-foreground hover:border-foreground/20 transition-colors"
+                  onClick={async () => { setDisconnecting(true); await disconnectSocial("instagram"); setDisconnecting(false); }}
+                  disabled={disconnecting}
+                  className="text-xs px-4 py-2.5 rounded-xl border border-border text-muted hover:text-foreground hover:border-foreground/20 transition-colors disabled:opacity-50"
+                >
+                  Desconectar Instagram
+                </button>
+              )}
+              {fbConnected && (
+                <button
+                  onClick={async () => { setDisconnecting(true); await disconnectSocial("facebook"); setDisconnecting(false); }}
+                  disabled={disconnecting}
+                  className="text-xs px-4 py-2.5 rounded-xl border border-border text-muted hover:text-foreground hover:border-foreground/20 transition-colors disabled:opacity-50"
+                >
+                  Desconectar Facebook
+                </button>
+              )}
+              {igConnected && fbConnected && (
+                <button
+                  onClick={async () => { setDisconnecting(true); await disconnectSocial(); setDisconnecting(false); }}
+                  disabled={disconnecting}
+                  className="text-xs px-4 py-2.5 rounded-xl border border-red-300 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
                   Desconectar todo
                 </button>

@@ -35,6 +35,7 @@ type AuthContextType = {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   updateEmail: (newEmail: string, currentPassword: string) => Promise<void>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  disconnectSocial: (platform?: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -48,6 +49,7 @@ const AuthContext = createContext<AuthContextType>({
   loginWithEmail: async () => {},
   updateEmail: async () => {},
   updatePassword: async () => {},
+  disconnectSocial: async () => {},
   logout: () => {},
 });
 
@@ -214,6 +216,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const disconnectSocial = useCallback(async (platform?: string) => {
+    const appToken = localStorage.getItem("app_token");
+    if (!appToken) return;
+    await requestSystemAuth<{ success: boolean }>("/auth/disconnect", {
+      method: "POST",
+      payload: platform ? { platform } : {},
+      token: appToken,
+    });
+    await fetchStatus();
+  }, [fetchStatus]);
+
   const logout = useCallback(() => {
     const appToken = localStorage.getItem("app_token");
     if (appToken) {
@@ -280,6 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithEmail,
         updateEmail,
         updatePassword,
+        disconnectSocial,
         logout,
       }}
     >

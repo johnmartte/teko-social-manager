@@ -229,4 +229,23 @@ class AuthController extends Controller
         }
         return response()->json(['success' => true]);
     }
+
+    public function disconnectSocial(Request $request): JsonResponse
+    {
+        $user = auth('sanctum')->user();
+        if (!$user) {
+            return response()->json(['error' => 'No autenticado'], 401);
+        }
+
+        $platform = $request->input('platform'); // 'instagram', 'facebook', or null for all
+
+        if ($platform) {
+            $user->socialCredentials()->where('platform', $platform)->delete();
+        } else {
+            $user->socialCredentials()->delete();
+            $user->update(['meta_id' => null]);
+        }
+
+        return response()->json(['success' => true]);
+    }
 }
