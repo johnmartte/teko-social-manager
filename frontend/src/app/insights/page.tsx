@@ -23,14 +23,15 @@ import {
 
 /* ── Types ──────────────────────────────────────────────────── */
 
-type AudienceMetric = {
-  name: string;
-  values: { value: Record<string, number> }[];
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AudienceMetric = Record<string, any>;
 
 type OnlineFollowersMetric = {
   name: string;
-  values: { value: Record<string, number>; end_time: string }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  values: { value: any; end_time: string }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  total_value?: any;
 };
 
 /* ── Helpers ────────────────────────────────────────────────── */
@@ -46,19 +47,53 @@ function shortDate(iso: string) {
   return `${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-function parseGenderAge(raw: Record<string, number>) {
+/**
+ * Parse gender/age data from either:
+ * - Legacy format: { "M.25-34": 100, "F.18-24": 200 }
+ * - v18+ format: total_value.breakdowns[].results[] with dimension_values ["age","gender"]
+ */
+function parseGenderAge(audienceData: AudienceMetric[]) {
   const ageGroups: Record<string, { male: number; female: number; unknown: number }> = {};
   let totalMale = 0;
   let totalFemale = 0;
   let totalUnknown = 0;
 
-  for (const [key, val] of Object.entries(raw)) {
-    const [gender, age] = key.split(".");
-    if (!ageGroups[age]) ageGroups[age] = { male: 0, female: 0, unknown: 0 };
-    if (gender === "M") { ageGroups[age].male += val; totalMale += val; }
-    else if (gender === "F") { ageGroups[age].female += val; totalFemale += val; }
-    else { ageGroups[age].unknown += val; totalUnknown += val; }
+  for (const metric of audienceData) {
+    // v18+ format: total_value.breakdowns
+    if (metric.total_value?.breakdowns) {
+      for (const bd of metric.total_value.breakdowns) {
+        for (const result of bd.results || []) {
+          const dims = result.dimension_values || [];
+          const val = result.value || 0;
+          // dims could be ["18-24", "M"] or ["M", "18-24"] depending on breakdown order
+          let age = "", gender = "";
+          for (const d of dims) {
+            if (d === "M" || d === "F" || d === "U") gender = d;
+            else age = d;
+          }
+          if (!age) continue;
+          if (!ageGroups[age]) ageGroups[age] = { male: 0, female: 0, unknown: 0 };
+          if (gender === "M") { ageGroups[age].male += val; totalMale += val; }
+          else if (gender === "F") { ageGroups[age].female += val; totalFemale += val; }
+          else { ageGroups[age].unknown += val; totalUnknown += val; }
+        }
+      }
+    }
+    // Legacy format: values[0].value = { "M.25-34": 100 }
+    else if (metric.values?.[0]?.value && typeof metric.values[0].value === "object") {
+      const raw = metric.values[0].value as Record<string, number>;
+      for (const [key, val] of Object.entries(raw)) {
+        const [gender, age] = key.split(".");
+        if (!age) continue;
+        if (!ageGroups[age]) ageGroups[age] = { male: 0, female: 0, unknown: 0 };
+        if (gender === "M") { ageGroups[age].male += val; totalMale += val; }
+        else if (gender === "F") { ageGroups[age].female += val; totalFemale += val; }
+        else { ageGroups[age].unknown += val; totalUnknown += val; }
+      }
+    }
   }
+
+  if (totalMale + totalFemale + totalUnknown === 0) return null;
 
   const ageData = Object.entries(ageGroups)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -76,8 +111,32 @@ function parseGenderAge(raw: Record<string, number>) {
   return { ageData, genderData, total };
 }
 
-function parseLocations(raw: Record<string, number>, limit = 10) {
-  return Object.entries(raw)
+/**
+ * Parse location data from either legacy or v18+ format
+ */
+function parseLocations(audienceData: AudienceMetric[], limit = 10) {
+  const locations: Record<string, number> = {};
+
+  for (const metric of audienceData) {
+    // v18+ format
+    if (metric.total_value?.breakdowns) {
+      for (const bd of metric.total_value.breakdowns) {
+        for (const result of bd.results || []) {
+          const name = (result.dimension_values || []).join(", ");
+          locations[name] = (locations[name] || 0) + (result.value || 0);
+        }
+      }
+    }
+    // Legacy format
+    else if (metric.values?.[0]?.value && typeof metric.values[0].value === "object") {
+      const raw = metric.values[0].value as Record<string, number>;
+      for (const [name, val] of Object.entries(raw)) {
+        locations[name] = (locations[name] || 0) + val;
+      }
+    }
+  }
+
+  return Object.entries(locations)
     .sort(([, a], [, b]) => b - a)
     .slice(0, limit)
     .map(([name, value]) => ({ name, value }));
@@ -85,10 +144,24 @@ function parseLocations(raw: Record<string, number>, limit = 10) {
 
 function parseOnlineFollowers(data: OnlineFollowersMetric[]) {
   if (!data.length) return [];
-  const latest = data[0].values?.[data[0].values.length - 1]?.value;
-  if (!latest) return [];
 
-  return Object.entries(latest)
+  // v18+ format: total_value.breakdowns
+  const metric = data[0];
+  if (metric.total_value?.breakdowns) {
+    const results = metric.total_value.breakdowns[0]?.results || [];
+    return results
+      .map((r: { dimension_values: string[]; value: number }) => ({
+        hour: `${(r.dimension_values?.[0] || "0").padStart(2, "0")}:00`,
+        followers: r.value,
+      }))
+      .sort((a: { hour: string }, b: { hour: string }) => a.hour.localeCompare(b.hour));
+  }
+
+  // Legacy format: values[].value = { "0": 100, "1": 200, ... }
+  const latest = metric.values?.[metric.values.length - 1]?.value;
+  if (!latest || typeof latest !== "object") return [];
+
+  return Object.entries(latest as Record<string, number>)
     .sort(([a], [b]) => Number(a) - Number(b))
     .map(([hour, count]) => ({
       hour: `${hour.padStart(2, "0")}:00`,
@@ -215,21 +288,29 @@ export default function InsightsPage() {
   }, [igInsights]);
 
   const genderAgeRaw = useMemo(() => {
-    const m = audience.find((a) => a.name === "audience_gender_age");
-    if (!m?.values?.[0]?.value) return null;
-    return parseGenderAge(m.values[0].value as Record<string, number>);
+    // Find gender/age data from either v18+ or legacy format
+    const genderAgeMetrics = audience.filter((a) =>
+      a.name === "audience_gender_age" ||
+      a.name === "follower_demographics" ||
+      a.name === "reached_audience_demographics" ||
+      (a._breakdown === "age,gender")
+    );
+    if (!genderAgeMetrics.length) return null;
+    return parseGenderAge(genderAgeMetrics);
   }, [audience]);
 
   const cityData = useMemo(() => {
-    const m = audience.find((a) => a.name === "audience_city");
-    if (!m?.values?.[0]?.value) return [];
-    return parseLocations(m.values[0].value as Record<string, number>);
+    const cityMetrics = audience.filter((a) =>
+      a.name === "audience_city" || a._breakdown === "city"
+    );
+    return parseLocations(cityMetrics);
   }, [audience]);
 
   const countryData = useMemo(() => {
-    const m = audience.find((a) => a.name === "audience_country");
-    if (!m?.values?.[0]?.value) return [];
-    return parseLocations(m.values[0].value as Record<string, number>);
+    const countryMetrics = audience.filter((a) =>
+      a.name === "audience_country" || a._breakdown === "country"
+    );
+    return parseLocations(countryMetrics);
   }, [audience]);
 
   const onlineFollowers = useMemo(() => parseOnlineFollowers(onlineData), [onlineData]);

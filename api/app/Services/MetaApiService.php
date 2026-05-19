@@ -241,18 +241,25 @@ class MetaApiService
     }
 
     /**
-     * Get audience demographics: gender-age, city, country, locale.
-     * These use period=lifetime. Each metric fetched individually for v18+ compat.
+     * Get audience demographics using the v18+ API format.
+     * Uses follower_demographics + reached_audience_demographics with breakdown param.
      */
     public function getInstagramAudience(string $userId, string $token): array
     {
-        $metrics = ['audience_gender_age', 'audience_city', 'audience_country', 'audience_locale'];
         $allData = [];
 
-        foreach ($metrics as $metric) {
+        // v18+ uses follower_demographics with breakdown parameter
+        $breakdowns = [
+            'age,gender' => 'follower_demographics_age_gender',
+            'city'       => 'follower_demographics_city',
+            'country'    => 'follower_demographics_country',
+        ];
+
+        foreach ($breakdowns as $breakdown => $dataName) {
+            // Try new API first (follower_demographics), then reached_audience, then legacy
             $attempts = [
-                ['metric' => $metric, 'period' => 'lifetime', 'metric_type' => 'total_value', 'access_token' => $token],
-                ['metric' => $metric, 'period' => 'lifetime', 'access_token' => $token],
+                ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => $breakdown, 'access_token' => $token],
+                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => $breakdown, 'access_token' => $token],
             ];
 
             foreach ($attempts as $params) {
@@ -260,9 +267,44 @@ class MetaApiService
                 $data = $response->json();
 
                 if (!isset($data['error']) && !empty($data['data'])) {
+                    // Rename data entries for frontend compatibility
+                    foreach ($data['data'] as &$entry) {
+                        $entry['_breakdown'] = $breakdown;
+                        $entry['_original_name'] = $entry['name'];
+                    }
                     $allData = array_merge($allData, $data['data']);
                     break;
                 }
+            }
+        }
+
+        // Also try legacy metrics as fallback
+        $legacyMetrics = ['audience_gender_age', 'audience_city', 'audience_country'];
+        foreach ($legacyMetrics as $metric) {
+            // Skip if we already got data for this breakdown
+            $alreadyHave = false;
+            foreach ($allData as $d) {
+                $legacy = match ($metric) {
+                    'audience_gender_age' => 'age,gender',
+                    'audience_city' => 'city',
+                    'audience_country' => 'country',
+                    default => '',
+                };
+                if (($d['_breakdown'] ?? '') === $legacy) {
+                    $alreadyHave = true;
+                    break;
+                }
+            }
+            if ($alreadyHave) continue;
+
+            $response = Http::get("{$this->igApi}/{$userId}/insights", [
+                'metric' => $metric,
+                'period' => 'lifetime',
+                'access_token' => $token,
+            ]);
+            $data = $response->json();
+            if (!isset($data['error']) && !empty($data['data'])) {
+                $allData = array_merge($allData, $data['data']);
             }
         }
 
