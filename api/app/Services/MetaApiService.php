@@ -246,25 +246,22 @@ class MetaApiService
         $allData = [];
         $debugErrors = [];
 
-        $now   = now();
-        $since = $now->copy()->subDays(28)->timestamp;
-        $until = $now->timestamp;
-
         $breakdowns = ['age,gender', 'city', 'country'];
 
         foreach ($breakdowns as $breakdown) {
-            // Try multiple metric + param combinations
+            // v20+ valid timeframes: this_month (30d), this_week (7d)
+            // since/until NOT supported for demographic metrics
             $attempts = [
                 // follower_demographics (needs 100+ followers)
                 ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => $breakdown, 'access_token' => $token],
-                // reached_audience_demographics — period + timeframe both required
-                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'last_30_days', 'breakdown' => $breakdown, 'access_token' => $token],
-                // reached with since/until + period
-                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'breakdown' => $breakdown, 'access_token' => $token],
-                // engaged_audience_demographics — period + timeframe
-                ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'last_30_days', 'breakdown' => $breakdown, 'access_token' => $token],
-                // engaged with since/until + period
-                ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'breakdown' => $breakdown, 'access_token' => $token],
+                // reached_audience_demographics — this_month (v20+ replacement for last_30_days)
+                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_month', 'breakdown' => $breakdown, 'access_token' => $token],
+                // reached — this_week fallback
+                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_week', 'breakdown' => $breakdown, 'access_token' => $token],
+                // engaged_audience_demographics — this_month
+                ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_month', 'breakdown' => $breakdown, 'access_token' => $token],
+                // engaged — this_week fallback
+                ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_week', 'breakdown' => $breakdown, 'access_token' => $token],
             ];
 
             foreach ($attempts as $params) {
