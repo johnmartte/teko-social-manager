@@ -17,12 +17,9 @@ return [
         'pages_read_user_content',
         'instagram_basic',
         'instagram_manage_insights',
-        'instagram_business_manage_insights',
         'instagram_content_publish',
         'instagram_manage_comments',
-        'instagram_manage_contents',
         'instagram_manage_messages',
-        'instagram_business_manage_messages',
         'business_management',
     ],
 
