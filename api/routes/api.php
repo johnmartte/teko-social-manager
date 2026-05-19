@@ -104,6 +104,7 @@ Route::prefix('instagram')->middleware('social:instagram')->group(function () {
     Route::get('/insights', [InstagramController::class, 'insights']);
     Route::get('/audience', [InstagramController::class, 'audience']);
     Route::get('/online-followers', [InstagramController::class, 'onlineFollowers']);
+    Route::get('/debug-audience', [InstagramController::class, 'debugAudience']);
     Route::get('/media/{mediaId}/insights', [InstagramController::class, 'mediaInsights']);
 
     Route::post('/publish/photo', [InstagramController::class, 'publishPhoto']);

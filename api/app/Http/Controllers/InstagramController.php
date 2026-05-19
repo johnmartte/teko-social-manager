@@ -56,6 +56,44 @@ class InstagramController extends Controller
         );
     }
 
+    /**
+     * Debug endpoint — returns raw API responses for each demographic metric attempt.
+     */
+    public function debugAudience(Request $request): JsonResponse
+    {
+        $userId = $request->attributes->get('ig_user_id');
+        $token = $request->attributes->get('ig_token');
+        $results = [];
+
+        $attempts = [
+            ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'age,gender', 'access_token' => $token],
+            ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'city', 'access_token' => $token],
+            ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'country', 'access_token' => $token],
+            ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'age,gender', 'access_token' => $token],
+            ['metric' => 'audience_gender_age', 'period' => 'lifetime', 'access_token' => $token],
+            ['metric' => 'audience_city', 'period' => 'lifetime', 'access_token' => $token],
+            ['metric' => 'online_followers', 'period' => 'lifetime', 'metric_type' => 'total_value', 'access_token' => $token],
+            ['metric' => 'online_followers', 'period' => 'lifetime', 'access_token' => $token],
+        ];
+
+        foreach ($attempts as $params) {
+            $label = $params['metric'] . ($params['breakdown'] ?? '') . ($params['metric_type'] ?? '');
+            $accessToken = $params['access_token'];
+            unset($params['access_token']);
+            $response = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$userId}/insights", array_merge($params, ['access_token' => $accessToken]));
+            $results[] = [
+                'params' => $params,
+                'status' => $response->status(),
+                'response' => $response->json(),
+            ];
+        }
+
+        return response()->json([
+            'user_id' => $userId,
+            'results' => $results,
+        ]);
+    }
+
     public function mediaInsights(Request $request, string $mediaId): JsonResponse
     {
         return response()->json(
