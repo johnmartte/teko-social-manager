@@ -150,7 +150,17 @@ class MetaApiService
         $until = $now->timestamp;
 
         // Fetch each metric individually so one failure doesn't block others
-        $metrics = ['reach', 'impressions', 'follower_count', 'profile_views'];
+        $metrics = [
+            'reach',
+            'impressions',
+            'follower_count',
+            'profile_views',
+            'website_clicks',
+            'email_contacts',
+            'phone_call_clicks',
+            'get_directions_clicks',
+            'text_message_clicks',
+        ];
         $allData = [];
 
         foreach ($metrics as $metric) {

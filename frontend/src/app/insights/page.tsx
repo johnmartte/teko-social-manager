@@ -96,6 +96,33 @@ function parseOnlineFollowers(data: OnlineFollowersMetric[]) {
     }));
 }
 
+const IG_LABELS: Record<string, string> = {
+  reach: "Alcance",
+  impressions: "Impresiones",
+  follower_count: "Seguidores",
+  profile_views: "Visitas al perfil",
+  website_clicks: "Clics en sitio web",
+  email_contacts: "Clics en email",
+  phone_call_clicks: "Clics en telefono",
+  get_directions_clicks: "Clics en direcciones",
+  text_message_clicks: "Clics en mensajes",
+};
+
+const IG_COLORS: Record<string, string> = {
+  reach: "#e1306c",
+  impressions: "#405de6",
+  follower_count: "#833ab4",
+  profile_views: "#f56040",
+  website_clicks: "#00b894",
+  email_contacts: "#0984e3",
+  phone_call_clicks: "#6c5ce7",
+  get_directions_clicks: "#f77737",
+  text_message_clicks: "#fd79a8",
+};
+
+// Metrics where we show latest value instead of total
+const CUMULATIVE_METRICS = new Set(["follower_count"]);
+
 /* ── Component ──────────────────────────────────────────────── */
 
 export default function InsightsPage() {
@@ -161,40 +188,22 @@ export default function InsightsPage() {
 
   /* ── Derived data ──────────────────────────────────── */
 
-  const reachData = useMemo(() => {
-    const metric = igInsights.find((m) => m.name === "reach");
-    if (!metric?.values) return [];
-    return metric.values.map((v) => ({
-      date: shortDate(v.end_time),
-      value: v.value,
-    }));
-  }, [igInsights]);
-
-  const impressionsData = useMemo(() => {
-    const metric = igInsights.find((m) => m.name === "impressions");
-    if (!metric?.values) return [];
-    return metric.values.map((v) => ({
-      date: shortDate(v.end_time),
-      value: v.value,
-    }));
-  }, [igInsights]);
-
-  const followerData = useMemo(() => {
-    const metric = igInsights.find((m) => m.name === "follower_count");
-    if (!metric?.values) return [];
-    return metric.values.map((v) => ({
-      date: shortDate(v.end_time),
-      value: v.value,
-    }));
-  }, [igInsights]);
-
-  const profileViewsData = useMemo(() => {
-    const metric = igInsights.find((m) => m.name === "profile_views");
-    if (!metric?.values) return [];
-    return metric.values.map((v) => ({
-      date: shortDate(v.end_time),
-      value: v.value,
-    }));
+  // Build chart data dynamically for ALL metrics that have values
+  const igChartMetrics = useMemo(() => {
+    return igInsights
+      .filter((m) => m.values && m.values.length > 0)
+      .map((m) => ({
+        name: m.name,
+        label: IG_LABELS[m.name] || m.title || m.name,
+        color: IG_COLORS[m.name] || "#e1306c",
+        isCumulative: CUMULATIVE_METRICS.has(m.name),
+        data: m.values.map((v) => ({
+          date: shortDate(v.end_time),
+          value: v.value,
+        })),
+        total: m.values.reduce((s, v) => s + v.value, 0),
+        latest: m.values[m.values.length - 1]?.value ?? 0,
+      }));
   }, [igInsights]);
 
   const genderAgeRaw = useMemo(() => {
@@ -216,20 +225,6 @@ export default function InsightsPage() {
   }, [audience]);
 
   const onlineFollowers = useMemo(() => parseOnlineFollowers(onlineData), [onlineData]);
-
-  /* ── Summary numbers ───────────────────────────────── */
-
-  const latestVal = (name: string) => {
-    const m = igInsights.find((i) => i.name === name);
-    if (!m?.values?.length) return null;
-    return m.values[m.values.length - 1].value;
-  };
-
-  const totalOverPeriod = (name: string) => {
-    const m = igInsights.find((i) => i.name === name);
-    if (!m?.values?.length) return null;
-    return m.values.reduce((s, v) => s + v.value, 0);
-  };
 
   const igConnected = status?.instagram.connected;
   const fbConnected = status?.facebook.connected;
@@ -269,49 +264,36 @@ export default function InsightsPage() {
       {/* ── Instagram ────────────────────────────────── */}
       {igConnected && (
         <>
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <SummaryCard label="Alcance total" value={totalOverPeriod("reach")} color="#e1306c" />
-            <SummaryCard label="Impresiones" value={totalOverPeriod("impressions")} color="#405de6" />
-            <SummaryCard label="Seguidores" value={latestVal("follower_count")} color="#833ab4" />
-            <SummaryCard label="Visitas al perfil" value={totalOverPeriod("profile_views")} color="#f56040" />
-          </div>
+          {/* Summary cards - show all available metrics */}
+          {igChartMetrics.length > 0 && (
+            <div className={`grid grid-cols-2 gap-4 ${igChartMetrics.length >= 4 ? "sm:grid-cols-4" : `sm:grid-cols-${Math.min(igChartMetrics.length, 4)}`}`}>
+              {igChartMetrics.map((m) => (
+                <SummaryCard
+                  key={m.name}
+                  label={m.label}
+                  value={m.isCumulative ? m.latest : m.total}
+                  color={m.color}
+                />
+              ))}
+            </div>
+          )}
 
-          {/* Reach + Impressions chart */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card title="Alcance (30 dias)" color="#e1306c">
-              {reachData.length > 0 ? (
-                <ChartArea data={reachData} color="#e1306c" label="Alcance" />
-              ) : (
-                <NoData />
-              )}
-            </Card>
-            <Card title="Impresiones (30 dias)" color="#405de6">
-              {impressionsData.length > 0 ? (
-                <ChartArea data={impressionsData} color="#405de6" label="Impresiones" />
-              ) : (
-                <NoData />
-              )}
-            </Card>
-          </div>
+          {/* Trend charts - 2 per row, only for metrics with data */}
+          {igChartMetrics.length > 0 && (
+            <div className="grid gap-6 lg:grid-cols-2">
+              {igChartMetrics.map((m) => (
+                <Card key={m.name} title={m.label} color={m.color}>
+                  <ChartArea data={m.data} color={m.color} label={m.label} />
+                </Card>
+              ))}
+            </div>
+          )}
 
-          {/* Follower growth + profile views */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card title="Crecimiento de seguidores" color="#833ab4">
-              {followerData.length > 0 ? (
-                <ChartArea data={followerData} color="#833ab4" label="Seguidores" />
-              ) : (
-                <NoData />
-              )}
+          {igChartMetrics.length === 0 && (
+            <Card title="Instagram" color="#e1306c">
+              <NoData />
             </Card>
-            <Card title="Visitas al perfil" color="#f56040">
-              {profileViewsData.length > 0 ? (
-                <ChartArea data={profileViewsData} color="#f56040" label="Visitas" />
-              ) : (
-                <NoData />
-              )}
-            </Card>
-          </div>
+          )}
 
           {/* Gender + Age demographics */}
           {genderAgeRaw && (
