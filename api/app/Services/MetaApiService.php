@@ -255,15 +255,16 @@ class MetaApiService
         foreach ($breakdowns as $breakdown) {
             // Try multiple metric + param combinations
             $attempts = [
-                // follower_demographics (needs 100+ followers, period=lifetime)
+                // follower_demographics (needs 100+ followers)
                 ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => $breakdown, 'access_token' => $token],
-                // reached_audience_demographics (needs timeframe, not period)
-                ['metric' => 'reached_audience_demographics', 'metric_type' => 'total_value', 'timeframe' => 'last_30_days', 'breakdown' => $breakdown, 'access_token' => $token],
-                // reached with since/until
-                ['metric' => 'reached_audience_demographics', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'breakdown' => $breakdown, 'access_token' => $token],
-                // engaged_audience_demographics
-                ['metric' => 'engaged_audience_demographics', 'metric_type' => 'total_value', 'timeframe' => 'last_30_days', 'breakdown' => $breakdown, 'access_token' => $token],
-                ['metric' => 'engaged_audience_demographics', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'breakdown' => $breakdown, 'access_token' => $token],
+                // reached_audience_demographics — period + timeframe both required
+                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'last_30_days', 'breakdown' => $breakdown, 'access_token' => $token],
+                // reached with since/until + period
+                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'breakdown' => $breakdown, 'access_token' => $token],
+                // engaged_audience_demographics — period + timeframe
+                ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'last_30_days', 'breakdown' => $breakdown, 'access_token' => $token],
+                // engaged with since/until + period
+                ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'breakdown' => $breakdown, 'access_token' => $token],
             ];
 
             foreach ($attempts as $params) {
