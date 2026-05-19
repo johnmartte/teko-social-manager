@@ -150,15 +150,18 @@ class MetaApiService
 
         $allData = [];
 
-        // ── 1. Time-series metrics (v18+ requires metric_type) ──────────
-        $timeSeriesMetrics = ['reach', 'impressions', 'follower_count', 'profile_views'];
+        // ── 1. Time-series metrics ───────────────────────────────────────
+        $timeSeriesMetrics = [
+            'reach', 'follower_count', 'profile_views',
+            'accounts_engaged', 'total_interactions',
+            'likes', 'comments', 'shares', 'saves', 'replies',
+            'follows_and_unfollows', 'profile_links_taps', 'views',
+        ];
 
         foreach ($timeSeriesMetrics as $metric) {
-            // Try with metric_type=time_series (v18+ format)
             $attempts = [
                 ['metric' => $metric, 'period' => 'day', 'metric_type' => 'time_series', 'since' => $since, 'until' => $until, 'access_token' => $token],
                 ['metric' => $metric, 'period' => 'day', 'since' => $since, 'until' => $until, 'access_token' => $token],
-                ['metric' => $metric, 'period' => 'day', 'metric_type' => 'time_series', 'access_token' => $token],
                 ['metric' => $metric, 'period' => 'day', 'access_token' => $token],
             ];
 
@@ -173,24 +176,18 @@ class MetaApiService
             }
         }
 
-        // ── 2. Total-value metrics (clicks, contacts, etc.) ─────────────
-        $totalMetrics = ['website_clicks', 'email_contacts', 'phone_call_clicks', 'get_directions_clicks', 'text_message_clicks'];
+        // ── 2. Total-value metrics ──────────────────────────────────────
+        $totalMetrics = ['website_clicks'];
 
         foreach ($totalMetrics as $metric) {
-            $attempts = [
-                ['metric' => $metric, 'period' => 'day', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'access_token' => $token],
-                ['metric' => $metric, 'period' => 'day', 'since' => $since, 'until' => $until, 'access_token' => $token],
-                ['metric' => $metric, 'period' => 'day', 'access_token' => $token],
-            ];
-
-            foreach ($attempts as $params) {
-                $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
-                $data = $response->json();
-
-                if (!isset($data['error']) && !empty($data['data'])) {
-                    $allData = array_merge($allData, $data['data']);
-                    break;
-                }
+            $response = Http::get("{$this->igApi}/{$userId}/insights", [
+                'metric' => $metric, 'period' => 'day',
+                'since' => $since, 'until' => $until,
+                'access_token' => $token,
+            ]);
+            $data = $response->json();
+            if (!isset($data['error']) && !empty($data['data'])) {
+                $allData = array_merge($allData, $data['data']);
             }
         }
 
@@ -249,20 +246,26 @@ class MetaApiService
         $allData = [];
         $debugErrors = [];
 
-        // v18+ uses follower_demographics with breakdown parameter
-        $breakdowns = [
-            'age,gender' => 'follower_demographics_age_gender',
-            'city'       => 'follower_demographics_city',
-            'country'    => 'follower_demographics_country',
-        ];
+        $now   = now();
+        $since = $now->copy()->subDays(28)->timestamp;
+        $until = $now->timestamp;
 
-        foreach ($breakdowns as $breakdown => $dataName) {
+        $breakdowns = ['age,gender', 'city', 'country'];
+
+        foreach ($breakdowns as $breakdown) {
+            // Try multiple metric + param combinations
             $attempts = [
+                // follower_demographics (needs 100+ followers, period=lifetime)
                 ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => $breakdown, 'access_token' => $token],
-                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => $breakdown, 'access_token' => $token],
+                // reached_audience_demographics (needs timeframe, not period)
+                ['metric' => 'reached_audience_demographics', 'metric_type' => 'total_value', 'timeframe' => 'last_30_days', 'breakdown' => $breakdown, 'access_token' => $token],
+                // reached with since/until
+                ['metric' => 'reached_audience_demographics', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'breakdown' => $breakdown, 'access_token' => $token],
+                // engaged_audience_demographics
+                ['metric' => 'engaged_audience_demographics', 'metric_type' => 'total_value', 'timeframe' => 'last_30_days', 'breakdown' => $breakdown, 'access_token' => $token],
+                ['metric' => 'engaged_audience_demographics', 'metric_type' => 'total_value', 'since' => $since, 'until' => $until, 'breakdown' => $breakdown, 'access_token' => $token],
             ];
 
-            $found = false;
             foreach ($attempts as $params) {
                 $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
                 $data = $response->json();
@@ -270,45 +273,12 @@ class MetaApiService
                 if (!isset($data['error']) && !empty($data['data'])) {
                     foreach ($data['data'] as &$entry) {
                         $entry['_breakdown'] = $breakdown;
-                        $entry['_original_name'] = $entry['name'];
                     }
                     $allData = array_merge($allData, $data['data']);
-                    $found = true;
                     break;
                 }
 
-                $debugErrors[] = "{$params['metric']}({$breakdown}): " . ($data['error']['message'] ?? json_encode($data));
-            }
-        }
-
-        // Legacy fallback
-        $legacyMetrics = ['audience_gender_age', 'audience_city', 'audience_country'];
-        foreach ($legacyMetrics as $metric) {
-            $alreadyHave = false;
-            foreach ($allData as $d) {
-                $legacy = match ($metric) {
-                    'audience_gender_age' => 'age,gender',
-                    'audience_city' => 'city',
-                    'audience_country' => 'country',
-                    default => '',
-                };
-                if (($d['_breakdown'] ?? '') === $legacy) {
-                    $alreadyHave = true;
-                    break;
-                }
-            }
-            if ($alreadyHave) continue;
-
-            $response = Http::get("{$this->igApi}/{$userId}/insights", [
-                'metric' => $metric,
-                'period' => 'lifetime',
-                'access_token' => $token,
-            ]);
-            $data = $response->json();
-            if (!isset($data['error']) && !empty($data['data'])) {
-                $allData = array_merge($allData, $data['data']);
-            } else {
-                $debugErrors[] = "{$metric}: " . ($data['error']['message'] ?? json_encode($data));
+                $debugErrors[] = "{$params['metric']}({$breakdown}): " . ($data['error']['message'] ?? 'empty data');
             }
         }
 

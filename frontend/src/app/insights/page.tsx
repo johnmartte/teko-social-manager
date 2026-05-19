@@ -171,38 +171,46 @@ function parseOnlineFollowers(data: OnlineFollowersMetric[]) {
 
 const IG_LABELS: Record<string, string> = {
   reach: "Alcance",
-  impressions: "Impresiones",
   follower_count: "Seguidores",
   profile_views: "Visitas al perfil",
+  accounts_engaged: "Cuentas interactuadas",
+  total_interactions: "Interacciones totales",
+  likes: "Likes",
+  comments: "Comentarios",
+  shares: "Compartidos",
+  saves: "Guardados",
+  replies: "Respuestas",
+  follows_and_unfollows: "Seguimientos",
+  profile_links_taps: "Clics en enlaces",
+  views: "Vistas",
   website_clicks: "Clics en sitio web",
-  email_contacts: "Clics en email",
-  phone_call_clicks: "Clics en telefono",
-  get_directions_clicks: "Clics en direcciones",
-  text_message_clicks: "Clics en mensajes",
-  total_likes: "Likes totales",
-  total_comments: "Comentarios totales",
-  total_interactions: "Interacciones",
+  total_likes: "Likes (posts)",
+  total_comments: "Comentarios (posts)",
   posts_count: "Posts analizados",
 };
 
 const IG_COLORS: Record<string, string> = {
   reach: "#e1306c",
-  impressions: "#405de6",
   follower_count: "#833ab4",
   profile_views: "#f56040",
+  accounts_engaged: "#405de6",
+  total_interactions: "#5851db",
+  likes: "#ed4956",
+  comments: "#0095f6",
+  shares: "#00b894",
+  saves: "#fcaf45",
+  replies: "#6c5ce7",
+  follows_and_unfollows: "#c13584",
+  profile_links_taps: "#f77737",
+  views: "#0984e3",
   website_clicks: "#00b894",
-  email_contacts: "#0984e3",
-  phone_call_clicks: "#6c5ce7",
-  get_directions_clicks: "#f77737",
-  text_message_clicks: "#fd79a8",
   total_likes: "#ed4956",
   total_comments: "#0095f6",
-  total_interactions: "#5851db",
   posts_count: "#00b894",
 };
 
 // Metrics where we show latest value instead of total
-const CUMULATIVE_METRICS = new Set(["follower_count", "total_likes", "total_comments", "total_interactions", "posts_count"]);
+const CUMULATIVE_METRICS = new Set(["follower_count", "total_likes", "total_comments", "posts_count"]);
 
 /* ── Component ──────────────────────────────────────────────── */
 
