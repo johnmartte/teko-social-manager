@@ -233,12 +233,16 @@ export default function InsightsPage() {
           .catch((e) => { errors.push(`insights fetch: ${e.message}`); })
       );
       promises.push(
-        api<{ data: AudienceMetric[] }>("/instagram/audience")
+        api<{ data: AudienceMetric[]; _debug_errors?: string[] }>("/instagram/audience")
           .then((r) => {
             console.log("IG audience response:", JSON.stringify(r));
+            if (r._debug_errors?.length) {
+              console.warn("Audience debug errors:", r._debug_errors);
+              r._debug_errors.forEach((e) => errors.push(`audience: ${e}`));
+            }
             setAudience((r.data || []) as AudienceMetric[]);
           })
-          .catch((e) => { errors.push(`audience: ${e.message}`); })
+          .catch((e) => { errors.push(`audience fetch: ${e.message}`); })
       );
       promises.push(
         api<{ data: OnlineFollowersMetric[] }>("/instagram/online-followers")

@@ -247,6 +247,7 @@ class MetaApiService
     public function getInstagramAudience(string $userId, string $token): array
     {
         $allData = [];
+        $debugErrors = [];
 
         // v18+ uses follower_demographics with breakdown parameter
         $breakdowns = [
@@ -256,32 +257,33 @@ class MetaApiService
         ];
 
         foreach ($breakdowns as $breakdown => $dataName) {
-            // Try new API first (follower_demographics), then reached_audience, then legacy
             $attempts = [
                 ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => $breakdown, 'access_token' => $token],
                 ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => $breakdown, 'access_token' => $token],
             ];
 
+            $found = false;
             foreach ($attempts as $params) {
                 $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
                 $data = $response->json();
 
                 if (!isset($data['error']) && !empty($data['data'])) {
-                    // Rename data entries for frontend compatibility
                     foreach ($data['data'] as &$entry) {
                         $entry['_breakdown'] = $breakdown;
                         $entry['_original_name'] = $entry['name'];
                     }
                     $allData = array_merge($allData, $data['data']);
+                    $found = true;
                     break;
                 }
+
+                $debugErrors[] = "{$params['metric']}({$breakdown}): " . ($data['error']['message'] ?? json_encode($data));
             }
         }
 
-        // Also try legacy metrics as fallback
+        // Legacy fallback
         $legacyMetrics = ['audience_gender_age', 'audience_city', 'audience_country'];
         foreach ($legacyMetrics as $metric) {
-            // Skip if we already got data for this breakdown
             $alreadyHave = false;
             foreach ($allData as $d) {
                 $legacy = match ($metric) {
@@ -305,10 +307,12 @@ class MetaApiService
             $data = $response->json();
             if (!isset($data['error']) && !empty($data['data'])) {
                 $allData = array_merge($allData, $data['data']);
+            } else {
+                $debugErrors[] = "{$metric}: " . ($data['error']['message'] ?? json_encode($data));
             }
         }
 
-        return ['data' => $allData];
+        return ['data' => $allData, '_debug_errors' => $debugErrors];
     }
 
     /**
