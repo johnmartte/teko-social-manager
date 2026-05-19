@@ -144,10 +144,11 @@ class MetaApiService
      */
     public function getInstagramInsights(string $userId, string $token, string $period = 'day'): array
     {
-        $since = now()->subDays(30)->startOfDay()->timestamp;
-        $until = now()->endOfDay()->timestamp;
+        // Meta API allows max 30 days (2592000s). Use 28 days to stay safe.
+        $now   = now();
+        $since = $now->copy()->subDays(28)->timestamp;
+        $until = $now->timestamp;
 
-        // Try all core metrics together first
         $metricSets = [
             'impressions,reach,follower_count,profile_views',
             'impressions,reach,follower_count',
@@ -155,7 +156,7 @@ class MetaApiService
             'reach',
         ];
 
-        // First try with since/until for 30 days of data
+        // Try with 28-day date range
         foreach ($metricSets as $metrics) {
             $response = Http::get("{$this->igApi}/{$userId}/insights", [
                 'metric' => $metrics,
@@ -170,11 +171,9 @@ class MetaApiService
             if (!isset($data['error'])) {
                 return $data;
             }
-
-            \Log::warning("IG insights error (with dates, metrics={$metrics}): " . json_encode($data['error'] ?? $data));
         }
 
-        // Fallback: try WITHOUT since/until (returns default ~2 days)
+        // Fallback: no date range (returns default ~2 days)
         foreach ($metricSets as $metrics) {
             $response = Http::get("{$this->igApi}/{$userId}/insights", [
                 'metric' => $metrics,
@@ -187,8 +186,6 @@ class MetaApiService
             if (!isset($data['error'])) {
                 return $data;
             }
-
-            \Log::warning("IG insights error (no dates, metrics={$metrics}): " . json_encode($data['error'] ?? $data));
         }
 
         return $data ?? ['data' => []];
@@ -484,8 +481,9 @@ class MetaApiService
 
     public function getPageInsights(string $pageId, string $pageToken, string $period = 'day'): array
     {
-        $since = now()->subDays(30)->startOfDay()->timestamp;
-        $until = now()->endOfDay()->timestamp;
+        $now   = now();
+        $since = $now->copy()->subDays(28)->timestamp;
+        $until = $now->timestamp;
 
         $metricSets = [
             'page_impressions,page_reach,page_fans,page_views_total,page_post_engagements',
