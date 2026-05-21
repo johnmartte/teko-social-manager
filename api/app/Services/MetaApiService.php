@@ -746,50 +746,47 @@ class MetaApiService
 
     /**
      * Get messages in a specific conversation.
-     * Tries graph.instagram.com first (IG Login token), falls back to graph.facebook.com.
      */
     public function getConversationMessages(string $conversationId, string $token, int $limit = 20): array
     {
         $fields = "messages.limit({$limit}){id,created_time,from,to,message,attachments}";
 
-        // Try Instagram API first
-        $response = Http::timeout(10)->get("https://graph.instagram.com/v20.0/{$conversationId}", [
+        // Use Facebook Graph API (token is a Page Access Token)
+        $response = Http::timeout(15)->get("{$this->fbApi}/{$conversationId}", [
             'fields' => $fields,
             'access_token' => $token,
         ]);
-        $data = $response->json();
 
-        // If IG API fails, try Facebook API
-        if (isset($data['error'])) {
-            $response = Http::timeout(10)->get("{$this->fbApi}/{$conversationId}", [
-                'fields' => $fields,
-                'access_token' => $token,
-            ]);
-            $data = $response->json();
-        }
-
-        return $data;
+        return $response->json();
     }
 
     /**
      * Send a reply in an Instagram conversation.
-     * Tries graph.instagram.com first, falls back to graph.facebook.com.
+     * Uses the Page ID (resolved from token) since the token is a Page Access Token.
      */
     public function sendInstagramMessage(string $igUserId, string $token, string $recipientId, string $text): array
     {
-        $payload = [
+        // Resolve Page ID — the send API needs POST /{PAGE_ID}/messages with Page token
+        $pageId = $this->resolvePageId($token);
+        if (!$pageId) {
+            return ['error' => 'No se pudo resolver el Page ID para enviar mensaje'];
+        }
+
+        $response = Http::timeout(10)->post("{$this->fbApi}/{$pageId}/messages", [
             'recipient' => ['id' => $recipientId],
             'message' => ['text' => $text],
             'access_token' => $token,
-        ];
+        ]);
 
-        // Try Instagram API first
-        $response = Http::timeout(10)->post("https://graph.instagram.com/v20.0/{$igUserId}/messages", $payload);
         $data = $response->json();
 
-        // If IG API fails, try Facebook API
+        // If page-based fails, try with IG user ID as fallback
         if (isset($data['error'])) {
-            $response = Http::timeout(10)->post("{$this->fbApi}/{$igUserId}/messages", $payload);
+            $response = Http::timeout(10)->post("{$this->fbApi}/{$igUserId}/messages", [
+                'recipient' => ['id' => $recipientId],
+                'message' => ['text' => $text],
+                'access_token' => $token,
+            ]);
             $data = $response->json();
         }
 
