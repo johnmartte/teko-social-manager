@@ -65,16 +65,29 @@ class InstagramController extends Controller
         $userId = $request->attributes->get('ig_user_id');
         $token = $request->attributes->get('ig_token');
 
-        // 1. Get account info (followers count, account type)
+        // 1. Get account info — try different field combos
         $profileResponse = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$userId}", [
-            'fields' => 'id,username,name,followers_count,follows_count,media_count,account_type,biography',
+            'fields' => 'id,username,name,followers_count,media_count,biography',
             'access_token' => $token,
         ]);
+        $profileRaw = $profileResponse->json();
+
+        // Also get the profile via the service for comparison
+        $profileViaService = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$userId}", [
+            'fields' => 'id,username',
+            'access_token' => $token,
+        ])->json();
 
         // 2. Check token permissions
         $tokenDebug = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/me/permissions", [
             'access_token' => $token,
         ]);
+
+        // 3. Check token info
+        $tokenInfo = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/debug_token", [
+            'input_token' => $token,
+            'access_token' => $token,
+        ])->json();
 
         // 3. Test all demographic metric combos
         $attempts = [
@@ -99,7 +112,10 @@ class InstagramController extends Controller
 
         return response()->json([
             'user_id' => $userId,
-            'profile' => $profileResponse->json(),
+            'token_first_10' => substr($token, 0, 10) . '...',
+            'profile' => $profileRaw,
+            'profile_minimal' => $profileViaService,
+            'token_info' => $tokenInfo,
             'permissions' => $tokenDebug->json(),
             'demographic_tests' => $results,
         ]);

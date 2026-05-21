@@ -447,19 +447,24 @@ export default function InsightsPage() {
                 <span className="font-bold text-white">Diagnostico de audiencia</span>
                 <button onClick={() => setDebugData(null)} className="text-muted hover:text-white">Cerrar</button>
               </div>
-              {debugData.profile && (
-                <div className="mb-3 space-y-1">
-                  <p className="text-green-400 font-bold">Perfil:</p>
-                  <p>Username: <span className="text-white">{debugData.profile.username}</span></p>
-                  <p>Followers: <span className="text-white font-bold">{debugData.profile.followers_count}</span></p>
-                  <p>Media: <span className="text-white">{debugData.profile.media_count}</span></p>
-                  <p>Tipo: <span className="text-white">{debugData.profile.account_type || "N/A"}</span></p>
+              <div className="mb-3 space-y-1">
+                <p className="text-green-400 font-bold">Cuenta IG ID: <span className="text-white font-mono">{debugData.user_id}</span></p>
+                <p className="text-green-400 font-bold">Perfil (raw):</p>
+                <pre className="text-white/80 whitespace-pre-wrap text-[10px] bg-black/30 p-2 rounded">{JSON.stringify(debugData.profile, null, 2)}</pre>
+              </div>
+              {debugData.token_info && (
+                <div className="mb-3">
+                  <p className="text-purple-400 font-bold">Token info:</p>
+                  <pre className="text-white/80 whitespace-pre-wrap text-[10px] bg-black/30 p-2 rounded">{JSON.stringify(debugData.token_info?.data ? { type: debugData.token_info.data.type, app_id: debugData.token_info.data.app_id, is_valid: debugData.token_info.data.is_valid, scopes: debugData.token_info.data.scopes, expires_at: debugData.token_info.data.expires_at } : debugData.token_info, null, 2)}</pre>
                 </div>
               )}
               {debugData.permissions?.data && (
                 <div className="mb-3">
                   <p className="text-blue-400 font-bold">Permisos del token:</p>
-                  <p className="text-white">{debugData.permissions.data.filter((p: {status:string}) => p.status === "granted").map((p: {permission:string}) => p.permission).join(", ")}</p>
+                  <p className="text-white text-[10px]">{debugData.permissions.data.filter((p: {status:string}) => p.status === "granted").map((p: {permission:string}) => p.permission).join(", ")}</p>
+                  {debugData.permissions.data.filter((p: {status:string}) => p.status !== "granted").length > 0 && (
+                    <p className="text-red-400 text-[10px]">Denegados: {debugData.permissions.data.filter((p: {status:string}) => p.status !== "granted").map((p: {permission:string, status:string}) => `${p.permission}(${p.status})`).join(", ")}</p>
+                  )}
                 </div>
               )}
               {debugData.demographic_tests && (
