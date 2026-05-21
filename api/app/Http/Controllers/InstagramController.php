@@ -58,40 +58,50 @@ class InstagramController extends Controller
     }
 
     /**
-     * Debug endpoint — returns raw API responses for each demographic metric attempt.
+     * Debug endpoint — returns raw API responses + account info to diagnose demographics.
      */
     public function debugAudience(Request $request): JsonResponse
     {
         $userId = $request->attributes->get('ig_user_id');
         $token = $request->attributes->get('ig_token');
-        $results = [];
 
+        // 1. Get account info (followers count, account type)
+        $profileResponse = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$userId}", [
+            'fields' => 'id,username,name,followers_count,follows_count,media_count,account_type,biography',
+            'access_token' => $token,
+        ]);
+
+        // 2. Check token permissions
+        $tokenDebug = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/me/permissions", [
+            'access_token' => $token,
+        ]);
+
+        // 3. Test all demographic metric combos
         $attempts = [
-            ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'age,gender', 'access_token' => $token],
-            ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'city', 'access_token' => $token],
-            ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'country', 'access_token' => $token],
-            ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'age,gender', 'access_token' => $token],
-            ['metric' => 'audience_gender_age', 'period' => 'lifetime', 'access_token' => $token],
-            ['metric' => 'audience_city', 'period' => 'lifetime', 'access_token' => $token],
-            ['metric' => 'online_followers', 'period' => 'lifetime', 'metric_type' => 'total_value', 'access_token' => $token],
-            ['metric' => 'online_followers', 'period' => 'lifetime', 'access_token' => $token],
+            ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'age,gender'],
+            ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => 'country'],
+            ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_month', 'breakdown' => 'age,gender'],
+            ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_week', 'breakdown' => 'age,gender'],
+            ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_month', 'breakdown' => 'age,gender'],
+            ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_week', 'breakdown' => 'age,gender'],
         ];
 
+        $results = [];
         foreach ($attempts as $params) {
-            $label = $params['metric'] . ($params['breakdown'] ?? '') . ($params['metric_type'] ?? '');
-            $accessToken = $params['access_token'];
-            unset($params['access_token']);
-            $response = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$userId}/insights", array_merge($params, ['access_token' => $accessToken]));
+            $response = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$userId}/insights", array_merge($params, ['access_token' => $token]));
             $results[] = [
                 'params' => $params,
                 'status' => $response->status(),
+                'has_data' => !empty($response->json('data')),
                 'response' => $response->json(),
             ];
         }
 
         return response()->json([
             'user_id' => $userId,
-            'results' => $results,
+            'profile' => $profileResponse->json(),
+            'permissions' => $tokenDebug->json(),
+            'demographic_tests' => $results,
         ]);
     }
 
