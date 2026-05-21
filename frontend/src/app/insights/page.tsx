@@ -210,10 +210,13 @@ export default function InsightsPage() {
   const [onlineData, setOnlineData] = useState<OnlineFollowersMetric[]>([]);
   const [fbInsights, setFbInsights] = useState<InsightMetric[]>([]);
   const [loading, setLoading] = useState(true);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const [selectedDays, setSelectedDays] = useState(28);
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
-  const fetchData = useCallback(() => {
-    if (!status) return;
+  // Initial load — fetch everything once
+  useEffect(() => {
+    if (!status || initialLoaded) return;
     setLoading(true);
     const promises: Promise<void>[] = [];
 
@@ -243,10 +246,23 @@ export default function InsightsPage() {
       );
     }
 
-    Promise.all(promises).finally(() => setLoading(false));
-  }, [status, selectedDays]);
+    Promise.all(promises).finally(() => {
+      setLoading(false);
+      setInitialLoaded(true);
+    });
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  // When period changes (after initial load), only refetch insights
+  const handlePeriodChange = useCallback((days: number) => {
+    if (days === selectedDays) return;
+    setSelectedDays(days);
+    if (!status?.instagram.connected) return;
+    setInsightsLoading(true);
+    api<{ data: InsightMetric[] }>(`/instagram/insights?days=${days}`)
+      .then((r) => setIgInsights(r.data || []))
+      .catch(() => {})
+      .finally(() => setInsightsLoading(false));
+  }, [status, selectedDays]);
 
   /* ── Derived data ──────────────────────────────────── */
 
@@ -347,7 +363,7 @@ export default function InsightsPage() {
           {TIME_PERIODS.map((tp) => (
             <button
               key={tp.days}
-              onClick={() => setSelectedDays(tp.days)}
+              onClick={() => handlePeriodChange(tp.days)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 selectedDays === tp.days
                   ? "bg-[#e1306c] text-white shadow-sm"
@@ -363,6 +379,13 @@ export default function InsightsPage() {
       {/* ── Instagram ────────────────────────────────── */}
       {igConnected && (
         <>
+          {insightsLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <span className="w-4 h-4 border-2 border-[#e1306c] border-t-transparent rounded-full animate-spin" />
+              Actualizando...
+            </div>
+          )}
+
           {/* Summary cards */}
           {igChartMetrics.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

@@ -145,44 +145,47 @@ class MetaApiService
     public function getInstagramInsights(string $userId, string $token, string $period = 'day', int $days = 28): array
     {
         $days  = min(max($days, 1), 28); // clamp 1–28
-        $now   = now();
-        $since = $now->copy()->subDays($days)->timestamp;
-        $until = $now->timestamp;
+        $cacheKey = "ig_insights_{$userId}_{$days}";
 
-        $allData = [];
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($userId, $token, $days) {
+            $now   = now();
+            $since = $now->copy()->subDays($days)->timestamp;
+            $until = $now->timestamp;
 
-        // ── 1. Time-series metrics ───────────────────────────────────────
-        $timeSeriesMetrics = [
-            'reach', 'follower_count', 'profile_views',
-            'accounts_engaged', 'total_interactions',
-            'likes', 'comments', 'shares', 'saves', 'replies',
-            'follows_and_unfollows', 'profile_links_taps', 'views',
-        ];
+            $allData = [];
 
-        foreach ($timeSeriesMetrics as $metric) {
-            $attempts = [
-                ['metric' => $metric, 'period' => 'day', 'metric_type' => 'time_series', 'since' => $since, 'until' => $until, 'access_token' => $token],
-                ['metric' => $metric, 'period' => 'day', 'since' => $since, 'until' => $until, 'access_token' => $token],
-                ['metric' => $metric, 'period' => 'day', 'access_token' => $token],
+            // ── 1. Time-series metrics (batch via Http::pool) ───────────
+            $timeSeriesMetrics = [
+                'reach', 'follower_count', 'profile_views',
+                'accounts_engaged', 'total_interactions',
+                'likes', 'comments', 'shares', 'saves', 'replies',
+                'follows_and_unfollows', 'profile_links_taps', 'views',
             ];
 
-            foreach ($attempts as $params) {
-                $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
-                $data = $response->json();
+            // Fire all metric requests concurrently
+            $responses = Http::pool(function ($pool) use ($timeSeriesMetrics, $userId, $since, $until, $token) {
+                foreach ($timeSeriesMetrics as $metric) {
+                    $pool->as($metric)->get("{$this->igApi}/{$userId}/insights", [
+                        'metric' => $metric, 'period' => 'day',
+                        'metric_type' => 'time_series',
+                        'since' => $since, 'until' => $until,
+                        'access_token' => $token,
+                    ]);
+                }
+            });
 
-                if (!isset($data['error']) && !empty($data['data'])) {
-                    $allData = array_merge($allData, $data['data']);
-                    break;
+            foreach ($timeSeriesMetrics as $metric) {
+                if (isset($responses[$metric]) && $responses[$metric]->successful()) {
+                    $data = $responses[$metric]->json();
+                    if (!isset($data['error']) && !empty($data['data'])) {
+                        $allData = array_merge($allData, $data['data']);
+                    }
                 }
             }
-        }
 
-        // ── 2. Total-value metrics ──────────────────────────────────────
-        $totalMetrics = ['website_clicks'];
-
-        foreach ($totalMetrics as $metric) {
+            // ── 2. Total-value metrics ──────────────────────────────────
             $response = Http::get("{$this->igApi}/{$userId}/insights", [
-                'metric' => $metric, 'period' => 'day',
+                'metric' => 'website_clicks', 'period' => 'day',
                 'since' => $since, 'until' => $until,
                 'access_token' => $token,
             ]);
@@ -190,52 +193,39 @@ class MetaApiService
             if (!isset($data['error']) && !empty($data['data'])) {
                 $allData = array_merge($allData, $data['data']);
             }
-        }
 
-        // ── 3. Compute engagement stats from recent media ───────────────
-        try {
-            $media = $this->getInstagramMedia($userId, $token, 25);
-            if (!empty($media['data'])) {
-                $totalLikes = 0;
-                $totalComments = 0;
-                $postCount = count($media['data']);
+            // ── 3. Compute engagement stats from recent media ───────────
+            try {
+                $media = $this->getInstagramMedia($userId, $token, 25);
+                if (!empty($media['data'])) {
+                    $totalLikes = 0;
+                    $totalComments = 0;
+                    $postCount = count($media['data']);
 
-                foreach ($media['data'] as $post) {
-                    $totalLikes += $post['like_count'] ?? 0;
-                    $totalComments += $post['comments_count'] ?? 0;
+                    foreach ($media['data'] as $post) {
+                        $totalLikes += $post['like_count'] ?? 0;
+                        $totalComments += $post['comments_count'] ?? 0;
+                    }
+
+                    $allData[] = [
+                        'name' => 'total_likes', 'period' => 'lifetime', 'title' => 'Total Likes',
+                        'values' => [['value' => $totalLikes, 'end_time' => $now->toIso8601String()]],
+                    ];
+                    $allData[] = [
+                        'name' => 'total_comments', 'period' => 'lifetime', 'title' => 'Total Comentarios',
+                        'values' => [['value' => $totalComments, 'end_time' => $now->toIso8601String()]],
+                    ];
+                    $allData[] = [
+                        'name' => 'posts_count', 'period' => 'lifetime', 'title' => 'Posts analizados',
+                        'values' => [['value' => $postCount, 'end_time' => $now->toIso8601String()]],
+                    ];
                 }
-
-                // Add synthetic metrics from media data
-                $allData[] = [
-                    'name' => 'total_likes',
-                    'period' => 'lifetime',
-                    'title' => 'Total Likes',
-                    'values' => [['value' => $totalLikes, 'end_time' => $now->toIso8601String()]],
-                ];
-                $allData[] = [
-                    'name' => 'total_comments',
-                    'period' => 'lifetime',
-                    'title' => 'Total Comentarios',
-                    'values' => [['value' => $totalComments, 'end_time' => $now->toIso8601String()]],
-                ];
-                $allData[] = [
-                    'name' => 'total_interactions',
-                    'period' => 'lifetime',
-                    'title' => 'Interacciones',
-                    'values' => [['value' => $totalLikes + $totalComments, 'end_time' => $now->toIso8601String()]],
-                ];
-                $allData[] = [
-                    'name' => 'posts_count',
-                    'period' => 'lifetime',
-                    'title' => 'Posts analizados',
-                    'values' => [['value' => $postCount, 'end_time' => $now->toIso8601String()]],
-                ];
+            } catch (\Throwable $e) {
+                // Media stats are optional
             }
-        } catch (\Throwable $e) {
-            // Media stats are optional
-        }
 
-        return ['data' => $allData];
+            return ['data' => $allData];
+        });
     }
 
     /**
@@ -244,44 +234,86 @@ class MetaApiService
      */
     public function getInstagramAudience(string $userId, string $token): array
     {
-        $allData = [];
-        $debugErrors = [];
+        $cacheKey = "ig_audience_{$userId}";
 
-        $breakdowns = ['age,gender', 'city', 'country'];
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($userId, $token) {
+            $allData = [];
+            $debugErrors = [];
 
-        foreach ($breakdowns as $breakdown) {
-            // v20+ valid timeframes: this_month (30d), this_week (7d)
-            // since/until NOT supported for demographic metrics
-            $attempts = [
-                // follower_demographics (needs 100+ followers)
-                ['metric' => 'follower_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'breakdown' => $breakdown, 'access_token' => $token],
-                // reached_audience_demographics — this_month (v20+ replacement for last_30_days)
-                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_month', 'breakdown' => $breakdown, 'access_token' => $token],
-                // reached — this_week fallback
-                ['metric' => 'reached_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_week', 'breakdown' => $breakdown, 'access_token' => $token],
-                // engaged_audience_demographics — this_month
-                ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_month', 'breakdown' => $breakdown, 'access_token' => $token],
-                // engaged — this_week fallback
-                ['metric' => 'engaged_audience_demographics', 'period' => 'lifetime', 'metric_type' => 'total_value', 'timeframe' => 'this_week', 'breakdown' => $breakdown, 'access_token' => $token],
-            ];
+            $breakdowns = ['age,gender', 'city', 'country'];
 
-            foreach ($attempts as $params) {
-                $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
-                $data = $response->json();
+            // Fire first attempt for all breakdowns concurrently
+            $firstResponses = Http::pool(function ($pool) use ($breakdowns, $userId, $token) {
+                foreach ($breakdowns as $breakdown) {
+                    $pool->as($breakdown)->get("{$this->igApi}/{$userId}/insights", [
+                        'metric' => 'follower_demographics', 'period' => 'lifetime',
+                        'metric_type' => 'total_value', 'breakdown' => $breakdown,
+                        'access_token' => $token,
+                    ]);
+                }
+            });
 
+            $needsFallback = [];
+            foreach ($breakdowns as $breakdown) {
+                $data = $firstResponses[$breakdown]?->json() ?? [];
                 if (!isset($data['error']) && !empty($data['data'])) {
                     foreach ($data['data'] as &$entry) {
                         $entry['_breakdown'] = $breakdown;
                     }
                     $allData = array_merge($allData, $data['data']);
-                    break;
+                } else {
+                    $debugErrors[] = "follower_demographics({$breakdown}): " . ($data['error']['message'] ?? 'empty data');
+                    $needsFallback[] = $breakdown;
                 }
-
-                $debugErrors[] = "{$params['metric']}({$breakdown}): " . ($data['error']['message'] ?? 'empty data');
             }
-        }
 
-        return ['data' => $allData, '_debug_errors' => $debugErrors];
+            // Fallback: try reached + engaged concurrently for remaining breakdowns
+            if (!empty($needsFallback)) {
+                $fallbackResponses = Http::pool(function ($pool) use ($needsFallback, $userId, $token) {
+                    foreach ($needsFallback as $breakdown) {
+                        $pool->as("reached_month_{$breakdown}")->get("{$this->igApi}/{$userId}/insights", [
+                            'metric' => 'reached_audience_demographics', 'period' => 'lifetime',
+                            'metric_type' => 'total_value', 'timeframe' => 'this_month',
+                            'breakdown' => $breakdown, 'access_token' => $token,
+                        ]);
+                        $pool->as("reached_week_{$breakdown}")->get("{$this->igApi}/{$userId}/insights", [
+                            'metric' => 'reached_audience_demographics', 'period' => 'lifetime',
+                            'metric_type' => 'total_value', 'timeframe' => 'this_week',
+                            'breakdown' => $breakdown, 'access_token' => $token,
+                        ]);
+                        $pool->as("engaged_month_{$breakdown}")->get("{$this->igApi}/{$userId}/insights", [
+                            'metric' => 'engaged_audience_demographics', 'period' => 'lifetime',
+                            'metric_type' => 'total_value', 'timeframe' => 'this_month',
+                            'breakdown' => $breakdown, 'access_token' => $token,
+                        ]);
+                        $pool->as("engaged_week_{$breakdown}")->get("{$this->igApi}/{$userId}/insights", [
+                            'metric' => 'engaged_audience_demographics', 'period' => 'lifetime',
+                            'metric_type' => 'total_value', 'timeframe' => 'this_week',
+                            'breakdown' => $breakdown, 'access_token' => $token,
+                        ]);
+                    }
+                });
+
+                foreach ($needsFallback as $breakdown) {
+                    $found = false;
+                    foreach (["reached_month_{$breakdown}", "reached_week_{$breakdown}", "engaged_month_{$breakdown}", "engaged_week_{$breakdown}"] as $key) {
+                        if ($found) break;
+                        $data = $fallbackResponses[$key]?->json() ?? [];
+                        if (!isset($data['error']) && !empty($data['data'])) {
+                            foreach ($data['data'] as &$entry) {
+                                $entry['_breakdown'] = $breakdown;
+                            }
+                            $allData = array_merge($allData, $data['data']);
+                            $found = true;
+                        } else {
+                            $debugErrors[] = "{$key}: " . ($data['error']['message'] ?? 'empty data');
+                        }
+                    }
+                }
+            }
+
+            return ['data' => $allData, '_debug_errors' => $debugErrors];
+        });
     }
 
     /**
@@ -290,21 +322,25 @@ class MetaApiService
      */
     public function getInstagramOnlineFollowers(string $userId, string $token): array
     {
-        $attempts = [
-            ['metric' => 'online_followers', 'period' => 'lifetime', 'metric_type' => 'total_value', 'access_token' => $token],
-            ['metric' => 'online_followers', 'period' => 'lifetime', 'access_token' => $token],
-        ];
+        $cacheKey = "ig_online_{$userId}";
 
-        foreach ($attempts as $params) {
-            $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
-            $data = $response->json();
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($userId, $token) {
+            $attempts = [
+                ['metric' => 'online_followers', 'period' => 'lifetime', 'metric_type' => 'total_value', 'access_token' => $token],
+                ['metric' => 'online_followers', 'period' => 'lifetime', 'access_token' => $token],
+            ];
 
-            if (!isset($data['error']) && !empty($data['data'])) {
-                return $data;
+            foreach ($attempts as $params) {
+                $response = Http::get("{$this->igApi}/{$userId}/insights", $params);
+                $data = $response->json();
+
+                if (!isset($data['error']) && !empty($data['data'])) {
+                    return $data;
+                }
             }
-        }
 
-        return ['data' => []];
+            return ['data' => []];
+        });
     }
 
     public function getMediaInsights(string $mediaId, string $token): array
