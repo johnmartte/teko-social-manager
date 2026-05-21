@@ -58,6 +58,89 @@ class InstagramController extends Controller
     }
 
     /**
+     * Debug endpoint — test different conversation fetch strategies.
+     */
+    public function debugConversations(Request $request): JsonResponse
+    {
+        $token = $request->attributes->get('ig_token');
+        $igUserId = $request->attributes->get('ig_user_id');
+
+        // Resolve page ID
+        $meResponse = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/me", [
+            'fields' => 'id,name',
+            'access_token' => $token,
+        ]);
+        $pageId = $meResponse->json('id');
+
+        $results = ['page_id' => $pageId, 'ig_user_id' => $igUserId, 'me_response' => $meResponse->json()];
+
+        if (!$pageId) {
+            return response()->json(array_merge($results, ['error' => 'Could not resolve page ID']));
+        }
+
+        $fields = 'id,updated_time,participants,messages.limit(1){id,created_time,from,to,message}';
+
+        // Test 1: No folder param
+        $r1 = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$pageId}/conversations", [
+            'platform' => 'instagram',
+            'fields' => $fields,
+            'limit' => 50,
+            'access_token' => $token,
+        ]);
+        $results['no_folder'] = ['status' => $r1->status(), 'count' => count($r1->json('data') ?? []), 'data' => $r1->json()];
+
+        // Test 2: folder=inbox
+        $r2 = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$pageId}/conversations", [
+            'platform' => 'instagram',
+            'folder' => 'inbox',
+            'fields' => $fields,
+            'limit' => 50,
+            'access_token' => $token,
+        ]);
+        $results['folder_inbox'] = ['status' => $r2->status(), 'count' => count($r2->json('data') ?? []), 'data' => $r2->json()];
+
+        // Test 3: folder=other
+        $r3 = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$pageId}/conversations", [
+            'platform' => 'instagram',
+            'folder' => 'other',
+            'fields' => $fields,
+            'limit' => 50,
+            'access_token' => $token,
+        ]);
+        $results['folder_other'] = ['status' => $r3->status(), 'count' => count($r3->json('data') ?? []), 'data' => $r3->json()];
+
+        // Test 4: folder=page_done
+        $r4 = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$pageId}/conversations", [
+            'platform' => 'instagram',
+            'folder' => 'page_done',
+            'fields' => $fields,
+            'limit' => 50,
+            'access_token' => $token,
+        ]);
+        $results['folder_page_done'] = ['status' => $r4->status(), 'count' => count($r4->json('data') ?? []), 'data' => $r4->json()];
+
+        // Test 5: folder=spam
+        $r5 = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$pageId}/conversations", [
+            'platform' => 'instagram',
+            'folder' => 'spam',
+            'fields' => $fields,
+            'limit' => 50,
+            'access_token' => $token,
+        ]);
+        $results['folder_spam'] = ['status' => $r5->status(), 'count' => count($r5->json('data') ?? []), 'data' => $r5->json()];
+
+        // Test 6: Without platform param (get ALL conversations)
+        $r6 = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$pageId}/conversations", [
+            'fields' => $fields,
+            'limit' => 50,
+            'access_token' => $token,
+        ]);
+        $results['no_platform_filter'] = ['status' => $r6->status(), 'count' => count($r6->json('data') ?? []), 'data' => $r6->json()];
+
+        return response()->json($results);
+    }
+
+    /**
      * Debug endpoint — returns raw API responses + account info to diagnose demographics.
      */
     public function debugAudience(Request $request): JsonResponse
