@@ -653,7 +653,7 @@ class MetaApiService
 
         $response = Http::get("{$this->fbApi}/{$pageId}/conversations", [
             'platform' => 'instagram',
-            'fields' => 'id,updated_time,participants,messages.limit(1){id,created_time,from,to,message}',
+            'fields' => 'id,updated_time,participants,messages.limit(1){id,created_time,from,to,message,attachments}',
             'limit' => $limit,
             'access_token' => $token,
         ]);
@@ -668,7 +668,7 @@ class MetaApiService
     {
         // Get message IDs
         $response = Http::get("{$this->fbApi}/{$conversationId}", [
-            'fields' => "messages.limit({$limit}){id,created_time,from,to,message}",
+            'fields' => "messages.limit({$limit}){id,created_time,from,to,message,attachments}",
             'access_token' => $token,
         ]);
 
