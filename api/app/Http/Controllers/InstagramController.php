@@ -229,13 +229,43 @@ class InstagramController extends Controller
     public function conversations(Request $request): JsonResponse
     {
         $limit = (int) $request->input('limit', 20);
+        $userId = $request->attributes->get('ig_user_id');
+        $token = $request->attributes->get('ig_token');
 
         try {
-            $data = $this->meta->getInstagramConversations(
-                $request->attributes->get('ig_user_id'),
-                $request->attributes->get('ig_token'),
-                $limit
-            );
+            $data = $this->meta->getInstagramConversations($userId, $token, $limit);
+
+            // Also try fetching with folder=inbox and folder=other
+            $pageId = $data['_page_id'] ?? null;
+            if ($pageId) {
+                $folders = ['inbox', 'other', 'spam'];
+                $extraConvos = [];
+                foreach ($folders as $folder) {
+                    $response = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v20.0/{$pageId}/conversations", [
+                        'platform' => 'instagram',
+                        'folder' => $folder,
+                        'fields' => 'id,updated_time,participants,messages.limit(1){id,created_time,from,to,message,attachments}',
+                        'limit' => 25,
+                        'access_token' => $token,
+                    ]);
+                    $folderData = $response->json();
+                    if (!empty($folderData['data'])) {
+                        $extraConvos[$folder] = count($folderData['data']);
+                        // Merge unique conversations
+                        $existingIds = array_column($data['data'] ?? [], 'id');
+                        foreach ($folderData['data'] as $convo) {
+                            if (!in_array($convo['id'], $existingIds)) {
+                                $data['data'][] = $convo;
+                                $existingIds[] = $convo['id'];
+                            }
+                        }
+                    } else {
+                        $extraConvos[$folder] = $folderData['error']['message'] ?? 0;
+                    }
+                }
+                $data['_folder_debug'] = $extraConvos;
+            }
+
             return response()->json($data);
         } catch (Throwable $e) {
             return response()->json(['data' => [], 'error' => $e->getMessage()]);
