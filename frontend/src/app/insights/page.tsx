@@ -213,6 +213,7 @@ export default function InsightsPage() {
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [selectedDays, setSelectedDays] = useState(28);
   const [initialLoaded, setInitialLoaded] = useState(false);
+  const [igFollowers, setIgFollowers] = useState<number | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [debugData, setDebugData] = useState<any>(null);
 
@@ -232,6 +233,11 @@ export default function InsightsPage() {
         api<{ data: AudienceMetric[] }>("/instagram/audience")
           .then((r) => setAudience((r.data || []) as AudienceMetric[]))
           .catch(() => setAudience([]))
+      );
+      promises.push(
+        api<{ followers_count?: number }>("/instagram/profile")
+          .then((r) => setIgFollowers(r.followers_count ?? null))
+          .catch(() => {})
       );
       promises.push(
         api<{ data: OnlineFollowersMetric[] }>("/instagram/online-followers")
@@ -424,61 +430,30 @@ export default function InsightsPage() {
           )}
 
           {/* ── Demographics (always visible) ────────── */}
-          <div className="flex items-center justify-between mt-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#c13584]" />
-              Audiencia
-            </h2>
-            <button
-              onClick={() => {
-                api<Record<string, unknown>>("/instagram/debug-audience")
-                  .then((r) => setDebugData(r))
-                  .catch((e) => setDebugData({ error: e.message }));
-              }}
-              className="text-[10px] text-muted/50 hover:text-muted border border-border/30 rounded px-2 py-0.5"
-            >
-              Diagnosticar
-            </button>
-          </div>
+          <h2 className="text-lg font-bold mt-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#c13584]" />
+            Audiencia
+          </h2>
 
-          {debugData && (
-            <div className="bg-zinc-900 border border-border rounded-xl p-4 text-xs overflow-auto max-h-96">
-              <div className="flex justify-between mb-2">
-                <span className="font-bold text-white">Diagnostico de audiencia</span>
-                <button onClick={() => setDebugData(null)} className="text-muted hover:text-white">Cerrar</button>
+          {/* Info banner when not enough followers */}
+          {!hasGenderData && igFollowers !== null && igFollowers < 100 && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+              <span className="text-amber-400 text-lg mt-0.5">&#9888;</span>
+              <div>
+                <p className="text-sm font-medium text-amber-300">Se necesitan 100+ seguidores para datos demograficos</p>
+                <p className="text-xs text-muted mt-1">
+                  Tu cuenta tiene <span className="font-bold text-white">{igFollowers}</span> seguidores.
+                  Meta requiere un minimo de 100 seguidores para mostrar datos de genero, edad, ciudades y paises.
+                  Te faltan <span className="font-bold text-amber-300">{100 - igFollowers}</span> seguidores.
+                </p>
+                <div className="mt-2 h-2 bg-white/5 rounded-full overflow-hidden w-48">
+                  <div
+                    className="h-full bg-amber-400 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (igFollowers / 100) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted mt-1">{igFollowers}/100 seguidores</p>
               </div>
-              <div className="mb-3 space-y-1">
-                <p className="text-green-400 font-bold">Cuenta IG ID: <span className="text-white font-mono">{debugData.user_id}</span></p>
-                <p className="text-green-400 font-bold">Perfil (raw):</p>
-                <pre className="text-white/80 whitespace-pre-wrap text-[10px] bg-black/30 p-2 rounded">{JSON.stringify(debugData.profile, null, 2)}</pre>
-              </div>
-              {debugData.token_info && (
-                <div className="mb-3">
-                  <p className="text-purple-400 font-bold">Token info:</p>
-                  <pre className="text-white/80 whitespace-pre-wrap text-[10px] bg-black/30 p-2 rounded">{JSON.stringify(debugData.token_info?.data ? { type: debugData.token_info.data.type, app_id: debugData.token_info.data.app_id, is_valid: debugData.token_info.data.is_valid, scopes: debugData.token_info.data.scopes, expires_at: debugData.token_info.data.expires_at } : debugData.token_info, null, 2)}</pre>
-                </div>
-              )}
-              {debugData.permissions?.data && (
-                <div className="mb-3">
-                  <p className="text-blue-400 font-bold">Permisos del token:</p>
-                  <p className="text-white text-[10px]">{debugData.permissions.data.filter((p: {status:string}) => p.status === "granted").map((p: {permission:string}) => p.permission).join(", ")}</p>
-                  {debugData.permissions.data.filter((p: {status:string}) => p.status !== "granted").length > 0 && (
-                    <p className="text-red-400 text-[10px]">Denegados: {debugData.permissions.data.filter((p: {status:string}) => p.status !== "granted").map((p: {permission:string, status:string}) => `${p.permission}(${p.status})`).join(", ")}</p>
-                  )}
-                </div>
-              )}
-              {debugData.demographic_tests && (
-                <div>
-                  <p className="text-yellow-400 font-bold mb-1">Tests de demographics:</p>
-                  {debugData.demographic_tests.map((t: Record<string, unknown>, i: number) => (
-                    <div key={i} className={`py-1 border-b border-border/20 ${(t.has_data as boolean) ? "text-green-400" : "text-red-400"}`}>
-                      <span className="font-mono">{(t.params as Record<string,string>).metric}({(t.params as Record<string,string>).breakdown}) [{(t.params as Record<string,string>).timeframe || "no-timeframe"}]</span>
-                      <span className="ml-2">{(t.has_data as boolean) ? "OK - tiene datos" : `Sin datos (${(t.response as Record<string,{message:string}>)?.error?.message || "empty"})`}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {debugData.error && <p className="text-red-400">{debugData.error}</p>}
             </div>
           )}
 
@@ -518,28 +493,7 @@ export default function InsightsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-center gap-8 py-2">
-                  <div className="w-40 h-40">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={emptyGenderData} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={65}>
-                          <Cell fill="#333" />
-                          <Cell fill="#444" />
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="space-y-2">
-                    {emptyGenderData.map((g, i) => (
-                      <div key={g.name} className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: ["#e1306c", "#405de6"][i] }} />
-                        <span className="text-sm font-medium">0%</span>
-                        <span className="text-xs text-muted">{g.name}</span>
-                      </div>
-                    ))}
-                    <p className="text-[10px] text-muted/60 mt-1">Sin datos suficientes</p>
-                  </div>
-                </div>
+                <EmptyState label="Disponible con 100+ seguidores" />
               )}
             </Card>
 
@@ -566,7 +520,7 @@ export default function InsightsPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              {!hasGenderData && <p className="text-[10px] text-muted/60 text-center">Sin datos suficientes</p>}
+              {!hasGenderData && <p className="text-[10px] text-muted/60 text-center">Disponible con 100+ seguidores</p>}
             </Card>
           </div>
 
@@ -597,7 +551,7 @@ export default function InsightsPage() {
                   })}
                 </div>
               ) : (
-                <EmptyState label="No hay datos de ciudades disponibles" />
+                <EmptyState label="Disponible con 100+ seguidores" />
               )}
             </Card>
             <Card title="Principales paises" color="#0984e3">
@@ -625,7 +579,7 @@ export default function InsightsPage() {
                   })}
                 </div>
               ) : (
-                <EmptyState label="No hay datos de paises disponibles" />
+                <EmptyState label="Disponible con 100+ seguidores" />
               )}
             </Card>
           </div>
@@ -655,7 +609,7 @@ export default function InsightsPage() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <EmptyState label="No hay datos de actividad disponibles" />
+              <EmptyState label="Disponible con 100+ seguidores" />
             )}
           </Card>
         </>
