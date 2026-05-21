@@ -214,6 +214,7 @@ export default function InsightsPage() {
   const [selectedDays, setSelectedDays] = useState(28);
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [igFollowers, setIgFollowers] = useState<number | null>(null);
+  const [igProfile, setIgProfile] = useState<{ username?: string; profile_picture_url?: string; name?: string } | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [debugData, setDebugData] = useState<any>(null);
 
@@ -235,8 +236,11 @@ export default function InsightsPage() {
           .catch(() => setAudience([]))
       );
       promises.push(
-        api<{ followers_count?: number }>("/instagram/profile")
-          .then((r) => setIgFollowers(r.followers_count ?? null))
+        api<{ followers_count?: number; username?: string; profile_picture_url?: string; name?: string }>("/instagram/profile")
+          .then((r) => {
+            setIgFollowers(r.followers_count ?? null);
+            setIgProfile(r);
+          })
           .catch(() => {})
       );
       promises.push(
@@ -387,6 +391,33 @@ export default function InsightsPage() {
       {/* ── Instagram ────────────────────────────────── */}
       {igConnected && (
         <>
+          {/* Profile header */}
+          {igProfile && (
+            <div className="flex items-center gap-4 bg-card/95 rounded-2xl border border-border p-4 shadow-sm">
+              {igProfile.profile_picture_url ? (
+                <img
+                  src={igProfile.profile_picture_url}
+                  alt={igProfile.username || ""}
+                  className="w-14 h-14 rounded-full border-2 border-[#e1306c] object-cover"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full border-2 border-[#e1306c] bg-gradient-to-br from-[#833ab4] via-[#e1306c] to-[#f77737] flex items-center justify-center">
+                  <span className="text-white text-lg font-bold">{(igProfile.username || "?")[0].toUpperCase()}</span>
+                </div>
+              )}
+              <div>
+                <p className="font-bold text-lg">{igProfile.name || igProfile.username}</p>
+                <p className="text-sm text-muted">@{igProfile.username}</p>
+              </div>
+              {igFollowers !== null && (
+                <div className="ml-auto text-right">
+                  <p className="text-2xl font-bold" style={{ color: "#e1306c" }}>{formatNum(igFollowers)}</p>
+                  <p className="text-xs text-muted">seguidores</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {insightsLoading && (
             <div className="flex items-center gap-2 text-sm text-muted">
               <span className="w-4 h-4 border-2 border-[#e1306c] border-t-transparent rounded-full animate-spin" />
