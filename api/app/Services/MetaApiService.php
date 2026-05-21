@@ -651,36 +651,97 @@ class MetaApiService
             return ['data' => [], 'error' => 'No se pudo obtener el Page ID'];
         }
 
-        // Fetch conversations — collect all pages up to $limit
+        $fields = 'id,updated_time,participants,messages.limit(1){id,created_time,from,to,message,attachments}';
         $allConversations = [];
-        $url = "{$this->fbApi}/{$pageId}/conversations";
-        $params = [
-            'platform' => 'instagram',
-            'fields' => 'id,updated_time,participants,messages.limit(1){id,created_time,from,to,message,attachments}',
-            'limit' => min($limit, 25),
-            'access_token' => $token,
+        $seenIds = [];
+        $debug = ['page_id' => $pageId, 'ig_user_id' => $igUserId, 'attempts' => []];
+
+        // Strategy 1: Default query (no folder — returns "primary" inbox)
+        $this->fetchConversationsFromEndpoint(
+            "{$this->fbApi}/{$pageId}/conversations",
+            ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
+            $allConversations, $seenIds, $debug, 'default'
+        );
+
+        // Strategy 2: Try graph.instagram.com endpoint (IG Login API style)
+        $this->fetchConversationsFromEndpoint(
+            "https://graph.instagram.com/v20.0/me/conversations",
+            ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
+            $allConversations, $seenIds, $debug, 'ig_api_me'
+        );
+
+        // Strategy 3: Try with the IG user ID on graph.instagram.com
+        $this->fetchConversationsFromEndpoint(
+            "https://graph.instagram.com/v20.0/{$igUserId}/conversations",
+            ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
+            $allConversations, $seenIds, $debug, 'ig_api_userid'
+        );
+
+        // Sort by updated_time descending
+        usort($allConversations, fn ($a, $b) =>
+            strtotime($b['updated_time'] ?? '0') - strtotime($a['updated_time'] ?? '0')
+        );
+
+        return [
+            'data' => array_slice($allConversations, 0, $limit),
+            '_debug' => $debug,
+            '_total' => count($allConversations),
         ];
+    }
 
-        // First request
-        $response = Http::get($url, $params);
-        $data = $response->json();
+    /**
+     * Helper: fetch conversations from an endpoint, paginate, and merge unique results.
+     */
+    private function fetchConversationsFromEndpoint(
+        string $url,
+        array $params,
+        array &$allConversations,
+        array &$seenIds,
+        array &$debug,
+        string $label
+    ): void {
+        try {
+            $response = Http::timeout(10)->get($url, $params);
+            $data = $response->json();
 
-        if (isset($data['error'])) {
-            return $data;
+            if (isset($data['error'])) {
+                $debug['attempts'][$label] = ['error' => $data['error']['message'] ?? $data['error'], 'code' => $data['error']['code'] ?? null];
+                return;
+            }
+
+            $found = 0;
+            $new = 0;
+            foreach ($data['data'] ?? [] as $convo) {
+                $found++;
+                if (!in_array($convo['id'], $seenIds)) {
+                    $allConversations[] = $convo;
+                    $seenIds[] = $convo['id'];
+                    $new++;
+                }
+            }
+
+            // Follow pagination
+            $nextUrl = $data['paging']['next'] ?? null;
+            $pages = 1;
+            while ($nextUrl && $pages < 5) {
+                $pages++;
+                $nextResponse = Http::timeout(10)->get($nextUrl);
+                $nextData = $nextResponse->json();
+                foreach ($nextData['data'] ?? [] as $convo) {
+                    $found++;
+                    if (!in_array($convo['id'], $seenIds)) {
+                        $allConversations[] = $convo;
+                        $seenIds[] = $convo['id'];
+                        $new++;
+                    }
+                }
+                $nextUrl = $nextData['paging']['next'] ?? null;
+            }
+
+            $debug['attempts'][$label] = ['found' => $found, 'new_unique' => $new, 'pages' => $pages];
+        } catch (\Throwable $e) {
+            $debug['attempts'][$label] = ['exception' => $e->getMessage()];
         }
-
-        $allConversations = array_merge($allConversations, $data['data'] ?? []);
-
-        // Follow pagination if we need more
-        $nextUrl = $data['paging']['next'] ?? null;
-        while ($nextUrl && count($allConversations) < $limit) {
-            $response = Http::get($nextUrl);
-            $page = $response->json();
-            $allConversations = array_merge($allConversations, $page['data'] ?? []);
-            $nextUrl = $page['paging']['next'] ?? null;
-        }
-
-        return ['data' => array_slice($allConversations, 0, $limit), '_page_id' => $pageId, '_debug_total' => count($allConversations)];
     }
 
     /**
