@@ -651,14 +651,36 @@ class MetaApiService
             return ['data' => [], 'error' => 'No se pudo obtener el Page ID'];
         }
 
-        $response = Http::get("{$this->fbApi}/{$pageId}/conversations", [
+        // Fetch conversations — collect all pages up to $limit
+        $allConversations = [];
+        $url = "{$this->fbApi}/{$pageId}/conversations";
+        $params = [
             'platform' => 'instagram',
             'fields' => 'id,updated_time,participants,messages.limit(1){id,created_time,from,to,message,attachments}',
-            'limit' => $limit,
+            'limit' => min($limit, 25),
             'access_token' => $token,
-        ]);
+        ];
 
-        return $response->json();
+        // First request
+        $response = Http::get($url, $params);
+        $data = $response->json();
+
+        if (isset($data['error'])) {
+            return $data;
+        }
+
+        $allConversations = array_merge($allConversations, $data['data'] ?? []);
+
+        // Follow pagination if we need more
+        $nextUrl = $data['paging']['next'] ?? null;
+        while ($nextUrl && count($allConversations) < $limit) {
+            $response = Http::get($nextUrl);
+            $page = $response->json();
+            $allConversations = array_merge($allConversations, $page['data'] ?? []);
+            $nextUrl = $page['paging']['next'] ?? null;
+        }
+
+        return ['data' => array_slice($allConversations, 0, $limit), '_page_id' => $pageId, '_debug_total' => count($allConversations)];
     }
 
     /**
