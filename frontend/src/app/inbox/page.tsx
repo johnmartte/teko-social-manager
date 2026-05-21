@@ -98,7 +98,7 @@ export default function InboxPage() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const myIgUserId = typeof window !== "undefined" ? localStorage.getItem("ig_user_id") : null;
+  const myIgUserId = status?.instagram?.userId || (typeof window !== "undefined" ? localStorage.getItem("ig_user_id") : null);
 
   const loadConversations = useCallback(async () => {
     setLoading(true);
