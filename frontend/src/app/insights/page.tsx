@@ -213,6 +213,8 @@ export default function InsightsPage() {
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [selectedDays, setSelectedDays] = useState(28);
   const [initialLoaded, setInitialLoaded] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [debugData, setDebugData] = useState<any>(null);
 
   // Initial load — fetch everything once
   useEffect(() => {
@@ -422,10 +424,58 @@ export default function InsightsPage() {
           )}
 
           {/* ── Demographics (always visible) ────────── */}
-          <h2 className="text-lg font-bold mt-4 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#c13584]" />
-            Audiencia
-          </h2>
+          <div className="flex items-center justify-between mt-4">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#c13584]" />
+              Audiencia
+            </h2>
+            <button
+              onClick={() => {
+                api<Record<string, unknown>>("/instagram/debug-audience")
+                  .then((r) => setDebugData(r))
+                  .catch((e) => setDebugData({ error: e.message }));
+              }}
+              className="text-[10px] text-muted/50 hover:text-muted border border-border/30 rounded px-2 py-0.5"
+            >
+              Diagnosticar
+            </button>
+          </div>
+
+          {debugData && (
+            <div className="bg-zinc-900 border border-border rounded-xl p-4 text-xs overflow-auto max-h-96">
+              <div className="flex justify-between mb-2">
+                <span className="font-bold text-white">Diagnostico de audiencia</span>
+                <button onClick={() => setDebugData(null)} className="text-muted hover:text-white">Cerrar</button>
+              </div>
+              {debugData.profile && (
+                <div className="mb-3 space-y-1">
+                  <p className="text-green-400 font-bold">Perfil:</p>
+                  <p>Username: <span className="text-white">{debugData.profile.username}</span></p>
+                  <p>Followers: <span className="text-white font-bold">{debugData.profile.followers_count}</span></p>
+                  <p>Media: <span className="text-white">{debugData.profile.media_count}</span></p>
+                  <p>Tipo: <span className="text-white">{debugData.profile.account_type || "N/A"}</span></p>
+                </div>
+              )}
+              {debugData.permissions?.data && (
+                <div className="mb-3">
+                  <p className="text-blue-400 font-bold">Permisos del token:</p>
+                  <p className="text-white">{debugData.permissions.data.filter((p: {status:string}) => p.status === "granted").map((p: {permission:string}) => p.permission).join(", ")}</p>
+                </div>
+              )}
+              {debugData.demographic_tests && (
+                <div>
+                  <p className="text-yellow-400 font-bold mb-1">Tests de demographics:</p>
+                  {debugData.demographic_tests.map((t: Record<string, unknown>, i: number) => (
+                    <div key={i} className={`py-1 border-b border-border/20 ${(t.has_data as boolean) ? "text-green-400" : "text-red-400"}`}>
+                      <span className="font-mono">{(t.params as Record<string,string>).metric}({(t.params as Record<string,string>).breakdown}) [{(t.params as Record<string,string>).timeframe || "no-timeframe"}]</span>
+                      <span className="ml-2">{(t.has_data as boolean) ? "OK - tiene datos" : `Sin datos (${(t.response as Record<string,{message:string}>)?.error?.message || "empty"})`}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {debugData.error && <p className="text-red-400">{debugData.error}</p>}
+            </div>
+          )}
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Gender */}
