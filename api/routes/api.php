@@ -115,6 +115,11 @@ Route::prefix('instagram')->middleware('social:instagram')->group(function () {
     Route::post('/media/{mediaId}/comments/reply', [InstagramController::class, 'replyToComment']);
     Route::post('/comments/{commentId}/hide', [InstagramController::class, 'hideComment']);
     Route::delete('/comments/{commentId}', [InstagramController::class, 'deleteComment']);
+
+    // Messaging / Inbox
+    Route::get('/conversations', [InstagramController::class, 'conversations']);
+    Route::get('/conversations/{conversationId}/messages', [InstagramController::class, 'conversationMessages']);
+    Route::post('/messages/send', [InstagramController::class, 'sendMessage']);
 });
 
 // Facebook

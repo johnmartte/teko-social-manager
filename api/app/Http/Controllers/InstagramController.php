@@ -223,4 +223,55 @@ class InstagramController extends Controller
             $this->meta->deleteComment($commentId, $request->attributes->get('ig_token'))
         );
     }
+
+    // ─── MESSAGING ──────────────────────────────────────
+
+    public function conversations(Request $request): JsonResponse
+    {
+        $limit = (int) $request->input('limit', 20);
+
+        try {
+            $data = $this->meta->getInstagramConversations(
+                $request->attributes->get('ig_user_id'),
+                $request->attributes->get('ig_token'),
+                $limit
+            );
+            return response()->json($data);
+        } catch (Throwable $e) {
+            return response()->json(['data' => [], 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function conversationMessages(Request $request, string $conversationId): JsonResponse
+    {
+        try {
+            $data = $this->meta->getConversationMessages(
+                $conversationId,
+                $request->attributes->get('ig_token')
+            );
+            return response()->json($data);
+        } catch (Throwable $e) {
+            return response()->json(['messages' => [], 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function sendMessage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'recipient_id' => 'required|string',
+            'message' => 'required|string|max:1000',
+        ]);
+
+        try {
+            $data = $this->meta->sendInstagramMessage(
+                $request->attributes->get('ig_user_id'),
+                $request->attributes->get('ig_token'),
+                $request->input('recipient_id'),
+                $request->input('message')
+            );
+            return response()->json($data);
+        } catch (Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
 }

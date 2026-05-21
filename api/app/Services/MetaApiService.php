@@ -636,4 +636,70 @@ class MetaApiService
             'access_token' => $pageToken,
         ])->json();
     }
+
+    // ─── INSTAGRAM MESSAGING ────────────────────────────
+
+    /**
+     * Get Instagram conversations via the Page Conversations API.
+     * The IG token is a Page token, so we need to resolve the Page ID first.
+     */
+    public function getInstagramConversations(string $igUserId, string $token, int $limit = 20): array
+    {
+        // The IG token is a Page Access Token — find the Page ID
+        $pageId = $this->resolvePageId($token);
+        if (!$pageId) {
+            return ['data' => [], 'error' => 'No se pudo obtener el Page ID'];
+        }
+
+        $response = Http::get("{$this->fbApi}/{$pageId}/conversations", [
+            'platform' => 'instagram',
+            'fields' => 'id,updated_time,participants,messages.limit(1){id,created_time,from,to,message}',
+            'limit' => $limit,
+            'access_token' => $token,
+        ]);
+
+        return $response->json();
+    }
+
+    /**
+     * Get messages in a specific conversation.
+     */
+    public function getConversationMessages(string $conversationId, string $token, int $limit = 20): array
+    {
+        // Get message IDs
+        $response = Http::get("{$this->fbApi}/{$conversationId}", [
+            'fields' => "messages.limit({$limit}){id,created_time,from,to,message}",
+            'access_token' => $token,
+        ]);
+
+        return $response->json();
+    }
+
+    /**
+     * Send a reply in an Instagram conversation.
+     * Uses the Instagram Send API: POST /<IG_USER_ID>/messages
+     */
+    public function sendInstagramMessage(string $igUserId, string $token, string $recipientId, string $text): array
+    {
+        $response = Http::post("{$this->fbApi}/{$igUserId}/messages", [
+            'recipient' => ['id' => $recipientId],
+            'message' => ['text' => $text],
+            'access_token' => $token,
+        ]);
+
+        return $response->json();
+    }
+
+    /**
+     * Resolve the Facebook Page ID from a Page Access Token.
+     */
+    private function resolvePageId(string $token): ?string
+    {
+        $response = Http::get("{$this->fbApi}/me", [
+            'fields' => 'id',
+            'access_token' => $token,
+        ]);
+
+        return $response->json('id');
+    }
 }
