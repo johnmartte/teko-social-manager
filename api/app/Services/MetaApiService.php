@@ -147,7 +147,7 @@ class MetaApiService
         $days  = min(max($days, 1), 28); // clamp 1–28
         $cacheKey = "ig_insights_{$userId}_{$days}";
 
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($userId, $token, $days) {
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 120, function () use ($userId, $token, $days) {
             $now   = now();
             $since = $now->copy()->subDays($days)->timestamp;
             $until = $now->timestamp;
@@ -236,7 +236,7 @@ class MetaApiService
     {
         $cacheKey = "ig_audience_{$userId}";
 
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($userId, $token) {
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($userId, $token) {
             $allData = [];
             $debugErrors = [];
 
@@ -324,7 +324,7 @@ class MetaApiService
     {
         $cacheKey = "ig_online_{$userId}";
 
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($userId, $token) {
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($userId, $token) {
             $attempts = [
                 ['metric' => 'online_followers', 'period' => 'lifetime', 'metric_type' => 'total_value', 'access_token' => $token],
                 ['metric' => 'online_followers', 'period' => 'lifetime', 'access_token' => $token],
