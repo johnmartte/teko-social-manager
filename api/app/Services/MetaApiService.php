@@ -645,37 +645,37 @@ class MetaApiService
      */
     public function getInstagramConversations(string $igUserId, string $token, int $limit = 20): array
     {
-        // The IG token is a Page Access Token — find the Page ID
-        $pageId = $this->resolvePageId($token);
-        if (!$pageId) {
-            return ['data' => [], 'error' => 'No se pudo obtener el Page ID'];
-        }
-
         $fields = 'id,updated_time,participants,messages.limit(1){id,created_time,from,to,message,attachments}';
         $allConversations = [];
         $seenIds = [];
-        $debug = ['page_id' => $pageId, 'ig_user_id' => $igUserId, 'attempts' => []];
+        $debug = ['ig_user_id' => $igUserId, 'attempts' => []];
 
-        // Strategy 1: Default query (no folder — returns "primary" inbox)
-        $this->fetchConversationsFromEndpoint(
-            "{$this->fbApi}/{$pageId}/conversations",
-            ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
-            $allConversations, $seenIds, $debug, 'default'
-        );
-
-        // Strategy 2: Try graph.instagram.com endpoint (IG Login API style)
+        // Strategy 1: Instagram Login API — graph.instagram.com/me/conversations
+        // This is the correct endpoint for tokens from Instagram OAuth
         $this->fetchConversationsFromEndpoint(
             "https://graph.instagram.com/v20.0/me/conversations",
             ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
-            $allConversations, $seenIds, $debug, 'ig_api_me'
+            $allConversations, $seenIds, $debug, 'ig_me'
         );
 
-        // Strategy 3: Try with the IG user ID on graph.instagram.com
+        // Strategy 2: Instagram Login API — graph.instagram.com/{igUserId}/conversations
         $this->fetchConversationsFromEndpoint(
             "https://graph.instagram.com/v20.0/{$igUserId}/conversations",
             ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
-            $allConversations, $seenIds, $debug, 'ig_api_userid'
+            $allConversations, $seenIds, $debug, 'ig_userid'
         );
+
+        // Strategy 3: Page API — graph.facebook.com/{pageId}/conversations
+        // Works if token is a Page Access Token
+        $pageId = $this->resolvePageId($token);
+        $debug['page_id'] = $pageId;
+        if ($pageId) {
+            $this->fetchConversationsFromEndpoint(
+                "{$this->fbApi}/{$pageId}/conversations",
+                ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
+                $allConversations, $seenIds, $debug, 'fb_page'
+            );
+        }
 
         // Sort by updated_time descending
         usort($allConversations, fn ($a, $b) =>
@@ -746,31 +746,54 @@ class MetaApiService
 
     /**
      * Get messages in a specific conversation.
+     * Tries graph.instagram.com first (IG Login token), falls back to graph.facebook.com.
      */
     public function getConversationMessages(string $conversationId, string $token, int $limit = 20): array
     {
-        // Get message IDs
-        $response = Http::get("{$this->fbApi}/{$conversationId}", [
-            'fields' => "messages.limit({$limit}){id,created_time,from,to,message,attachments}",
+        $fields = "messages.limit({$limit}){id,created_time,from,to,message,attachments}";
+
+        // Try Instagram API first
+        $response = Http::timeout(10)->get("https://graph.instagram.com/v20.0/{$conversationId}", [
+            'fields' => $fields,
             'access_token' => $token,
         ]);
+        $data = $response->json();
 
-        return $response->json();
+        // If IG API fails, try Facebook API
+        if (isset($data['error'])) {
+            $response = Http::timeout(10)->get("{$this->fbApi}/{$conversationId}", [
+                'fields' => $fields,
+                'access_token' => $token,
+            ]);
+            $data = $response->json();
+        }
+
+        return $data;
     }
 
     /**
      * Send a reply in an Instagram conversation.
-     * Uses the Instagram Send API: POST /<IG_USER_ID>/messages
+     * Tries graph.instagram.com first, falls back to graph.facebook.com.
      */
     public function sendInstagramMessage(string $igUserId, string $token, string $recipientId, string $text): array
     {
-        $response = Http::post("{$this->fbApi}/{$igUserId}/messages", [
+        $payload = [
             'recipient' => ['id' => $recipientId],
             'message' => ['text' => $text],
             'access_token' => $token,
-        ]);
+        ];
 
-        return $response->json();
+        // Try Instagram API first
+        $response = Http::timeout(10)->post("https://graph.instagram.com/v20.0/{$igUserId}/messages", $payload);
+        $data = $response->json();
+
+        // If IG API fails, try Facebook API
+        if (isset($data['error'])) {
+            $response = Http::timeout(10)->post("{$this->fbApi}/{$igUserId}/messages", $payload);
+            $data = $response->json();
+        }
+
+        return $data;
     }
 
     /**
