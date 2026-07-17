@@ -793,6 +793,49 @@ class MetaApiService
         return $data;
     }
 
+    // ─── FACEBOOK MESSAGING ────────────────────────────
+
+    public function getFacebookConversations(string $pageId, string $pageToken, int $limit = 20): array
+    {
+        $fields = 'id,participants,updated_time,snippet,unread_count,messages.limit(1){id,message,from,created_time}';
+        $response = Http::timeout(10)->get("{$this->fbApi}/{$pageId}/conversations", [
+            'fields' => $fields,
+            'limit' => $limit,
+            'access_token' => $pageToken,
+        ]);
+
+        return $response->json();
+    }
+
+    public function getFacebookMessages(string $conversationId, string $pageToken, int $limit = 20): array
+    {
+        $response = Http::timeout(10)->get("{$this->fbApi}/{$conversationId}/messages", [
+            'fields' => 'id,message,from,created_time,attachments',
+            'limit' => $limit,
+            'access_token' => $pageToken,
+        ]);
+
+        return $response->json();
+    }
+
+    public function sendFacebookMessage(string $pageId, string $pageToken, string $recipientId, string $text): array
+    {
+        $response = Http::timeout(10)->post("{$this->fbApi}/{$pageId}/messages", [
+            'recipient' => ['id' => $recipientId],
+            'message' => ['text' => $text],
+            'messaging_type' => 'RESPONSE',
+            'access_token' => $pageToken,
+        ]);
+
+        $data = $response->json();
+
+        if (isset($data['error'])) {
+            throw new \RuntimeException("Facebook message error: " . ($data['error']['message'] ?? json_encode($data)));
+        }
+
+        return $data;
+    }
+
     /**
      * Resolve the Facebook Page ID from a Page Access Token.
      */

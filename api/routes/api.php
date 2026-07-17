@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FacebookController;
 use App\Http\Controllers\InstagramController;
+use App\Http\Controllers\MessagesController;
 use App\Http\Controllers\ScheduledPostController;
 use App\Http\Controllers\SystemAuthController;
 use App\Http\Controllers\UploadController;
@@ -89,6 +90,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/workspace/social/meta', [WorkspaceController::class, 'socialMeta']);
     Route::get('/workspace/inbox', [WorkspaceController::class, 'inbox']);
     Route::post('/workspace/inbox/templates', [WorkspaceController::class, 'addTemplate']);
+
+    Route::get('/messages/conversations', [MessagesController::class, 'conversations']);
+    Route::get('/messages/{conversationId}', [MessagesController::class, 'messages']);
+    Route::post('/messages/send', [MessagesController::class, 'send']);
     Route::get('/workspace/automations', [WorkspaceController::class, 'automations']);
     Route::patch('/workspace/automations/{automationRule}/toggle', [WorkspaceController::class, 'toggleAutomation']);
 });

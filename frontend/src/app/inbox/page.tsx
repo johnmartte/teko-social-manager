@@ -6,49 +6,33 @@ import { api } from "@/lib/api";
 
 /* ── Types ──────────────────────────────────────────────────── */
 
-type Participant = { username?: string; name?: string; id: string };
-
-type Attachment = {
-  mime_type?: string;
-  size?: number;
-  image_data?: { url: string; width: number; height: number };
-  video_data?: { url: string };
-  file_url?: string;
-};
-
-type MessageData = {
-  id: string;
-  created_time: string;
-  from: { username?: string; name?: string; id: string };
-  to?: { data: { username?: string; name?: string; id: string }[] };
-  message?: string;
-  attachments?: { data: Attachment[] };
-};
-
 type Conversation = {
   id: string;
-  updated_time: string;
-  participants?: { data: Participant[] };
-  messages?: { data: MessageData[] };
+  channel: "instagram" | "facebook";
+  participant_id: string | null;
+  participant_name: string;
+  last_message: string;
+  last_message_from: string;
+  updated_time: string | null;
+  unread_count?: number;
 };
 
-type ConversationsResponse = {
-  data?: Conversation[];
-  error?: { message: string } | string;
+type Message = {
+  id: string;
+  message: string;
+  from_id: string | null;
+  from_name: string;
+  created_time: string | null;
+  attachments: { type: string; url: string | null }[];
 };
 
-type MessagesResponse = {
-  messages?: { data: MessageData[] };
-  error?: string;
-};
+type ConversationsResponse = { conversations: Conversation[] };
+type MessagesResponse = { messages: Message[] };
 
 /* ── Helpers ────────────────────────────────────────────────── */
 
-function displayName(p: { username?: string; name?: string; id?: string }): string {
-  return p.username || p.name || p.id || "Usuario";
-}
-
-function timeAgo(iso: string) {
+function timeAgo(iso: string | null) {
+  if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "ahora";
@@ -59,29 +43,10 @@ function timeAgo(iso: string) {
   return `${days}d`;
 }
 
-function formatTime(iso: string) {
+function formatTime(iso: string | null) {
+  if (!iso) return "";
   const d = new Date(iso);
   return d.toLocaleString("es-DO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-}
-
-function messageContent(msg: MessageData): { text: string; imageUrl?: string } {
-  const text = msg.message || "";
-  let imageUrl: string | undefined;
-
-  if (msg.attachments?.data?.length) {
-    const att = msg.attachments.data[0];
-    if (att.image_data?.url) {
-      imageUrl = att.image_data.url;
-    } else if (att.video_data?.url) {
-      return { text: text || "Video", imageUrl: undefined };
-    } else if (att.file_url) {
-      imageUrl = att.file_url;
-    }
-  }
-
-  if (!text && imageUrl) return { text: "", imageUrl };
-  if (!text && !imageUrl) return { text: "Contenido multimedia", imageUrl: undefined };
-  return { text, imageUrl };
 }
 
 /* ── Component ──────────────────────────────────────────────── */
@@ -89,130 +54,144 @@ function messageContent(msg: MessageData): { text: string; imageUrl?: string } {
 export default function InboxPage() {
   const { status } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
-  const [messages, setMessages] = useState<MessageData[]>([]);
-  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [selected, setSelected] = useState<Conversation | null>(null);
+  const [msgsLoading, setMsgsLoading] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
+  const [filter, setFilter] = useState<"all" | "instagram" | "facebook">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const myIgUserId = status?.instagram?.userId || (typeof window !== "undefined" ? localStorage.getItem("ig_user_id") : null);
+  const connected = status?.instagram?.connected || status?.facebook?.connected;
 
   const loadConversations = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await api<ConversationsResponse>("/instagram/conversations");
-      if (data.error) {
-        const errMsg = typeof data.error === "string" ? data.error : data.error.message;
-        setError(errMsg);
-        setConversations([]);
-      } else {
-        setConversations(data.data || []);
-      }
+      const data = await api<ConversationsResponse>("/messages/conversations");
+      setConversations(data.conversations || []);
     } catch (e) {
       setError((e as Error).message);
+      setConversations([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (status?.instagram.connected) {
-      loadConversations();
+    if (connected) {
+      void loadConversations();
     } else {
       setLoading(false);
     }
-  }, [status, loadConversations]);
+  }, [connected, loadConversations]);
 
-  const loadMessages = useCallback(async (convoId: string) => {
-    setSelectedConvo(convoId);
-    setMessagesLoading(true);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (!connected) return;
+    const interval = setInterval(() => void loadConversations(), 30000);
+    return () => clearInterval(interval);
+  }, [connected, loadConversations]);
+
+  async function openConversation(conv: Conversation) {
+    setSelected(conv);
+    setMessages([]);
+    setMsgsLoading(true);
+    setReplyText("");
     try {
-      const data = await api<MessagesResponse>(`/instagram/conversations/${convoId}/messages`);
-      const msgs = data.messages?.data || [];
-      setMessages([...msgs].reverse());
+      const data = await api<MessagesResponse>(
+        `/messages/${conv.id}?channel=${conv.channel}`
+      );
+      setMessages(data.messages || []);
     } catch {
       setMessages([]);
     } finally {
-      setMessagesLoading(false);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      setMsgsLoading(false);
     }
-  }, []);
+  }
 
-  const sendReply = async () => {
-    if (!replyText.trim() || !selectedConvo || sending) return;
-
-    const convo = conversations.find((c) => c.id === selectedConvo);
-    const otherParticipant = convo?.participants?.data?.find((p) => p.id !== myIgUserId);
-    const lastMsg = messages.find((m) => m.from.id !== myIgUserId);
-    const recipientId = otherParticipant?.id || lastMsg?.from.id;
-
-    if (!recipientId) return;
-
+  async function sendReply() {
+    if (!selected || !replyText.trim() || sending) return;
     setSending(true);
     try {
-      await api("/instagram/messages/send", {
+      await api("/messages/send", {
         method: "POST",
-        body: { recipient_id: recipientId, message: replyText.trim() },
+        body: {
+          conversation_id: selected.id,
+          channel: selected.channel,
+          recipient_id: selected.participant_id,
+          message: replyText.trim(),
+        },
       });
       setReplyText("");
-      await loadMessages(selectedConvo);
-    } catch {
-      // silently fail
+      await openConversation(selected);
+    } catch (e) {
+      alert((e as Error).message || "Error enviando mensaje");
     } finally {
       setSending(false);
     }
-  };
-
-  const selectedConversation = conversations.find((c) => c.id === selectedConvo);
-
-  function convoName(convo: Conversation): string {
-    if (convo.participants?.data) {
-      const other = convo.participants.data.find((p) => p.id !== myIgUserId);
-      if (other) return displayName(other);
-    }
-    const lastMsg = convo.messages?.data?.[0];
-    if (lastMsg && lastMsg.from.id !== myIgUserId) return displayName(lastMsg.from);
-    if (lastMsg?.to?.data?.[0]) return displayName(lastMsg.to.data[0]);
-    return "Conversacion";
   }
 
-  function convoPreview(convo: Conversation): string {
-    const msg = convo.messages?.data?.[0];
-    if (!msg) return "Sin mensajes";
-    const { text } = messageContent(msg);
-    if (text) return text;
-    return "Imagen";
-  }
+  const filtered = filter === "all"
+    ? conversations
+    : conversations.filter((c) => c.channel === filter);
 
-  if (!status?.instagram.connected) {
+  if (!connected) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-muted">Conecta Instagram para ver tus mensajes.</p>
+        <p className="text-muted">Conecta Instagram o Facebook para ver tus mensajes.</p>
       </div>
     );
   }
 
+  const channelColor = (ch: string) => ch === "instagram" ? "#e1306c" : "#1877f2";
+  const channelGradient = (ch: string) =>
+    ch === "instagram"
+      ? "from-[#833ab4] via-[#e1306c] to-[#f77737]"
+      : "from-[#1877f2] to-[#42a5f5]";
+
   return (
     <div className="flex flex-col h-[calc(100vh-80px)]">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border">
-        <h1 className="text-xl font-bold">Inbox</h1>
-        <p className="text-xs text-muted">Mensajes directos de Instagram</p>
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold">Inbox unificado</h1>
+          <p className="text-xs text-muted">Mensajes de Instagram y Facebook en un solo lugar</p>
+        </div>
+        <div className="flex gap-1">
+          {(["all", "instagram", "facebook"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`text-[11px] px-3 py-1.5 rounded-full transition-colors ${
+                filter === f
+                  ? "bg-accent text-white"
+                  : "bg-white/5 text-muted hover:bg-white/10"
+              }`}
+            >
+              {f === "all" ? "Todos" : f === "instagram" ? "Instagram" : "Facebook"}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {error && (
+        <div className="mx-4 mt-2 rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800 px-4 py-2 text-xs text-red-700 dark:text-red-300">
+          {error}
+        </div>
+      )}
 
       <div className="flex flex-1 min-h-0">
         {/* Sidebar - Conversation list */}
         <div className="w-80 border-r border-border flex flex-col shrink-0">
           <div className="p-3 border-b border-border flex items-center justify-between">
-            <span className="text-xs text-muted">{conversations.length} conversaciones</span>
-            <button
-              onClick={loadConversations}
-              className="text-xs text-accent hover:underline"
-            >
+            <span className="text-xs text-muted">{filtered.length} conversaciones</span>
+            <button onClick={() => void loadConversations()} className="text-xs text-accent hover:underline">
               Actualizar
             </button>
           </div>
@@ -220,40 +199,47 @@ export default function InboxPage() {
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <p className="text-sm text-muted text-center py-8 animate-pulse">Cargando...</p>
-            ) : error ? (
-              <div className="p-4 text-center">
-                <p className="text-xs text-red-400 mb-2">{error}</p>
-                <button onClick={loadConversations} className="text-xs text-accent hover:underline">
-                  Reintentar
-                </button>
-              </div>
-            ) : conversations.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <div className="p-4 text-center">
                 <p className="text-sm text-muted">No hay conversaciones</p>
-                <p className="text-xs text-muted/60 mt-1">Los DMs apareceran aqui cuando alguien te escriba.</p>
+                <p className="text-xs text-muted/60 mt-1">Los mensajes apareceran aqui.</p>
               </div>
             ) : (
-              conversations.map((convo) => (
+              filtered.map((conv) => (
                 <button
-                  key={convo.id}
-                  onClick={() => loadMessages(convo.id)}
+                  key={conv.id}
+                  onClick={() => void openConversation(conv)}
                   className={`w-full text-left px-4 py-3 border-b border-border/50 hover:bg-white/5 transition-colors ${
-                    selectedConvo === convo.id ? "bg-white/10 border-l-2 border-l-[#e1306c]" : ""
+                    selected?.id === conv.id ? "bg-white/10" : ""
                   }`}
+                  style={selected?.id === conv.id ? { borderLeftWidth: 2, borderLeftColor: channelColor(conv.channel) } : undefined}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#833ab4] via-[#e1306c] to-[#f77737] flex items-center justify-center shrink-0">
+                    <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${channelGradient(conv.channel)} flex items-center justify-center shrink-0`}>
                       <span className="text-white text-xs font-bold">
-                        {convoName(convo)[0].toUpperCase()}
+                        {conv.participant_name[0]?.toUpperCase() || "?"}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium truncate">@{convoName(convo)}</span>
-                        <span className="text-[10px] text-muted ml-2 shrink-0">{timeAgo(convo.updated_time)}</span>
+                        <span className="text-sm font-medium truncate">{conv.participant_name}</span>
+                        <span className="text-[10px] text-muted ml-2 shrink-0">{timeAgo(conv.updated_time)}</span>
                       </div>
-                      <p className="text-xs text-muted mt-0.5 truncate">{convoPreview(convo)}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span
+                          className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                          style={{ backgroundColor: `${channelColor(conv.channel)}20`, color: channelColor(conv.channel) }}
+                        >
+                          {conv.channel === "instagram" ? "IG" : "FB"}
+                        </span>
+                        <p className="text-xs text-muted truncate">{conv.last_message}</p>
+                      </div>
                     </div>
+                    {(conv.unread_count ?? 0) > 0 && (
+                      <span className="bg-accent text-white text-[10px] px-1.5 py-0.5 rounded-full shrink-0">
+                        {conv.unread_count}
+                      </span>
+                    )}
                   </div>
                 </button>
               ))
@@ -263,7 +249,7 @@ export default function InboxPage() {
 
         {/* Main - Message view */}
         <div className="flex-1 flex flex-col min-w-0">
-          {!selectedConvo ? (
+          {!selected ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
@@ -278,59 +264,62 @@ export default function InboxPage() {
             <>
               {/* Chat header */}
               <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                <button
-                  onClick={() => setSelectedConvo(null)}
-                  className="lg:hidden text-muted hover:text-foreground text-lg"
-                >
+                <button onClick={() => setSelected(null)} className="lg:hidden text-muted hover:text-foreground text-lg">
                   &larr;
                 </button>
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#833ab4] via-[#e1306c] to-[#f77737] flex items-center justify-center">
+                <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${channelGradient(selected.channel)} flex items-center justify-center`}>
                   <span className="text-white text-xs font-bold">
-                    {(selectedConversation ? convoName(selectedConversation) : "?")[0].toUpperCase()}
+                    {selected.participant_name[0]?.toUpperCase() || "?"}
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium">@{selectedConversation ? convoName(selectedConversation) : ""}</p>
-                  <p className="text-[10px] text-muted">Instagram DM</p>
+                  <p className="text-sm font-medium">{selected.participant_name}</p>
+                  <p className="text-[10px] text-muted">
+                    {selected.channel === "instagram" ? "Instagram DM" : "Facebook Messenger"}
+                  </p>
                 </div>
               </div>
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-                {messagesLoading ? (
+                {msgsLoading ? (
                   <p className="text-sm text-muted text-center py-8 animate-pulse">Cargando mensajes...</p>
                 ) : messages.length === 0 ? (
                   <p className="text-sm text-muted text-center py-8">Sin mensajes visibles.</p>
                 ) : (
                   messages.map((msg) => {
-                    const isMe = msg.from.id === myIgUserId;
-                    const { text, imageUrl } = messageContent(msg);
+                    const isOwn = msg.from_id !== selected.participant_id;
                     return (
-                      <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                      <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                         <div
                           className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
-                            isMe
-                              ? "bg-[#e1306c] text-white rounded-br-sm"
+                            isOwn
+                              ? `text-white rounded-br-sm`
                               : "bg-white/10 text-foreground rounded-bl-sm"
                           }`}
+                          style={isOwn ? { backgroundColor: channelColor(selected.channel) } : undefined}
                         >
-                          {!isMe && (
+                          {!isOwn && (
                             <p className="text-[10px] font-medium mb-1 opacity-70">
-                              @{displayName(msg.from)}
+                              {msg.from_name}
                             </p>
                           )}
-                          {imageUrl && (
-                            <img
-                              src={imageUrl}
-                              alt="attachment"
-                              className="rounded-lg max-w-full max-h-60 object-cover mb-1"
-                            />
-                          )}
-                          {text && <p className="text-sm">{text}</p>}
-                          {!text && !imageUrl && (
+                          {msg.attachments.length > 0 &&
+                            msg.attachments.map((att, i) =>
+                              att.url ? (
+                                <img
+                                  key={i}
+                                  src={att.url}
+                                  alt="adjunto"
+                                  className="rounded-lg max-w-full max-h-60 object-cover mb-1"
+                                />
+                              ) : null
+                            )}
+                          {msg.message && <p className="text-sm">{msg.message}</p>}
+                          {!msg.message && msg.attachments.length === 0 && (
                             <p className="text-sm italic opacity-70">Contenido multimedia</p>
                           )}
-                          <p className={`text-[10px] mt-1 ${isMe ? "text-white/60" : "text-muted"}`}>
+                          <p className={`text-[10px] mt-1 ${isOwn ? "text-white/60" : "text-muted"}`}>
                             {formatTime(msg.created_time)}
                           </p>
                         </div>
@@ -347,15 +336,22 @@ export default function InboxPage() {
                   <input
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendReply()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void sendReply();
+                      }
+                    }}
                     placeholder="Escribe un mensaje..."
-                    className="flex-1 rounded-xl border border-border bg-background/80 text-sm px-4 py-2.5 outline-none focus:border-[#e1306c] transition-colors"
+                    className="flex-1 rounded-xl border border-border bg-background/80 text-sm px-4 py-2.5 outline-none transition-colors"
+                    style={{ ["--tw-ring-color" as string]: channelColor(selected.channel) }}
                     disabled={sending}
                   />
                   <button
-                    onClick={sendReply}
+                    onClick={() => void sendReply()}
                     disabled={!replyText.trim() || sending}
-                    className="px-4 py-2.5 rounded-xl bg-[#e1306c] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="px-4 py-2.5 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    style={{ backgroundColor: channelColor(selected.channel) }}
                   >
                     {sending ? "..." : "Enviar"}
                   </button>
