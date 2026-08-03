@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\MetaApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class MessagesController extends Controller
 {
@@ -19,13 +20,23 @@ class MessagesController extends Controller
         $fbCred = $user->socialCredential('facebook');
 
         $conversations = [];
+        $debug = ['ig' => null, 'fb' => null];
 
         if ($igCred) {
             try {
+                $this->ensurePageSubscribed($igCred->access_token);
+
                 $igData = $this->meta->getInstagramConversations(
                     $igCred->meta_user_id,
                     $igCred->access_token,
                 );
+
+                $debug['ig'] = [
+                    'meta_user_id' => $igCred->meta_user_id,
+                    'raw_count' => count($igData['data'] ?? []),
+                    '_debug' => $igData['_debug'] ?? null,
+                ];
+
                 foreach ($igData['data'] ?? [] as $conv) {
                     $lastMsg = $conv['messages']['data'][0] ?? null;
                     $participant = $this->resolveParticipant($conv['participants']['data'] ?? [], $igCred->meta_user_id);
@@ -41,16 +52,28 @@ class MessagesController extends Controller
                     ];
                 }
             } catch (\Throwable $e) {
+                $debug['ig'] = ['error' => $e->getMessage()];
                 \Log::warning('IG conversations error: ' . $e->getMessage());
             }
+        } else {
+            $debug['ig'] = 'no_credential';
         }
 
         if ($fbCred) {
             try {
+                $this->ensurePageSubscribed($fbCred->access_token);
+
                 $fbData = $this->meta->getFacebookConversations(
                     $fbCred->meta_user_id,
                     $fbCred->access_token,
                 );
+
+                $debug['fb'] = [
+                    'meta_user_id' => $fbCred->meta_user_id,
+                    'raw_count' => count($fbData['data'] ?? []),
+                    'raw_error' => $fbData['error'] ?? null,
+                ];
+
                 foreach ($fbData['data'] ?? [] as $conv) {
                     $lastMsg = $conv['messages']['data'][0] ?? null;
                     $participant = $this->resolveParticipant($conv['participants']['data'] ?? [], $fbCred->meta_user_id);
@@ -67,13 +90,19 @@ class MessagesController extends Controller
                     ];
                 }
             } catch (\Throwable $e) {
+                $debug['fb'] = ['error' => $e->getMessage()];
                 \Log::warning('FB conversations error: ' . $e->getMessage());
             }
+        } else {
+            $debug['fb'] = 'no_credential';
         }
 
         usort($conversations, fn($a, $b) => strcmp($b['updated_time'] ?? '', $a['updated_time'] ?? ''));
 
-        return response()->json(['conversations' => $conversations]);
+        return response()->json([
+            'conversations' => $conversations,
+            '_debug' => $debug,
+        ]);
     }
 
     public function messages(Request $request, string $conversationId): JsonResponse
@@ -167,6 +196,26 @@ class MessagesController extends Controller
             return response()->json(['success' => true, 'result' => $result]);
         } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    private function ensurePageSubscribed(string $pageToken): void
+    {
+        try {
+            $version = config('meta.graph_api_version', 'v20.0');
+            $pageId = Http::get("https://graph.facebook.com/{$version}/me", [
+                'fields' => 'id',
+                'access_token' => $pageToken,
+            ])->json('id');
+
+            if ($pageId) {
+                Http::post("https://graph.facebook.com/{$version}/{$pageId}/subscribed_apps", [
+                    'subscribed_fields' => 'messages,messaging_postbacks,message_deliveries,message_reads',
+                    'access_token' => $pageToken,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Page subscription error: ' . $e->getMessage());
         }
     }
 
