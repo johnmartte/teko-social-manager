@@ -52,18 +52,16 @@ export default function ForgotPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [resetCode, setResetCode] = useState<string | null>(null);
 
   async function handleRequestCode(e: FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError("");
     try {
-      const data = await api<{ success: boolean; code?: string }>("/auth/system/forgot-password", {
+      await api<{ success: boolean }>("/auth/system/forgot-password", {
         method: "POST",
         body: { email: email.trim() },
       });
-      if (data.code) setResetCode(data.code);
       setStep("code");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al solicitar codigo");
@@ -159,17 +157,8 @@ export default function ForgotPasswordPage() {
                 Ingresa el codigo
               </h1>
               <p className="text-center text-sm text-white/80 mt-3 mb-6 leading-6">
-                {resetCode
-                  ? "Usa el codigo de abajo junto con tu nueva contrasena."
-                  : "Revisa tu email e introduce el codigo de 6 digitos junto con tu nueva contrasena."}
+                Revisa tu email e introduce el codigo de 6 digitos junto con tu nueva contrasena.
               </p>
-
-              {resetCode && (
-                <div className="mb-4 rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-center">
-                  <p className="text-xs text-white/60 mb-1">Tu codigo de recuperacion:</p>
-                  <p className="text-2xl font-mono font-bold tracking-[0.3em]">{resetCode}</p>
-                </div>
-              )}
 
               <form onSubmit={handleReset} className="space-y-4">
                 <div>

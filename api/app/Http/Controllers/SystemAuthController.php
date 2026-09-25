@@ -158,26 +158,15 @@ class SystemAuthController extends Controller
             ['token' => Hash::make($code), 'created_at' => now()],
         );
 
-        $emailSent = false;
-        try {
-            Mail::raw(
-                "Tu codigo de recuperacion de Tekamp es: {$code}\n\nEste codigo expira en 30 minutos.",
-                function ($message) use ($user) {
-                    $message->to($user->email)
-                        ->subject('Codigo de recuperacion - Tekamp');
-                }
-            );
-            $emailSent = true;
-        } catch (\Throwable $e) {
-            \Log::warning('Password reset email failed: ' . $e->getMessage());
-        }
+        Mail::raw(
+            "Tu codigo de recuperacion de Tekamp es: {$code}\n\nEste codigo expira en 30 minutos.",
+            function ($message) use ($user) {
+                $message->to($user->email)
+                    ->subject('Codigo de recuperacion - Tekamp');
+            }
+        );
 
-        $response = ['success' => true];
-        if (!$emailSent) {
-            $response['code'] = $code;
-        }
-
-        return response()->json($response);
+        return response()->json(['success' => true]);
     }
 
     public function resetPassword(Request $request): JsonResponse
