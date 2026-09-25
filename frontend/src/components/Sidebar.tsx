@@ -42,7 +42,7 @@ export default function Sidebar() {
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
                     isActive
-                      ? "bg-white/12 text-sidebar-active shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                      ? "bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] text-white shadow-[0_4px_18px_-4px_rgba(11,110,255,0.6)]"
                       : "text-sidebar-text hover:bg-white/6 hover:text-sidebar-active"
                   }`}
                 >

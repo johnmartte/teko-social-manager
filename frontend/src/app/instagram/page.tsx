@@ -53,7 +53,7 @@ export default function InstagramPage() {
       {profile && (
         <Card>
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-[#fcaf45] flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-ig to-[#fcaf45] flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
               {profile.username[0].toUpperCase()}
             </div>
             <div className="flex-1">

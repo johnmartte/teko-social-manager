@@ -2,43 +2,59 @@
 
 :root,
 [data-theme="light"] {
-  --background: #ebe4d4;
-  --foreground: #1f1e1a;
-  --card: #fefbf4;
-  --card-hover: #f8f1e2;
-  --border: #ded2bc;
-  --muted: #887e6d;
-  --accent: #e1306c;
-  --accent-light: #fde7ef;
+  --background: #fbfcfe;
+  --foreground: #101828;
+  --card: #ffffff;
+  --card-hover: #f7f9fc;
+  --border: #e7ebf2;
+  --muted: #6a7282;
+  --accent: #0047ff;
+  --accent-light: #eaf4ff;
+  --ig: #e1306c;
+  --ig-light: #fde7ef;
   --fb: #1877f2;
   --fb-light: #e7f1ff;
-  --warning: #e8a126;
-  --warning-light: #faefcf;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
   --success: #22c55e;
-  --success-light: #dcf8e4;
-  --sidebar: #0f1112;
-  --sidebar-text: #9ea3aa;
+  --success-light: #dcfce7;
+  --error: #ef4444;
+  --error-light: #fef2f2;
+  --error-border: #fecaca;
+  --sidebar: #0a0e1a;
+  --sidebar-text: rgba(242, 243, 245, 0.55);
   --sidebar-active: #ffffff;
+  --shadow-color: rgba(16, 24, 40, 0.06);
+  --shadow-md: rgba(16, 24, 40, 0.12);
+  --shadow-lg: rgba(16, 24, 40, 0.35);
 }
 
 [data-theme="dark"] {
-  --background: #0f1112;
-  --foreground: #e4e2de;
-  --card: #1a1c1e;
-  --card-hover: #232628;
-  --border: #2e3135;
-  --muted: #8a8f96;
-  --accent: #e1306c;
-  --accent-light: #3a1526;
+  --background: #080a0f;
+  --foreground: #f2f3f5;
+  --card: rgba(255, 255, 255, 0.04);
+  --card-hover: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.1);
+  --muted: rgba(242, 243, 245, 0.55);
+  --accent: #1ec4ff;
+  --accent-light: rgba(30, 196, 255, 0.12);
+  --ig: #f0508a;
+  --ig-light: rgba(225, 48, 108, 0.14);
   --fb: #4599ff;
   --fb-light: #162438;
-  --warning: #f0b040;
-  --warning-light: #332a14;
-  --success: #34d66a;
-  --success-light: #14291c;
-  --sidebar: #0a0b0c;
-  --sidebar-text: #9ea3aa;
+  --warning: #fbbf24;
+  --warning-light: rgba(251, 191, 36, 0.12);
+  --success: #4ade80;
+  --success-light: rgba(74, 222, 128, 0.12);
+  --error: #f87171;
+  --error-light: rgba(248, 113, 113, 0.12);
+  --error-border: rgba(248, 113, 113, 0.25);
+  --sidebar: #05070c;
+  --sidebar-text: rgba(242, 243, 245, 0.55);
   --sidebar-active: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-md: rgba(0, 0, 0, 0.5);
+  --shadow-lg: rgba(0, 0, 0, 0.6);
 }
 
 @theme inline {
@@ -50,12 +66,17 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-light: var(--accent-light);
+  --color-ig: var(--ig);
+  --color-ig-light: var(--ig-light);
   --color-fb: var(--fb);
   --color-fb-light: var(--fb-light);
   --color-warning: var(--warning);
   --color-warning-light: var(--warning-light);
   --color-success: var(--success);
   --color-success-light: var(--success-light);
+  --color-error: var(--error);
+  --color-error-light: var(--error-light);
+  --color-error-border: var(--error-border);
   --color-sidebar: var(--sidebar);
   --color-sidebar-text: var(--sidebar-text);
   --color-sidebar-active: var(--sidebar-active);
@@ -65,9 +86,9 @@
 
 body {
   background:
-    radial-gradient(circle at 16% 12%, rgba(255, 236, 197, 0.75), transparent 38%),
-    radial-gradient(circle at 86% 2%, rgba(196, 227, 255, 0.6), transparent 34%),
-    radial-gradient(circle at 88% 88%, rgba(255, 194, 217, 0.38), transparent 38%),
+    radial-gradient(circle at 16% 12%, rgba(0, 113, 255, 0.05), transparent 38%),
+    radial-gradient(circle at 86% 2%, rgba(30, 196, 255, 0.05), transparent 34%),
+    radial-gradient(circle at 88% 88%, rgba(0, 71, 255, 0.03), transparent 38%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -76,9 +97,9 @@ body {
 
 [data-theme="dark"] body {
   background:
-    radial-gradient(circle at 16% 12%, rgba(225, 48, 108, 0.08), transparent 38%),
-    radial-gradient(circle at 86% 2%, rgba(69, 153, 255, 0.06), transparent 34%),
-    radial-gradient(circle at 88% 88%, rgba(225, 48, 108, 0.04), transparent 38%),
+    radial-gradient(circle at 16% 12%, rgba(30, 196, 255, 0.07), transparent 38%),
+    radial-gradient(circle at 86% 2%, rgba(11, 110, 255, 0.07), transparent 34%),
+    radial-gradient(circle at 88% 88%, rgba(0, 71, 255, 0.05), transparent 38%),
     var(--background);
 }
 
@@ -96,11 +117,16 @@ body {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(rgba(31, 30, 26, 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(31, 30, 26, 0.028) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(16, 24, 40, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 24, 40, 0.035) 1px, transparent 1px);
   background-size: 28px 28px;
   mask-image: radial-gradient(circle at 50% 32%, black 30%, transparent 100%);
   z-index: 0;
+}
+
+[data-theme="dark"] .teko-shell::before {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
 }
 
 .teko-enter {
@@ -235,7 +261,7 @@ body {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 1rem;
-  box-shadow: 0 16px 28px rgba(31, 30, 26, 0.12);
+  box-shadow: 0 16px 28px var(--shadow-md);
   overflow: hidden;
   font-family: var(--font-sans), system-ui, sans-serif;
 }

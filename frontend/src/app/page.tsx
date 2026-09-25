@@ -44,11 +44,11 @@ export default function DashboardPage() {
 function ConnectPrompt() {
   return (
     <div className="flex items-center justify-center min-h-[70vh] teko-enter">
-      <div className="w-full max-w-xl rounded-[34px] border border-border bg-card/95 px-8 py-10 shadow-[0_32px_60px_rgba(64,48,21,0.14)] text-center relative overflow-hidden">
+      <div className="w-full max-w-xl rounded-[34px] border border-border bg-card/95 px-8 py-10 shadow-[0_32px_60px_var(--shadow-color)] text-center relative overflow-hidden">
         <div className="absolute -left-10 -top-12 w-40 h-40 rounded-full bg-accent-light/70 blur-2xl" />
         <div className="absolute -right-10 -bottom-14 w-48 h-48 rounded-full bg-fb-light/70 blur-2xl" />
 
-        <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-linear-to-br from-accent to-[#f39f1f] flex items-center justify-center shadow-[0_16px_34px_rgba(225,48,108,0.34)] relative z-10">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] flex items-center justify-center shadow-[0_16px_34px_-8px_rgba(11,110,255,0.6)] relative z-10">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
             <polyline points="15,3 21,3 21,9" />
@@ -63,7 +63,7 @@ function ConnectPrompt() {
         </p>
         <a
           href={getLoginUrl()}
-          className="inline-flex items-center gap-2 bg-linear-to-r from-accent to-[#f39f1f] text-white px-7 py-3.5 rounded-2xl font-semibold text-sm hover:opacity-90 transition-opacity shadow-[0_12px_28px_rgba(225,48,108,0.34)] relative z-10"
+          className="inline-flex items-center gap-2 bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] text-white px-7 py-3.5 rounded-2xl font-semibold text-sm hover:brightness-110 transition-[filter] shadow-[0_12px_28px_-8px_rgba(11,110,255,0.6)] relative z-10"
         >
           Conectar Instagram y Facebook
         </a>
@@ -105,7 +105,7 @@ function DashboardContent() {
 
   return (
     <div className="space-y-6 teko-enter">
-      <section className="rounded-[34px] border border-border bg-card/95 px-6 py-6 sm:px-8 relative overflow-hidden shadow-[0_24px_56px_rgba(75,58,28,0.1)]">
+      <section className="rounded-[34px] border border-border bg-card/95 px-6 py-6 sm:px-8 relative overflow-hidden shadow-[0_24px_56px_var(--shadow-color)]">
         <div className="absolute -right-10 -top-5 h-40 w-40 rounded-full bg-fb-light/70 blur-2xl" />
         <div className="absolute -left-8 -bottom-11 h-44 w-44 rounded-full bg-warning-light/70 blur-2xl" />
 

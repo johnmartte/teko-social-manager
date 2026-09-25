@@ -17,7 +17,7 @@ export default function Card({
 }: CardProps) {
   return (
     <div
-      className={`bg-card/95 rounded-3xl border border-border p-5 shadow-[0_16px_42px_rgba(67,54,27,0.08)] ${className}`}
+      className={`bg-card/95 rounded-3xl border border-border p-5 shadow-[0_16px_42px_var(--shadow-color)] ${className}`}
       style={color ? { borderLeftColor: color, borderLeftWidth: 3 } : undefined}
     >
       {(title || action) && (
@@ -43,11 +43,11 @@ export function StatCard({
   icon?: ReactNode;
 }) {
   return (
-    <div className="bg-card/95 rounded-3xl border border-border p-4 flex flex-col gap-3 shadow-[0_16px_36px_rgba(67,54,27,0.07)] min-w-0">
+    <div className="bg-card/95 rounded-3xl border border-border p-4 flex flex-col gap-3 shadow-[0_16px_36px_var(--shadow-color)] min-w-0">
       {icon && (
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ backgroundColor: color ? `${color}20` : "#f5f2ec" }}
+          style={{ backgroundColor: color ? `${color}20` : "var(--card-hover)" }}
         >
           {icon}
         </div>

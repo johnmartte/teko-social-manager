@@ -69,7 +69,7 @@ export default function Header() {
           <span
             className={`text-xs px-3 py-1.5 rounded-full font-medium border ${
               igConnected
-                ? "bg-accent-light text-accent border-accent/20"
+                ? "bg-ig-light text-ig border-ig/20"
                 : "bg-card/92 text-muted border-border"
             }`}
           >
@@ -93,7 +93,7 @@ export default function Header() {
         {!anyConnected && (
           <a
             href={getLoginUrl()}
-            className="text-xs px-4 py-2 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity shadow-[0_8px_20px_rgba(225,48,108,0.35)]"
+            className="text-xs px-4 py-2 rounded-xl bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] text-white font-medium hover:brightness-110 transition-[filter] shadow-[0_8px_24px_-6px_rgba(11,110,255,0.6)]"
           >
             Conectar cuentas
           </a>

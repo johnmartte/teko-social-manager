@@ -5,25 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import Link from "next/link";
 
-function SpiralIcon() {
-  return (
-    <svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true">
-      <path
-        d="M22 6.5a15.5 15.5 0 0 0 0 31 9.2 9.2 0 1 0 0-18.4 4.4 4.4 0 1 1 0 8.8"
-        stroke="#00A0FF"
-        strokeWidth="4.2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M22 37.5a15.5 15.5 0 0 0 0-31 9.2 9.2 0 1 0 0 18.4 4.4 4.4 0 1 1 0-8.8"
-        stroke="#1272FF"
-        strokeWidth="4.2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function EyeIcon({ visible }: { visible: boolean }) {
   if (visible) {
     return (
@@ -94,13 +75,13 @@ export default function LoginPage() {
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/imagenes/wallpaperflare.com_wallpaper%20(6).jpg')" }}
       />
-      <div className="absolute inset-0 bg-slate-900/35" />
-      <div className="absolute inset-0 bg-linear-to-b from-slate-900/35 via-slate-900/18 to-slate-900/45" />
+      <div className="absolute inset-0 bg-[#080a0f]/45" />
+      <div className="absolute inset-0 bg-linear-to-b from-[#080a0f]/40 via-[#080a0f]/20 to-[#080a0f]/55" />
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-107.5 rounded-[18px] border border-white/32 bg-white/20 backdrop-blur-xl shadow-[0_26px_70px_rgba(8,17,34,0.42)] px-7 pt-8 pb-7 text-white">
+        <div className="w-full max-w-107.5 rounded-[18px] border border-white/32 bg-white/20 backdrop-blur-xl shadow-[0_26px_70px_rgba(3,6,15,0.5)] px-7 pt-8 pb-7 text-white">
           <div className="flex justify-center mb-3">
-            <SpiralIcon />
+            <img src="/logos/isotipo.svg" alt="Teko" width={44} height={44} />
           </div>
 
           <h1 className="text-[37px] leading-none font-semibold text-center tracking-[-0.02em]">
@@ -155,7 +136,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={!canSubmit || submitting}
-              className="mt-3 h-11 w-full rounded-[9px] bg-[#222533] text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-3 h-11 w-full rounded-[9px] bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] text-white font-medium shadow-[0_10px_26px_-8px_rgba(11,110,255,0.7)] hover:brightness-110 transition-[filter] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:brightness-100"
             >
               {submitting ? "Ingresando..." : "Iniciar Sesion"}
             </button>

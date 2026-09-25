@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import Card from "@/components/Card";
 import { api, formatNum } from "@/lib/api";
 import type { InsightMetric } from "@/lib/types";
@@ -47,7 +48,7 @@ const TIME_PERIODS = [
 const COLORS = [
   "#e1306c", "#405de6", "#5851db", "#833ab4", "#c13584",
   "#fd1d1d", "#f56040", "#f77737", "#fcaf45", "#ffdc80",
-  "#00b894", "#0984e3", "#6c5ce7", "#fd79a8",
+  "#0b6eff", "#1ec4ff", "#0047ff", "#7aa3ff",
 ];
 
 function shortDate(iso: string) {
@@ -186,16 +187,16 @@ const IG_COLORS: Record<string, string> = {
   total_interactions: "#5851db",
   likes: "#ed4956",
   comments: "#0095f6",
-  shares: "#00b894",
+  shares: "#0b6eff",
   saves: "#fcaf45",
-  replies: "#6c5ce7",
+  replies: "#0047ff",
   follows_and_unfollows: "#c13584",
   profile_links_taps: "#f77737",
-  views: "#0984e3",
-  website_clicks: "#00b894",
+  views: "#1ec4ff",
+  website_clicks: "#0b6eff",
   total_likes: "#ed4956",
   total_comments: "#0095f6",
-  posts_count: "#00b894",
+  posts_count: "#0b6eff",
 };
 
 const CUMULATIVE_METRICS = new Set(["follower_count", "total_likes", "total_comments", "posts_count"]);
@@ -204,6 +205,14 @@ const CUMULATIVE_METRICS = new Set(["follower_count", "total_likes", "total_comm
 
 export default function InsightsPage() {
   const { status } = useAuth();
+  const { isDark } = useTheme();
+  const chartTheme = {
+    grid: isDark ? "rgba(255,255,255,0.08)" : "rgba(16,24,40,0.08)",
+    axis: isDark ? "rgba(242,243,245,0.55)" : "#6a7282",
+    tooltipBg: isDark ? "rgba(8,10,15,0.95)" : "rgba(255,255,255,0.97)",
+    tooltipBorder: isDark ? "rgba(255,255,255,0.1)" : "rgba(16,24,40,0.08)",
+    tooltipText: isDark ? "#f2f3f5" : "#101828",
+  };
 
   const [igInsights, setIgInsights] = useState<InsightMetric[]>([]);
   const [audience, setAudience] = useState<AudienceMetric[]>([]);
@@ -378,7 +387,7 @@ export default function InsightsPage() {
               onClick={() => handlePeriodChange(tp.days)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 selectedDays === tp.days
-                  ? "bg-[#e1306c] text-white shadow-sm"
+                  ? "bg-accent text-white shadow-sm"
                   : "text-muted hover:text-foreground hover:bg-white/5"
               }`}
             >
@@ -454,7 +463,7 @@ export default function InsightsPage() {
                 .filter((m) => m.data.length > 1)
                 .map((m) => (
                   <Card key={m.name} title={m.label} color={m.color}>
-                    <ChartArea data={m.data} color={m.color} label={m.label} />
+                    <ChartArea data={m.data} color={m.color} label={m.label} theme={chartTheme} />
                   </Card>
                 ))}
             </div>
@@ -468,18 +477,18 @@ export default function InsightsPage() {
 
           {/* Info banner when not enough followers */}
           {!hasGenderData && igFollowers !== null && igFollowers < 100 && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
-              <span className="text-amber-400 text-lg mt-0.5">&#9888;</span>
+            <div className="bg-warning-light/40 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
+              <span className="text-warning text-lg mt-0.5">&#9888;</span>
               <div>
-                <p className="text-sm font-medium text-amber-300">Se necesitan 100+ seguidores para datos demograficos</p>
+                <p className="text-sm font-medium text-warning">Se necesitan 100+ seguidores para datos demograficos</p>
                 <p className="text-xs text-muted mt-1">
-                  Tu cuenta tiene <span className="font-bold text-white">{igFollowers}</span> seguidores.
+                  Tu cuenta tiene <span className="font-bold text-foreground">{igFollowers}</span> seguidores.
                   Meta requiere un minimo de 100 seguidores para mostrar datos de genero, edad, ciudades y paises.
-                  Te faltan <span className="font-bold text-amber-300">{100 - igFollowers}</span> seguidores.
+                  Te faltan <span className="font-bold text-warning">{100 - igFollowers}</span> seguidores.
                 </p>
                 <div className="mt-2 h-2 bg-white/5 rounded-full overflow-hidden w-48">
                   <div
-                    className="h-full bg-amber-400 rounded-full transition-all"
+                    className="h-full bg-warning rounded-full transition-all"
                     style={{ width: `${Math.min(100, (igFollowers / 100) * 100)}%` }}
                   />
                 </div>
@@ -533,16 +542,16 @@ export default function InsightsPage() {
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hasGenderData ? genderAgeRaw!.ageData : emptyAgeData} barGap={2}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #eee)" />
-                    <XAxis dataKey="age" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} width={40} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                    <XAxis dataKey="age" tick={{ fontSize: 11, fill: chartTheme.axis }} />
+                    <YAxis tick={{ fontSize: 11, fill: chartTheme.axis }} width={40} />
                     <Tooltip
                       contentStyle={{
-                        background: "rgba(30,30,35,0.95)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: chartTheme.tooltipBg,
+                        border: `1px solid ${chartTheme.tooltipBorder}`,
                         borderRadius: 12,
                         fontSize: 12,
-                        color: "#fff",
+                        color: chartTheme.tooltipText,
                       }}
                     />
                     <Bar dataKey="female" name="Mujeres" fill="#e1306c" radius={[4, 4, 0, 0]} />
@@ -557,7 +566,7 @@ export default function InsightsPage() {
 
           {/* Locations (always visible) */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card title="Principales ciudades" color="#00b894">
+            <Card title="Principales ciudades" color="#0b6eff">
               {hasCityData ? (
                 <div className="space-y-2">
                   {cityData.map((c, i) => {
@@ -585,7 +594,7 @@ export default function InsightsPage() {
                 <EmptyState label="Disponible con 100+ seguidores" />
               )}
             </Card>
-            <Card title="Principales paises" color="#0984e3">
+            <Card title="Principales paises" color="#1ec4ff">
               {hasCountryData ? (
                 <div className="space-y-2">
                   {countryData.map((c, i) => {
@@ -616,26 +625,26 @@ export default function InsightsPage() {
           </div>
 
           {/* Online followers (always visible) */}
-          <Card title="Actividad de seguidores por hora" color="#6c5ce7">
+          <Card title="Actividad de seguidores por hora" color="#0047ff">
             <p className="text-xs text-muted mb-3">Cuando tus seguidores estan mas activos (hora local).</p>
             {hasOnlineData ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={onlineFollowers}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #eee)" />
-                    <XAxis dataKey="hour" tick={{ fontSize: 10 }} interval={1} angle={-45} textAnchor="end" height={50} />
-                    <YAxis tick={{ fontSize: 11 }} width={45} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                    <XAxis dataKey="hour" tick={{ fontSize: 10, fill: chartTheme.axis }} interval={1} angle={-45} textAnchor="end" height={50} />
+                    <YAxis tick={{ fontSize: 11, fill: chartTheme.axis }} width={45} />
                     <Tooltip
                       contentStyle={{
-                        background: "rgba(30,30,35,0.95)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: chartTheme.tooltipBg,
+                        border: `1px solid ${chartTheme.tooltipBorder}`,
                         borderRadius: 12,
                         fontSize: 12,
-                        color: "#fff",
+                        color: chartTheme.tooltipText,
                       }}
                       formatter={(v) => [formatNum(v as number), "Seguidores activos"]}
                     />
-                    <Bar dataKey="followers" fill="#6c5ce7" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="followers" fill="#0047ff" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -677,6 +686,7 @@ export default function InsightsPage() {
                   <ChartArea
                     data={m.values.map((v) => ({ date: shortDate(v.end_time), value: v.value }))}
                     color="#1877f2"
+                    theme={chartTheme}
                   />
                 </Card>
               ))}
@@ -711,7 +721,15 @@ function SummaryCard({ label, value, color }: { label: string; value: number | n
 
 let chartIdCounter = 0;
 
-function ChartArea({ data, color, label }: { data: { date: string; value: number }[]; color: string; label?: string }) {
+type ChartTheme = {
+  grid: string;
+  axis: string;
+  tooltipBg: string;
+  tooltipBorder: string;
+  tooltipText: string;
+};
+
+function ChartArea({ data, color, label, theme }: { data: { date: string; value: number }[]; color: string; label?: string; theme: ChartTheme }) {
   const gradId = `grad-${color.replace("#", "")}-${++chartIdCounter}`;
   return (
     <div className="h-64">
@@ -723,16 +741,16 @@ function ChartArea({ data, color, label }: { data: { date: string; value: number
               <stop offset="100%" stopColor={color} stopOpacity={0.03} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <CartesianGrid strokeDasharray="3 3" stroke={theme.grid} />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 10, fill: "#999" }}
+            tick={{ fontSize: 10, fill: theme.axis }}
             interval={Math.max(0, Math.floor(data.length / 7) - 1)}
-            axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
+            axisLine={{ stroke: theme.grid }}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: "#999" }}
+            tick={{ fontSize: 11, fill: theme.axis }}
             width={50}
             tickFormatter={(v) => formatNum(v)}
             axisLine={false}
@@ -740,15 +758,15 @@ function ChartArea({ data, color, label }: { data: { date: string; value: number
           />
           <Tooltip
             contentStyle={{
-              background: "rgba(30,30,35,0.95)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: theme.tooltipBg,
+              border: `1px solid ${theme.tooltipBorder}`,
               borderRadius: 12,
               fontSize: 13,
-              color: "#fff",
+              color: theme.tooltipText,
               padding: "8px 14px",
             }}
             formatter={(v) => [Number(v).toLocaleString(), label || ""]}
-            labelStyle={{ color: "#999", fontSize: 11, marginBottom: 4 }}
+            labelStyle={{ color: theme.axis, fontSize: 11, marginBottom: 4 }}
           />
           <Area
             type="monotone"
@@ -757,7 +775,7 @@ function ChartArea({ data, color, label }: { data: { date: string; value: number
             strokeWidth={2.5}
             fill={`url(#${gradId})`}
             dot={false}
-            activeDot={{ r: 5, fill: color, stroke: "#fff", strokeWidth: 2 }}
+            activeDot={{ r: 5, fill: color, stroke: theme.tooltipBg, strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>
