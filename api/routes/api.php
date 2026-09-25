@@ -79,6 +79,8 @@ Route::post('/debug/register', function (\Illuminate\Http\Request $request) {
     }
 });
 Route::post('/auth/system/login', [SystemAuthController::class, 'login']);
+Route::post('/auth/system/forgot-password', [SystemAuthController::class, 'forgotPassword']);
+Route::post('/auth/system/reset-password', [SystemAuthController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/system/me', [SystemAuthController::class, 'me']);
     Route::post('/auth/system/logout', [SystemAuthController::class, 'logout']);

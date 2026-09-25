@@ -161,12 +161,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <button
-            type="button"
-            className="mt-6 w-full text-center text-white/65 hover:text-white/80 text-sm"
+          <Link
+            href="/forgot-password"
+            className="mt-6 block w-full text-center text-white/65 hover:text-white/80 text-sm"
           >
             Olvidaste tu contrasena?
-          </button>
+          </Link>
 
           <p className="mt-3 text-center text-sm text-white/65">
             No tienes cuenta?{" "}
