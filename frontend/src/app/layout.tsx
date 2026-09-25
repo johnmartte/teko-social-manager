@@ -30,6 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      data-theme="dark"
       suppressHydrationWarning
       className={`${geistSans.variable} ${plexMono.variable} h-full antialiased`}
     >

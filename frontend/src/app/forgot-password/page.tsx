@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { api } from "@/lib/api";
-import { useTheme } from "@/context/ThemeContext";
 import Link from "next/link";
 
 function EyeIcon({ visible }: { visible: boolean }) {
@@ -24,8 +23,13 @@ function EyeIcon({ visible }: { visible: boolean }) {
 
 type Step = "email" | "code" | "done";
 
+const inputStyle = { borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#f2f3f5" };
+const onFocus = (e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.style.borderColor = "rgba(30,196,255,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(30,196,255,0.1)"; };
+const onBlur = (e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; };
+
+const primaryBtn = { background: "#1ec4ff", color: "#080a0f", boxShadow: "0 8px 24px -6px rgba(30,196,255,0.45)" };
+
 export default function ForgotPasswordPage() {
-  const { isDark, toggleTheme } = useTheme();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -74,57 +78,76 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <section className="relative min-h-screen w-full overflow-hidden">
-      <button
-        type="button"
-        onClick={toggleTheme}
-        className="absolute right-5 top-5 z-20 inline-flex items-center gap-2 rounded-xl border border-white/30 bg-black/20 px-3 py-2 text-xs text-white backdrop-blur-md hover:bg-black/30"
-      >
-        {isDark ? "Claro" : "Oscuro"}
-      </button>
-
+    <main className="grid min-h-screen lg:grid-cols-2 bg-[#080a0f] text-[#f2f3f5]">
+      {/* Left: decorative */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/imagenes/wallpaperflare.com_wallpaper%20(6).jpg')" }}
-      />
-      <div className="absolute inset-0 bg-[#080a0f]/45" />
-      <div className="absolute inset-0 bg-linear-to-b from-[#080a0f]/40 via-[#080a0f]/20 to-[#080a0f]/55" />
+        className="relative hidden overflow-hidden lg:block"
+        style={{ background: "linear-gradient(135deg, #080a0f, #0a1628)" }}
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{ background: "radial-gradient(60% 60% at 30% 80%, rgba(30,196,255,0.14), transparent 70%)" }}
+        />
+        <div className="absolute top-14 left-14">
+          <img src="/logos/Isologo-White.svg" alt="TEKO" className="h-8 w-auto" />
+        </div>
+        <div className="absolute bottom-16 left-14 max-w-lg">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[.25em] text-[#1ec4ff]">TEKO MANAGER</p>
+          <h1 className="text-5xl font-bold leading-tight">Recupera el acceso a tu cuenta.</h1>
+          <p className="mt-5 text-lg text-white/55">
+            Te enviaremos un codigo de verificacion a tu correo.
+          </p>
+        </div>
+      </div>
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-107.5 rounded-[18px] border border-white/32 bg-white/20 backdrop-blur-xl shadow-[0_26px_70px_rgba(3,6,15,0.5)] px-7 pt-8 pb-7 text-white">
-          <div className="flex justify-center mb-3">
-            <img src="/logos/isotipo.svg" alt="Teko" width={44} height={44} />
-          </div>
+      {/* Right: form */}
+      <div className="flex items-center justify-center p-6">
+        <div
+          className="w-full max-w-md rounded-3xl border p-8"
+          style={{
+            borderColor: "rgba(255,255,255,0.1)",
+            background: "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+          }}
+        >
+          <img src="/logos/Isologo-White.svg" alt="TEKO" className="mb-10 h-8 w-auto lg:hidden" />
 
           {step === "email" && (
             <>
-              <h1 className="text-[28px] leading-none font-semibold text-center tracking-[-0.02em]">
-                Recupera tu contrasena
-              </h1>
-              <p className="text-center text-sm text-white/80 mt-3 mb-6 leading-6">
+              <p className="text-sm font-medium text-[#1ec4ff]">Recuperacion</p>
+              <h2 className="mt-1 text-3xl font-bold">Recupera tu contrasena</h2>
+              <p className="mt-2 text-sm text-white/50">
                 Ingresa tu email y te enviaremos un codigo para restablecer tu contrasena.
               </p>
 
-              <form onSubmit={handleRequestCode} className="space-y-4">
-                <div>
-                  <label className="block text-sm text-white/90 mb-1.5">Email</label>
+              {error && (
+                <p className="mt-5 rounded-xl border p-3 text-sm" style={{ borderColor: "rgba(248,113,113,0.25)", background: "rgba(248,113,113,0.1)", color: "#f87171" }}>
+                  {error}
+                </p>
+              )}
+
+              <form onSubmit={handleRequestCode}>
+                <label className="mt-8 block text-sm font-medium">
+                  Email
                   <input
+                    required
                     type="email"
+                    autoComplete="email"
                     placeholder="tu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 w-full rounded-[9px] border border-white/32 bg-white/18 px-3 text-[15px] text-white placeholder:text-white/55 outline-none focus:border-white/65"
-                    autoComplete="email"
-                    required
+                    className="mt-2 w-full rounded-xl border px-4 py-3 outline-none transition-all placeholder:text-white/40"
+                    style={inputStyle}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
                   />
-                </div>
-
-                {error && <p className="text-[13px] text-red-200">{error}</p>}
+                </label>
 
                 <button
                   type="submit"
                   disabled={!email.trim() || submitting}
-                  className="mt-3 h-11 w-full rounded-[9px] bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] text-white font-medium shadow-[0_10px_26px_-8px_rgba(11,110,255,0.7)] hover:brightness-110 transition-[filter] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:brightness-100"
+                  className="mt-7 w-full rounded-xl py-3 font-semibold transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={primaryBtn}
                 >
                   {submitting ? "Enviando..." : "Enviar codigo"}
                 </button>
@@ -134,57 +157,67 @@ export default function ForgotPasswordPage() {
 
           {step === "code" && (
             <>
-              <h1 className="text-[28px] leading-none font-semibold text-center tracking-[-0.02em]">
-                Ingresa el codigo
-              </h1>
-              <p className="text-center text-sm text-white/80 mt-3 mb-6 leading-6">
+              <p className="text-sm font-medium text-[#1ec4ff]">Verificacion</p>
+              <h2 className="mt-1 text-3xl font-bold">Ingresa el codigo</h2>
+              <p className="mt-2 text-sm text-white/50">
                 Revisa tu email e introduce el codigo de 6 digitos junto con tu nueva contrasena.
               </p>
 
-              <form onSubmit={handleReset} className="space-y-4">
-                <div>
-                  <label className="block text-sm text-white/90 mb-1.5">Codigo</label>
+              {error && (
+                <p className="mt-5 rounded-xl border p-3 text-sm" style={{ borderColor: "rgba(248,113,113,0.25)", background: "rgba(248,113,113,0.1)", color: "#f87171" }}>
+                  {error}
+                </p>
+              )}
+
+              <form onSubmit={handleReset}>
+                <label className="mt-8 block text-sm font-medium">
+                  Codigo
                   <input
+                    required
                     type="text"
+                    inputMode="numeric"
+                    maxLength={6}
                     placeholder="000000"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className="h-11 w-full rounded-[9px] border border-white/32 bg-white/18 px-3 text-[15px] text-white text-center font-mono tracking-[0.3em] placeholder:text-white/55 outline-none focus:border-white/65"
-                    maxLength={6}
-                    inputMode="numeric"
-                    required
+                    className="mt-2 w-full rounded-xl border px-4 py-3 text-center font-mono tracking-[0.3em] outline-none transition-all placeholder:text-white/40"
+                    style={inputStyle}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
                   />
-                </div>
+                </label>
 
-                <div>
-                  <label className="block text-sm text-white/90 mb-1.5">Nueva contrasena</label>
-                  <div className="relative">
+                <label className="mt-4 block text-sm font-medium">
+                  Nueva contrasena
+                  <div className="relative mt-2">
                     <input
+                      required
+                      minLength={8}
                       type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
                       placeholder="********"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-11 w-full rounded-[9px] border border-white/32 bg-white/18 px-3 pr-11 text-[15px] text-white placeholder:text-white/55 outline-none focus:border-white/65"
-                      autoComplete="new-password"
-                      required
-                      minLength={8}
+                      className="w-full rounded-xl border px-4 py-3 pr-11 outline-none transition-all placeholder:text-white/40"
+                      style={inputStyle}
+                      onFocus={onFocus}
+                      onBlur={onBlur}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((c) => !c)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
                     >
                       <EyeIcon visible={showPassword} />
                     </button>
                   </div>
-                </div>
-
-                {error && <p className="text-[13px] text-red-200">{error}</p>}
+                </label>
 
                 <button
                   type="submit"
                   disabled={code.length !== 6 || password.length < 8 || submitting}
-                  className="mt-3 h-11 w-full rounded-[9px] bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] text-white font-medium shadow-[0_10px_26px_-8px_rgba(11,110,255,0.7)] hover:brightness-110 transition-[filter] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:brightness-100"
+                  className="mt-7 w-full rounded-xl py-3 font-semibold transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={primaryBtn}
                 >
                   {submitting ? "Restableciendo..." : "Restablecer contrasena"}
                 </button>
@@ -199,15 +232,14 @@ export default function ForgotPasswordPage() {
                   <path d="M5 13l4 4L19 7" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <h1 className="text-[28px] leading-none font-semibold tracking-[-0.02em]">
-                Contrasena actualizada
-              </h1>
-              <p className="text-sm text-white/80 mt-3 mb-6">
+              <h2 className="text-3xl font-bold">Contrasena actualizada</h2>
+              <p className="text-sm text-white/55 mt-3 mb-7">
                 Tu contrasena ha sido restablecida exitosamente.
               </p>
               <a
                 href="/"
-                className="inline-block h-11 leading-[44px] px-8 rounded-[9px] bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] text-white font-medium shadow-[0_10px_26px_-8px_rgba(11,110,255,0.7)] hover:brightness-110 transition-[filter]"
+                className="inline-block rounded-xl px-8 py-3 font-semibold transition-all hover:brightness-110"
+                style={primaryBtn}
               >
                 Ir al dashboard
               </a>
@@ -217,13 +249,13 @@ export default function ForgotPasswordPage() {
           {step !== "done" && (
             <Link
               href="/login"
-              className="mt-6 block w-full text-center text-white/65 hover:text-white/80 text-sm"
+              className="mt-6 block w-full text-center text-sm text-white/55 hover:text-white/80"
             >
               Volver al login
             </Link>
           )}
         </div>
       </div>
-    </section>
+    </main>
   );
 }

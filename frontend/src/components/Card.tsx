@@ -17,7 +17,7 @@ export default function Card({
 }: CardProps) {
   return (
     <div
-      className={`bg-card/95 rounded-3xl border border-border p-5 shadow-[0_16px_42px_var(--shadow-color)] ${className}`}
+      className={`teko-card p-5 ${className}`}
       style={color ? { borderLeftColor: color, borderLeftWidth: 3 } : undefined}
     >
       {(title || action) && (
@@ -43,7 +43,7 @@ export function StatCard({
   icon?: ReactNode;
 }) {
   return (
-    <div className="bg-card/95 rounded-3xl border border-border p-4 flex flex-col gap-3 shadow-[0_16px_36px_var(--shadow-color)] min-w-0">
+    <div className="teko-card p-4 flex flex-col gap-3 min-w-0">
       {icon && (
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"

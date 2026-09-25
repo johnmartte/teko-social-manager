@@ -44,26 +44,24 @@ export default function DashboardPage() {
 function ConnectPrompt() {
   return (
     <div className="flex items-center justify-center min-h-[70vh] teko-enter">
-      <div className="w-full max-w-xl rounded-[34px] border border-border bg-card/95 px-8 py-10 shadow-[0_32px_60px_var(--shadow-color)] text-center relative overflow-hidden">
-        <div className="absolute -left-10 -top-12 w-40 h-40 rounded-full bg-accent-light/70 blur-2xl" />
-        <div className="absolute -right-10 -bottom-14 w-48 h-48 rounded-full bg-fb-light/70 blur-2xl" />
-
-        <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] flex items-center justify-center shadow-[0_16px_34px_-8px_rgba(11,110,255,0.6)] relative z-10">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="teko-card w-full max-w-xl px-8 py-10 text-center">
+        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-accent-light flex items-center justify-center">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
             <polyline points="15,3 21,3 21,9" />
             <line x1="10" y1="14" x2="21" y2="3" />
           </svg>
         </div>
 
-        <h1 className="text-3xl font-bold mb-2 relative z-10">Centro de control social</h1>
-        <p className="text-muted mb-8 text-sm max-w-md mx-auto relative z-10">
+        <p className="text-sm font-medium text-accent mb-1">Bienvenido</p>
+        <h1 className="text-3xl font-bold mb-2">Centro de control social</h1>
+        <p className="text-muted mb-8 text-sm max-w-md mx-auto">
           Conecta Instagram y Facebook para activar el tablero avanzado de contenido,
           comentarios, automatizaciones y analitica en un solo flujo.
         </p>
         <a
           href={getLoginUrl()}
-          className="inline-flex items-center gap-2 bg-linear-to-b from-[#1ec4ff] via-[#0b6eff] to-[#0047ff] text-white px-7 py-3.5 rounded-2xl font-semibold text-sm hover:brightness-110 transition-[filter] shadow-[0_12px_28px_-8px_rgba(11,110,255,0.6)] relative z-10"
+          className="inline-flex items-center gap-2 bg-accent text-white px-7 py-3.5 rounded-xl font-semibold text-sm hover:brightness-110 transition-[filter] shadow-[0_12px_28px_-8px_rgba(30,196,255,0.45)]"
         >
           Conectar Instagram y Facebook
         </a>
@@ -105,13 +103,10 @@ function DashboardContent() {
 
   return (
     <div className="space-y-6 teko-enter">
-      <section className="rounded-[34px] border border-border bg-card/95 px-6 py-6 sm:px-8 relative overflow-hidden shadow-[0_24px_56px_var(--shadow-color)]">
-        <div className="absolute -right-10 -top-5 h-40 w-40 rounded-full bg-fb-light/70 blur-2xl" />
-        <div className="absolute -left-8 -bottom-11 h-44 w-44 rounded-full bg-warning-light/70 blur-2xl" />
-
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <section className="teko-card px-6 py-6 sm:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-muted font-semibold">Panel diario</p>
+            <p className="text-sm font-medium text-accent">Panel diario</p>
             <h1 className="text-3xl font-bold mt-1">
               Hola{igProfile ? `, @${igProfile.username}` : ""}
             </h1>

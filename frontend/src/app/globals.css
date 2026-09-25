@@ -85,22 +85,10 @@
 }
 
 body {
-  background:
-    radial-gradient(circle at 16% 12%, rgba(0, 113, 255, 0.05), transparent 38%),
-    radial-gradient(circle at 86% 2%, rgba(30, 196, 255, 0.05), transparent 34%),
-    radial-gradient(circle at 88% 88%, rgba(0, 71, 255, 0.03), transparent 38%),
-    var(--background);
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   min-height: 100vh;
-}
-
-[data-theme="dark"] body {
-  background:
-    radial-gradient(circle at 16% 12%, rgba(30, 196, 255, 0.07), transparent 38%),
-    radial-gradient(circle at 86% 2%, rgba(11, 110, 255, 0.07), transparent 34%),
-    radial-gradient(circle at 88% 88%, rgba(0, 71, 255, 0.05), transparent 38%),
-    var(--background);
 }
 
 * {
@@ -112,21 +100,15 @@ body {
   position: relative;
 }
 
-.teko-shell::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image: linear-gradient(rgba(16, 24, 40, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(16, 24, 40, 0.035) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(circle at 50% 32%, black 30%, transparent 100%);
-  z-index: 0;
+/* Superficie de tarjeta estándar (espejo del admin de TEKO) */
+.teko-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
 }
 
-[data-theme="dark"] .teko-shell::before {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+[data-theme="dark"] .teko-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
 }
 
 .teko-enter {

@@ -22,8 +22,8 @@ type ThemeContextType = {
 const THEME_KEY = "teko-theme";
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: "light",
-  isDark: false,
+  theme: "dark",
+  isDark: true,
   setTheme: () => {},
   toggleTheme: () => {},
 });
@@ -35,12 +35,12 @@ function applyTheme(theme: Theme) {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "light";
+    if (typeof window === "undefined") return "dark";
 
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "light" || saved === "dark") return saved;
 
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return "dark";
   });
 
   useEffect(() => {
