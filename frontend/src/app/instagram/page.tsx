@@ -33,7 +33,7 @@ export default function InstagramPage() {
   if (!status?.instagram.connected) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <p className="text-muted">Conecta tu cuenta de Instagram primero.</p>
+        <p className="text-muted-foreground">Conecta tu cuenta de Instagram primero.</p>
       </div>
     );
   }
@@ -58,17 +58,17 @@ export default function InstagramPage() {
             </div>
             <div className="flex-1">
               <p className="text-base font-semibold">{profile.name || profile.username}</p>
-              <p className="text-sm text-muted">@{profile.username}</p>
-              {profile.biography && <p className="text-xs text-muted mt-1">{profile.biography}</p>}
+              <p className="text-sm text-muted-foreground">@{profile.username}</p>
+              {profile.biography && <p className="text-xs text-muted-foreground mt-1">{profile.biography}</p>}
             </div>
             <div className="flex gap-8">
               <div className="text-center">
                 <p className="text-xl font-bold">{formatNum(profile.followers_count)}</p>
-                <p className="text-xs text-muted">Seguidores</p>
+                <p className="text-xs text-muted-foreground">Seguidores</p>
               </div>
               <div className="text-center">
                 <p className="text-xl font-bold">{formatNum(profile.media_count)}</p>
-                <p className="text-xs text-muted">Posts</p>
+                <p className="text-xs text-muted-foreground">Posts</p>
               </div>
             </div>
           </div>
@@ -96,12 +96,12 @@ export default function InstagramPage() {
             return (
               <div key={m.name} className="bg-background rounded-xl p-4 text-center">
                 <p className="text-xl font-bold">{formatNum(val)}</p>
-                <p className="text-xs text-muted mt-0.5">{metricLabels[m.name] || m.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{metricLabels[m.name] || m.name}</p>
               </div>
             );
           })}
           {insights.length === 0 && (
-            <p className="col-span-4 text-center text-sm text-muted py-4">Sin datos disponibles.</p>
+            <p className="col-span-4 text-center text-sm text-muted-foreground py-4">Sin datos disponibles.</p>
           )}
         </div>
       </Card>
@@ -109,7 +109,7 @@ export default function InstagramPage() {
       {/* Feed */}
       <Card title="Feed reciente">
         {media.length === 0 ? (
-          <p className="text-center text-sm text-muted py-8">No hay publicaciones.</p>
+          <p className="text-center text-sm text-muted-foreground py-8">No hay publicaciones.</p>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
             {media.map((item) => (

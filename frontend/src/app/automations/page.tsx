@@ -57,19 +57,19 @@ export default function AutomationsPage() {
     <div className="space-y-6 teko-enter">
       <section className="rounded-[30px] border border-border bg-card/95 px-6 py-6 shadow-[0_20px_48px_var(--shadow-color)]">
         <h1 className="text-2xl font-bold">Automatizaciones</h1>
-        <p className="text-sm text-muted mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Activa reglas para escalar moderacion, rendimiento y operacion diaria.
         </p>
       </section>
 
       <Card title="Reglas activas">
         <div className="space-y-3">
-          {loading ? <p className="text-sm text-muted text-center py-6">Cargando reglas...</p> : null}
+          {loading ? <p className="text-sm text-muted-foreground text-center py-6">Cargando reglas...</p> : null}
           {rules.map((rule) => (
             <div key={rule.id} className="rounded-2xl border border-border bg-background/80 p-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">{rule.name}</p>
-                <p className="text-xs text-muted mt-1 max-w-xl">{rule.description}</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-xl">{rule.description}</p>
               </div>
               <button
                 type="button"

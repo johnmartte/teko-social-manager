@@ -117,7 +117,7 @@ function FancySelect<T extends string>({
         className={`ui-control flex items-center justify-between text-left ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <span>{activeLabel}</span>
-        <span className="text-muted text-xs">▾</span>
+        <span className="text-muted-foreground text-xs">▾</span>
       </button>
 
       {open && !disabled && (
@@ -130,7 +130,7 @@ function FancySelect<T extends string>({
                 onChange(opt.value);
                 setOpen(false);
               }}
-              className={`w-full px-3 py-2 text-sm text-left transition-colors ${opt.value === value ? "bg-accent text-white" : "hover:bg-background"}`}
+              className={`w-full px-3 py-2 text-sm text-left transition-colors ${opt.value === value ? "bg-primary text-primary-foreground" : "hover:bg-background"}`}
             >
               {opt.label}
             </button>
@@ -243,8 +243,8 @@ export default function PublishPage() {
               onClick={() => setMode(m)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 mode === m
-                  ? "bg-accent text-white"
-                  : "text-muted hover:text-foreground"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {m === "now" ? "Ahora" : m === "schedule" ? "Programar" : "Múltiples"}
@@ -269,10 +269,10 @@ export default function PublishPage() {
                   className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
                     activeTab === tab.id
                       ? tab.platform === "ig"
-                        ? "bg-accent text-white"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-fb text-white"
                       : disabled
-                      ? "bg-background text-muted/50 border border-border cursor-not-allowed"
+                      ? "bg-background text-muted-foreground/50 border border-border cursor-not-allowed"
                       : "bg-background text-foreground border border-border hover:border-foreground/20"
                   }`}
                 >
@@ -322,7 +322,7 @@ export default function PublishPage() {
 function ScheduleInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs font-medium text-muted">Fecha y hora de publicación</label>
+      <label className="text-xs font-medium text-muted-foreground">Fecha y hora de publicación</label>
       <DatePicker
         selected={toDateTime(value)}
         onChange={(date: Date | null) => onChange(fromDateTime(date))}
@@ -371,7 +371,7 @@ function IGPhotoForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
     <Card title="Publicar foto en Instagram" color="#e1306c">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-3"}>
         <ImageUpload value={url} onChange={setUrl} accept="image/*" label="imagen" accentColor="#e1306c" />
-        <textarea placeholder="Pie de foto (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-accent resize-none" />
+        <textarea placeholder="Pie de foto (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-border resize-none" />
         {mode === "schedule" && (
           <div className="lg:col-span-2">
             <ScheduleInput value={scheduledAt} onChange={setScheduledAt} />
@@ -380,7 +380,7 @@ function IGPhotoForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
         <button
           disabled={!url || submitting || (mode === "schedule" && !scheduledAt)}
           onClick={handleAction}
-          className={`bg-accent text-white px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity ${mode === "schedule" ? "lg:col-span-2" : ""}`}
+          className={`bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity ${mode === "schedule" ? "lg:col-span-2" : ""}`}
         >
           {submitting ? "..." : mode === "schedule" ? "Programar foto" : "Publicar foto"}
         </button>
@@ -450,7 +450,7 @@ function IGCarouselForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
           {images.map((url, i) => (
             <div key={i} className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted font-medium">Imagen {i + 1}</span>
+                <span className="text-xs text-muted-foreground font-medium">Imagen {i + 1}</span>
                 {images.length > 1 && (
                   <button type="button" onClick={() => setImages(images.filter((_, idx) => idx !== i))} className="text-xs text-red-400 hover:text-red-600">
                     Quitar
@@ -461,7 +461,7 @@ function IGCarouselForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
             </div>
           ))}
           {images.length < 10 && (
-            <button type="button" onClick={() => setImages([...images, ""])} className="w-full py-2 border border-dashed border-border rounded-xl text-xs text-muted hover:text-foreground hover:border-foreground/20 transition-colors">
+            <button type="button" onClick={() => setImages([...images, ""])} className="w-full py-2 border border-dashed border-border rounded-xl text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors">
               + Agregar imagen ({images.length}/10)
             </button>
           )}
@@ -854,7 +854,7 @@ function BulkScheduler({
           type="button"
           onClick={() => setBulkMode("intelligent")}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            bulkMode === "intelligent" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+            bulkMode === "intelligent" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Inteligente
@@ -863,7 +863,7 @@ function BulkScheduler({
           type="button"
           onClick={() => setBulkMode("manual")}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            bulkMode === "manual" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+            bulkMode === "manual" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Manual
@@ -873,7 +873,7 @@ function BulkScheduler({
       {bulkMode === "intelligent" ? (
         <Card title="Programador inteligente (por rango)">
           <div className="space-y-4">
-            <p className="text-sm text-muted">
+            <p className="text-sm text-muted-foreground">
               Define rango de días, cantidad diaria y horarios. Luego sube todas las imágenes y se programan automáticamente.
             </p>
 
@@ -881,7 +881,7 @@ function BulkScheduler({
               <div className="space-y-4 rounded-2xl border border-border bg-background/60 p-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <label className="text-xs text-muted font-medium">Fecha inicio</label>
+                    <label className="text-xs text-muted-foreground font-medium">Fecha inicio</label>
                     <DatePicker
                       selected={toDateOnly(startDate)}
                       onChange={(date: Date | null) => setStartDate(fromDateOnly(date))}
@@ -891,7 +891,7 @@ function BulkScheduler({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-muted font-medium">Días</label>
+                    <label className="text-xs text-muted-foreground font-medium">Días</label>
                     <input
                       type="number"
                       min={1}
@@ -902,7 +902,7 @@ function BulkScheduler({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-muted font-medium">Posts por día</label>
+                    <label className="text-xs text-muted-foreground font-medium">Posts por día</label>
                     <input
                       type="number"
                       min={1}
@@ -913,7 +913,7 @@ function BulkScheduler({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-muted font-medium">Total a programar</label>
+                    <label className="text-xs text-muted-foreground font-medium">Total a programar</label>
                     <div className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm font-semibold">
                       {totalPosts} post(s)
                     </div>
@@ -922,7 +922,7 @@ function BulkScheduler({
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <label className="text-xs text-muted font-medium">Plataforma</label>
+                    <label className="text-xs text-muted-foreground font-medium">Plataforma</label>
                     <FancySelect
                       value={platform}
                       onChange={(next) => setPlatform(next as BulkItem["platform"])}
@@ -934,7 +934,7 @@ function BulkScheduler({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-muted font-medium">Tipo</label>
+                    <label className="text-xs text-muted-foreground font-medium">Tipo</label>
                     <FancySelect
                       value={type}
                       onChange={(next) => setType(next as Exclude<BulkItem["type"], "text">)}
@@ -953,8 +953,8 @@ function BulkScheduler({
                     onClick={() => toggleSection("timing")}
                     className="w-full flex items-center justify-between rounded-xl border border-border bg-card/70 px-3 py-2 text-left"
                   >
-                    <span className="text-xs text-muted font-medium">Horas por día</span>
-                    <span className="text-xs text-muted">{openSections.timing ? "Ocultar" : "Mostrar"}</span>
+                    <span className="text-xs text-muted-foreground font-medium">Horas por día</span>
+                    <span className="text-xs text-muted-foreground">{openSections.timing ? "Ocultar" : "Mostrar"}</span>
                   </button>
                   {openSections.timing && (
                     <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
@@ -983,8 +983,8 @@ function BulkScheduler({
                     onClick={() => toggleSection("captions")}
                     className="w-full flex items-center justify-between rounded-xl border border-border bg-card/70 px-3 py-2 text-left"
                   >
-                    <span className="text-xs text-muted font-medium">Descripciones</span>
-                    <span className="text-xs text-muted">{openSections.captions ? "Ocultar" : "Mostrar"}</span>
+                    <span className="text-xs text-muted-foreground font-medium">Descripciones</span>
+                    <span className="text-xs text-muted-foreground">{openSections.captions ? "Ocultar" : "Mostrar"}</span>
                   </button>
 
                   {openSections.captions && (
@@ -996,7 +996,7 @@ function BulkScheduler({
                           checked={sameCaptionForAll}
                           onChange={(e) => setSameCaptionForAll(e.target.checked)}
                         />
-                        <label htmlFor="same-caption" className="text-sm text-muted">
+                        <label htmlFor="same-caption" className="text-sm text-muted-foreground">
                           Usar la misma descripción para todos los posts
                         </label>
                       </div>
@@ -1007,14 +1007,14 @@ function BulkScheduler({
                           value={globalCaption}
                           onChange={(e) => setGlobalCaption(e.target.value)}
                           rows={3}
-                          className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent resize-none"
+                          className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-border resize-none"
                         />
                       ) : (
                         <div className="space-y-2">
                           <button
                             type="button"
                             onClick={() => ensureCaptionSlots(totalPosts)}
-                            className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
+                            className="text-xs px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground"
                           >
                             Preparar {totalPosts} descripciones
                           </button>
@@ -1046,10 +1046,10 @@ function BulkScheduler({
                     onClick={() => toggleSection("uploads")}
                     className="w-full flex items-center justify-between rounded-xl border border-border bg-card/70 px-3 py-2 text-left"
                   >
-                    <span className="text-xs text-muted font-medium">
+                    <span className="text-xs text-muted-foreground font-medium">
                       Carga de archivos ({imagePool.filter(Boolean).length}/{totalPosts})
                     </span>
-                    <span className="text-xs text-muted">{openSections.uploads ? "Ocultar" : "Mostrar"}</span>
+                    <span className="text-xs text-muted-foreground">{openSections.uploads ? "Ocultar" : "Mostrar"}</span>
                   </button>
 
                   {openSections.uploads && (
@@ -1059,7 +1059,7 @@ function BulkScheduler({
                           type="button"
                           onClick={() => setUploadMode("massive")}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            uploadMode === "massive" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+                            uploadMode === "massive" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                           }`}
                         >
                           Subida masiva
@@ -1068,7 +1068,7 @@ function BulkScheduler({
                           type="button"
                           onClick={() => setUploadMode("individual")}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            uploadMode === "individual" ? "bg-accent text-white" : "text-muted hover:text-foreground"
+                            uploadMode === "individual" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                           }`}
                         >
                           Subida individual
@@ -1077,7 +1077,7 @@ function BulkScheduler({
 
                       {uploadMode === "massive" ? (
                         <div className="space-y-3 rounded-xl border border-border bg-background p-4">
-                          <p className="text-xs text-muted">
+                          <p className="text-xs text-muted-foreground">
                             Selecciona múltiples archivos y el sistema los subirá en turnos de {UPLOAD_BATCH_SIZE} para evitar bloqueos.
                           </p>
                           <input
@@ -1093,15 +1093,15 @@ function BulkScheduler({
                           {uploadingPool ? (
                             <div className="space-y-1">
                               <div className="h-2 w-full rounded-full bg-border overflow-hidden">
-                                <div className="h-full bg-accent transition-all" style={{ width: `${uploadProgress}%` }} />
+                                <div className="h-full bg-primary transition-all" style={{ width: `${uploadProgress}%` }} />
                               </div>
-                              <p className="text-xs text-muted">Subiendo en cola... {uploadProgress}%</p>
+                              <p className="text-xs text-muted-foreground">Subiendo en cola... {uploadProgress}%</p>
                             </div>
                           ) : null}
                           <button
                             type="button"
                             onClick={() => setImagePool([])}
-                            className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
+                            className="text-xs px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground"
                           >
                             Limpiar selección
                           </button>
@@ -1110,7 +1110,7 @@ function BulkScheduler({
                         <div className="max-h-96 overflow-auto space-y-3 pr-1">
                           {Array.from({ length: totalPosts }).map((_, i) => (
                             <div key={i} className="space-y-1">
-                              <span className="text-xs text-muted">Imagen post #{i + 1}</span>
+                              <span className="text-xs text-muted-foreground">Imagen post #{i + 1}</span>
                               <ImageUpload
                                 value={imagePool[i] || ""}
                                 onChange={(url) => {
@@ -1135,7 +1135,7 @@ function BulkScheduler({
             <button
               onClick={scheduleIntelligent}
               disabled={!canSubmitIntelligent}
-              className="w-full py-3 bg-accent text-white rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+              className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
             >
               {submitting ? "Programando..." : `Programar ${totalPosts} post(s)`}
             </button>
@@ -1143,7 +1143,7 @@ function BulkScheduler({
         </Card>
       ) : (
         <>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted-foreground">
             Programa múltiples posts a la vez. Cada uno se publicará en la fecha y hora indicada.
           </p>
 
@@ -1162,7 +1162,7 @@ function BulkScheduler({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs text-muted font-medium">Plataforma</label>
+                      <label className="text-xs text-muted-foreground font-medium">Plataforma</label>
                       <FancySelect
                         value={item.platform}
                         onChange={(next) => updateItem(item.id, { platform: next as BulkItem["platform"] })}
@@ -1175,7 +1175,7 @@ function BulkScheduler({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs text-muted font-medium">Tipo</label>
+                      <label className="text-xs text-muted-foreground font-medium">Tipo</label>
                       <FancySelect
                         value={item.type}
                         onChange={(next) => updateItem(item.id, { type: next as BulkItem["type"] })}
@@ -1204,7 +1204,7 @@ function BulkScheduler({
                           value={item.caption}
                           onChange={(e) => updateItem(item.id, { caption: e.target.value })}
                           rows={2}
-                          className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent resize-none"
+                          className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-border resize-none"
                         />
                         <ScheduleInput
                           value={item.scheduledAt}
@@ -1219,7 +1219,7 @@ function BulkScheduler({
                         value={item.caption}
                         onChange={(e) => updateItem(item.id, { caption: e.target.value })}
                         rows={2}
-                        className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-accent resize-none"
+                        className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-border resize-none"
                       />
                       <ScheduleInput
                         value={item.scheduledAt}
@@ -1234,7 +1234,7 @@ function BulkScheduler({
 
           <button
             onClick={addItem}
-            className="w-full py-3 border border-dashed border-border rounded-xl text-sm text-muted hover:text-foreground hover:border-foreground/20 transition-colors"
+            className="w-full py-3 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
           >
             + Agregar otro post
           </button>
@@ -1242,7 +1242,7 @@ function BulkScheduler({
           <button
             onClick={scheduleAll}
             disabled={!canSubmit}
-            className="w-full py-3 bg-accent text-white rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+            className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
           >
             {submitting ? "Programando..." : `Programar ${items.length} post(s)`}
           </button>

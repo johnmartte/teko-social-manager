@@ -144,7 +144,7 @@ export default function InboxPage() {
   if (!connected) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-muted">Conecta Instagram o Facebook para ver tus mensajes.</p>
+        <p className="text-muted-foreground">Conecta Instagram o Facebook para ver tus mensajes.</p>
       </div>
     );
   }
@@ -161,7 +161,7 @@ export default function InboxPage() {
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold">Inbox unificado</h1>
-          <p className="text-xs text-muted">Mensajes de Instagram y Facebook en un solo lugar</p>
+          <p className="text-xs text-muted-foreground">Mensajes de Instagram y Facebook en un solo lugar</p>
         </div>
         <div className="flex gap-1">
           {(["all", "instagram", "facebook"] as const).map((f) => (
@@ -170,8 +170,8 @@ export default function InboxPage() {
               onClick={() => setFilter(f)}
               className={`text-[11px] px-3 py-1.5 rounded-full transition-colors ${
                 filter === f
-                  ? "bg-accent text-white"
-                  : "bg-white/5 text-muted hover:bg-white/10"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-white/5 text-muted-foreground hover:bg-white/10"
               }`}
             >
               {f === "all" ? "Todos" : f === "instagram" ? "Instagram" : "Facebook"}
@@ -190,19 +190,19 @@ export default function InboxPage() {
         {/* Sidebar - Conversation list */}
         <div className="w-80 border-r border-border flex flex-col shrink-0">
           <div className="p-3 border-b border-border flex items-center justify-between">
-            <span className="text-xs text-muted">{filtered.length} conversaciones</span>
-            <button onClick={() => void loadConversations()} className="text-xs text-accent hover:underline">
+            <span className="text-xs text-muted-foreground">{filtered.length} conversaciones</span>
+            <button onClick={() => void loadConversations()} className="text-xs text-foreground hover:underline">
               Actualizar
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <p className="text-sm text-muted text-center py-8 animate-pulse">Cargando...</p>
+              <p className="text-sm text-muted-foreground text-center py-8 animate-pulse">Cargando...</p>
             ) : filtered.length === 0 ? (
               <div className="p-4 text-center">
-                <p className="text-sm text-muted">No hay conversaciones</p>
-                <p className="text-xs text-muted/60 mt-1">Los mensajes apareceran aqui.</p>
+                <p className="text-sm text-muted-foreground">No hay conversaciones</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Los mensajes apareceran aqui.</p>
               </div>
             ) : (
               filtered.map((conv) => (
@@ -223,7 +223,7 @@ export default function InboxPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium truncate">{conv.participant_name}</span>
-                        <span className="text-[10px] text-muted ml-2 shrink-0">{timeAgo(conv.updated_time)}</span>
+                        <span className="text-[10px] text-muted-foreground ml-2 shrink-0">{timeAgo(conv.updated_time)}</span>
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span
@@ -232,11 +232,11 @@ export default function InboxPage() {
                         >
                           {conv.channel === "instagram" ? "IG" : "FB"}
                         </span>
-                        <p className="text-xs text-muted truncate">{conv.last_message}</p>
+                        <p className="text-xs text-muted-foreground truncate">{conv.last_message}</p>
                       </div>
                     </div>
                     {(conv.unread_count ?? 0) > 0 && (
-                      <span className="bg-accent text-white text-[10px] px-1.5 py-0.5 rounded-full shrink-0">
+                      <span className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full shrink-0">
                         {conv.unread_count}
                       </span>
                     )}
@@ -253,18 +253,18 @@ export default function InboxPage() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-8 h-8 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="w-8 h-8 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
                   </svg>
                 </div>
-                <p className="text-sm text-muted">Selecciona una conversacion</p>
+                <p className="text-sm text-muted-foreground">Selecciona una conversacion</p>
               </div>
             </div>
           ) : (
             <>
               {/* Chat header */}
               <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                <button onClick={() => setSelected(null)} className="lg:hidden text-muted hover:text-foreground text-lg">
+                <button onClick={() => setSelected(null)} className="lg:hidden text-muted-foreground hover:text-foreground text-lg">
                   &larr;
                 </button>
                 <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${channelGradient(selected.channel)} flex items-center justify-center`}>
@@ -274,7 +274,7 @@ export default function InboxPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">{selected.participant_name}</p>
-                  <p className="text-[10px] text-muted">
+                  <p className="text-[10px] text-muted-foreground">
                     {selected.channel === "instagram" ? "Instagram DM" : "Facebook Messenger"}
                   </p>
                 </div>
@@ -283,9 +283,9 @@ export default function InboxPage() {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
                 {msgsLoading ? (
-                  <p className="text-sm text-muted text-center py-8 animate-pulse">Cargando mensajes...</p>
+                  <p className="text-sm text-muted-foreground text-center py-8 animate-pulse">Cargando mensajes...</p>
                 ) : messages.length === 0 ? (
-                  <p className="text-sm text-muted text-center py-8">Sin mensajes visibles.</p>
+                  <p className="text-sm text-muted-foreground text-center py-8">Sin mensajes visibles.</p>
                 ) : (
                   messages.map((msg) => {
                     const isOwn = msg.from_id !== selected.participant_id;
@@ -319,7 +319,7 @@ export default function InboxPage() {
                           {!msg.message && msg.attachments.length === 0 && (
                             <p className="text-sm italic opacity-70">Contenido multimedia</p>
                           )}
-                          <p className={`text-[10px] mt-1 ${isOwn ? "text-white/60" : "text-muted"}`}>
+                          <p className={`text-[10px] mt-1 ${isOwn ? "text-white/60" : "text-muted-foreground"}`}>
                             {formatTime(msg.created_time)}
                           </p>
                         </div>

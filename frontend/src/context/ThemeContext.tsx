@@ -29,8 +29,10 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 function applyTheme(theme: Theme) {
-  document.documentElement.setAttribute("data-theme", theme);
-  document.documentElement.style.colorScheme = theme;
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+  root.classList.toggle("dark", theme === "dark");
+  root.style.colorScheme = theme;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

@@ -89,7 +89,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
         <button
           type="button"
           onClick={() => setMode("upload")}
-          className={`px-3 py-1 rounded-lg transition-colors ${mode === "upload" ? "text-white" : "bg-background border border-border text-muted hover:text-foreground"}`}
+          className={`px-3 py-1 rounded-lg transition-colors ${mode === "upload" ? "text-white" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
           style={mode === "upload" ? { backgroundColor: accentColor } : {}}
         >
           Subir archivo
@@ -97,7 +97,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
         <button
           type="button"
           onClick={() => setMode("url")}
-          className={`px-3 py-1 rounded-lg transition-colors ${mode === "url" ? "text-white" : "bg-background border border-border text-muted hover:text-foreground"}`}
+          className={`px-3 py-1 rounded-lg transition-colors ${mode === "url" ? "text-white" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
           style={mode === "url" ? { backgroundColor: accentColor } : {}}
         >
           URL pública
@@ -131,7 +131,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
           {uploading ? (
             <div className="flex flex-col items-center gap-2">
               <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: accentColor, borderTopColor: "transparent" }} />
-              <p className="text-xs text-muted">Subiendo...</p>
+              <p className="text-xs text-muted-foreground">Subiendo...</p>
             </div>
           ) : preview ? (
             <div className="space-y-2">
@@ -141,7 +141,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={preview} alt="preview" className="max-h-40 mx-auto rounded-lg object-contain" />
               )}
-              <p className="text-xs text-muted">Click para cambiar</p>
+              <p className="text-xs text-muted-foreground">Click para cambiar</p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
@@ -153,7 +153,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
                 </svg>
               </div>
               <p className="text-sm font-medium">Arrastra o haz click para subir</p>
-              <p className="text-xs text-muted">
+              <p className="text-xs text-muted-foreground">
                 {isVideo ? "MP4, MOV hasta 100MB" : "JPG, PNG, GIF, WebP hasta 100MB"}
               </p>
             </div>

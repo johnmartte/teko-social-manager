@@ -41,9 +41,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar />
-      <div className="flex-1 ml-64 flex flex-col min-h-screen relative z-10">
+      <div className="flex-1 ml-60 flex flex-col min-h-screen relative z-10">
         <Header />
-        <main className="flex-1 px-5 py-5 sm:px-8 sm:py-7">{children}</main>
+        <main className="flex-1 px-5 py-6 sm:px-6">{children}</main>
       </div>
     </>
   );

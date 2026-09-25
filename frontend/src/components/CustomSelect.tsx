@@ -54,7 +54,7 @@ export default function CustomSelect({
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`text-muted transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -62,7 +62,7 @@ export default function CustomSelect({
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 min-w-[130px] bg-card border border-border rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.12)] overflow-hidden" style={{ animation: "dropdownOpen 0.15s ease" }}>
+        <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[130px] bg-popover border border-border rounded-lg shadow-md overflow-hidden" style={{ animation: "dropdownOpen 0.15s ease" }}>
           {options.map((opt) => {
             const isActive = opt.value === value;
             return (
@@ -75,7 +75,7 @@ export default function CustomSelect({
                 }}
                 className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-xs text-left transition-colors ${
                   isActive
-                    ? "bg-accent/10 text-accent font-semibold"
+                    ? "bg-primary/10 text-foreground font-semibold"
                     : "text-foreground hover:bg-background"
                 }`}
               >

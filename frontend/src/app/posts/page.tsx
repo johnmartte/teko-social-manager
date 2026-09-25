@@ -64,12 +64,12 @@ export default function PostsPage() {
   function tabClass(p: WorkspaceSocialMeta["posts"]["platforms"][number]): string {
     const active = platform === p.key;
     if (!active) {
-      return "px-4 py-1.5 rounded-lg text-xs font-medium transition-colors text-muted hover:text-foreground";
+      return "px-4 py-1.5 rounded-lg text-xs font-medium transition-colors text-muted-foreground hover:text-foreground";
     }
     if (p.color === "fb") {
       return "px-4 py-1.5 rounded-lg text-xs font-medium transition-colors bg-fb text-white";
     }
-    return "px-4 py-1.5 rounded-lg text-xs font-medium transition-colors bg-accent text-white";
+    return "px-4 py-1.5 rounded-lg text-xs font-medium transition-colors bg-primary text-primary-foreground";
   }
 
   return (
@@ -90,7 +90,7 @@ export default function PostsPage() {
       </div>
 
       {!igConnected && !fbConnected && (
-        <p className="text-muted text-center py-12 text-sm">{messages.connect_account}</p>
+        <p className="text-muted-foreground text-center py-12 text-sm">{messages.connect_account}</p>
       )}
 
       {platform === "instagram" && igConnected && <IGPosts messages={messages} />}
@@ -135,11 +135,11 @@ function IGPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
   }
 
   if (loading) {
-    return <Card><p className="text-muted text-sm text-center py-12">{messages.loading_posts}</p></Card>;
+    return <Card><p className="text-muted-foreground text-sm text-center py-12">{messages.loading_posts}</p></Card>;
   }
 
   if (posts.length === 0) {
-    return <Card><p className="text-muted text-sm text-center py-12">{messages.empty_posts}</p></Card>;
+    return <Card><p className="text-muted-foreground text-sm text-center py-12">{messages.empty_posts}</p></Card>;
   }
 
   return (
@@ -158,7 +158,7 @@ function IGPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted text-xs p-2 text-center">
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs p-2 text-center">
                 {post.caption || messages.no_image}
               </div>
             )}
@@ -181,7 +181,7 @@ function IGPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
           <div className="bg-card rounded-3xl border border-border w-full max-w-lg space-y-4 p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <h3 className="font-semibold">{messages.details_title}</h3>
-              <button onClick={() => setSelected(null)} className="text-muted hover:text-foreground text-xl leading-none">×</button>
+              <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
             </div>
 
             {(selected.media_url || selected.thumbnail_url) && (
@@ -196,12 +196,12 @@ function IGPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
               <p className="text-sm whitespace-pre-wrap">{selected.caption}</p>
             )}
 
-            <div className="flex gap-4 text-sm text-muted">
+            <div className="flex gap-4 text-sm text-muted-foreground">
               {selected.like_count != null && <span>♥ {selected.like_count} likes</span>}
               {selected.comments_count != null && <span>💬 {selected.comments_count} comentarios</span>}
             </div>
 
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted-foreground">
               {new Date(selected.timestamp).toLocaleString("es-ES")}
             </p>
 
@@ -225,7 +225,7 @@ function IGPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
               </button>
             </div>
 
-            <p className="text-[11px] text-muted text-center">
+            <p className="text-[11px] text-muted-foreground text-center">
               {messages.instagram_caption_note}
             </p>
           </div>
@@ -299,11 +299,11 @@ function FBPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
   }
 
   if (loading) {
-    return <Card><p className="text-muted text-sm text-center py-12">{messages.loading_posts}</p></Card>;
+    return <Card><p className="text-muted-foreground text-sm text-center py-12">{messages.loading_posts}</p></Card>;
   }
 
   if (posts.length === 0) {
-    return <Card><p className="text-muted text-sm text-center py-12">{messages.empty_posts}</p></Card>;
+    return <Card><p className="text-muted-foreground text-sm text-center py-12">{messages.empty_posts}</p></Card>;
   }
 
   return (
@@ -320,7 +320,7 @@ function FBPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm line-clamp-2">{post.message || post.story || messages.no_text}</p>
-              <div className="flex gap-3 mt-2 text-xs text-muted">
+              <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
                 <span>♥ {post.likes?.summary?.total_count ?? 0}</span>
                 <span>💬 {post.comments?.summary?.total_count ?? 0}</span>
                 <span>{new Date(post.created_time).toLocaleDateString("es-ES")}</span>
@@ -336,7 +336,7 @@ function FBPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
           <div className="bg-card rounded-3xl border border-border w-full max-w-lg space-y-4 p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <h3 className="font-semibold">{messages.edit_title}</h3>
-              <button onClick={() => setSelected(null)} className="text-muted hover:text-foreground text-xl leading-none">×</button>
+              <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
             </div>
 
             {selected.full_picture && (
@@ -344,7 +344,7 @@ function FBPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
             )}
 
             <div className="space-y-1">
-              <label className="text-xs text-muted font-medium">{messages.message_label}</label>
+              <label className="text-xs text-muted-foreground font-medium">{messages.message_label}</label>
               <textarea
                 value={editMsg}
                 onChange={(e) => setEditMsg(e.target.value)}
@@ -355,12 +355,12 @@ function FBPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
 
             <div className="flex gap-3">
               {selected.likes?.summary?.total_count != null && (
-                <span className="text-xs text-muted">♥ {selected.likes.summary.total_count}</span>
+                <span className="text-xs text-muted-foreground">♥ {selected.likes.summary.total_count}</span>
               )}
               {selected.comments?.summary?.total_count != null && (
-                <span className="text-xs text-muted">💬 {selected.comments.summary.total_count}</span>
+                <span className="text-xs text-muted-foreground">💬 {selected.comments.summary.total_count}</span>
               )}
-              <span className="text-xs text-muted ml-auto">
+              <span className="text-xs text-muted-foreground ml-auto">
                 {new Date(selected.created_time).toLocaleString("es-ES")}
               </span>
             </div>

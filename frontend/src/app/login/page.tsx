@@ -3,23 +3,11 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-
-function EyeIcon({ visible }: { visible: boolean }) {
-  if (visible) {
-    return (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M3 12s3.8-6 9-6 9 6 9 6-3.8 6-9 6-9-6-9-6Z" stroke="currentColor" strokeWidth="1.8" />
-        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
-      </svg>
-    );
-  }
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 12s3.8-6 9-6 9 6 9 6-3.8 6-9 6-9-6-9-6Z" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
+import { Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import BrandMark from "@/components/BrandMark";
 
 export default function LoginPage() {
   const { loginWithEmail } = useAuth();
@@ -50,120 +38,88 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-2 bg-[#080a0f] text-[#f2f3f5]">
-      {/* Left: decorative */}
-      <div
-        className="relative hidden overflow-hidden lg:block"
-        style={{ background: "linear-gradient(135deg, #080a0f, #0a1628)" }}
-      >
-        <div
-          aria-hidden="true"
-          className="absolute inset-0"
-          style={{ background: "radial-gradient(60% 60% at 30% 80%, rgba(30,196,255,0.14), transparent 70%)" }}
-        />
-        <div className="absolute top-14 left-14">
-          <img src="/logos/Isologo-White.svg" alt="TEKO" className="h-8 w-auto" />
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
+      <div className="w-full max-w-sm">
+        <div className="flex justify-center mb-8">
+          <BrandMark />
         </div>
-        <div className="absolute bottom-16 left-14 max-w-lg">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[.25em] text-[#1ec4ff]">TEKO MANAGER</p>
-          <h1 className="text-5xl font-bold leading-tight">Gestiona tus redes desde un solo lugar.</h1>
-          <p className="mt-5 text-lg text-white/55">
-            Contenido, conversaciones y analitica de Instagram y Facebook, unificados.
+
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold tracking-tight">Inicia sesión</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">
+            Ingresa con tus credenciales para continuar.
           </p>
         </div>
-      </div>
 
-      {/* Right: form */}
-      <div className="flex items-center justify-center p-6">
-        <form
-          onSubmit={onSubmit}
-          className="w-full max-w-md rounded-3xl border p-8"
-          style={{
-            borderColor: "rgba(255,255,255,0.1)",
-            background: "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
-          }}
-        >
-          <img src="/logos/Isologo-White.svg" alt="TEKO" className="mb-10 h-8 w-auto lg:hidden" />
-          <p className="text-sm font-medium text-[#1ec4ff]">Bienvenido</p>
-          <h2 className="mt-1 text-3xl font-bold">Inicia sesion</h2>
-          <p className="mt-2 text-sm text-white/50">Ingresa con tus credenciales personales de acceso.</p>
-
-          {error && (
-            <p
-              className="mt-5 rounded-xl border p-3 text-sm"
-              style={{ borderColor: "rgba(248,113,113,0.25)", background: "rgba(248,113,113,0.1)", color: "#f87171" }}
-            >
-              {error}
-            </p>
-          )}
-
-          <label className="mt-8 block text-sm font-medium">
-            Email
-            <input
-              required
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
               type="email"
               autoComplete="email"
               placeholder="tu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-xl border px-4 py-3 outline-none transition-all placeholder:text-white/40"
-              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#f2f3f5" }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(30,196,255,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(30,196,255,0.1)"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+              required
             />
-          </label>
+          </div>
 
-          <label className="mt-4 block text-sm font-medium">
-            Contrasena
-            <div className="relative mt-2">
-              <input
-                required
-                minLength={8}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Contraseña</Label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ¿La olvidaste?
+              </Link>
+            </div>
+            <div className="relative">
+              <Input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
-                placeholder="********"
+                placeholder="••••••••"
+                className="pr-10"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border px-4 py-3 pr-11 outline-none transition-all placeholder:text-white/40"
-                style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#f2f3f5" }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(30,196,255,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(30,196,255,0.1)"; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+                required
+                minLength={8}
               />
               <button
                 type="button"
-                onClick={() => setShowPassword((current) => !current)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
-                aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+                onClick={() => setShowPassword((c) => !c)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
-                <EyeIcon visible={showPassword} />
+                {showPassword ? (
+                  <EyeOff className="size-4" strokeWidth={1.75} />
+                ) : (
+                  <Eye className="size-4" strokeWidth={1.75} />
+                )}
               </button>
             </div>
-          </label>
+          </div>
 
-          <button
-            type="submit"
-            disabled={!canSubmit || submitting}
-            className="mt-7 w-full rounded-xl py-3 font-semibold transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{ background: "#1ec4ff", color: "#080a0f", boxShadow: "0 8px 24px -6px rgba(30,196,255,0.45)" }}
-          >
-            {submitting ? "Ingresando..." : "Iniciar sesion"}
-          </button>
+          {error && (
+            <p className="text-sm text-error border border-error-border bg-error-light rounded-md px-3 py-2">
+              {error}
+            </p>
+          )}
 
-          <Link
-            href="/forgot-password"
-            className="mt-6 block w-full text-center text-sm text-white/55 hover:text-white/80"
-          >
-            Olvidaste tu contrasena?
-          </Link>
-
-          <p className="mt-3 text-center text-sm text-white/55">
-            No tienes cuenta?{" "}
-            <Link href="/register" className="text-white/90 hover:text-white underline underline-offset-2">
-              Registrate
-            </Link>
-          </p>
+          <Button type="submit" className="w-full" disabled={!canSubmit || submitting}>
+            {submitting ? "Ingresando..." : "Iniciar sesión"}
+          </Button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          ¿No tienes cuenta?{" "}
+          <Link href="/register" className="text-foreground hover:underline underline-offset-4">
+            Regístrate
+          </Link>
+        </p>
       </div>
-    </main>
+    </div>
   );
 }

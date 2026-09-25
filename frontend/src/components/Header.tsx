@@ -3,6 +3,17 @@
 import { useAuth } from "@/context/AuthContext";
 import { getLoginUrl } from "@/lib/api";
 import { useTheme } from "@/context/ThemeContext";
+import { Search, Sun, Moon, User, Settings, LogOut, Link2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 export default function Header() {
   const { status, user, logout } = useAuth();
@@ -12,99 +23,104 @@ export default function Header() {
   const fbConnected = status?.facebook.connected;
   const anyConnected = igConnected || fbConnected;
 
-  const initial = (user?.name || "T").charAt(0).toUpperCase();
+  const initial = (user?.name || "U").charAt(0).toUpperCase();
 
   return (
-    <header className="h-20 flex items-center justify-between gap-4 px-4 sm:px-8 sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
-      {/* Search */}
-      <div className="flex items-center gap-2 flex-1 max-w-md">
-        <div className="flex items-center gap-2 bg-card rounded-xl px-3.5 py-2.5 w-full border border-border">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" />
-          </svg>
+    <header className="h-16 flex items-center justify-between gap-4 px-4 sm:px-6 sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-sm">
+      {/* Búsqueda */}
+      <div className="flex items-center gap-2 flex-1 max-w-sm">
+        <div className="flex items-center gap-2 h-9 w-full rounded-md border border-input bg-card px-3">
+          <Search className="size-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
           <input
             type="text"
             placeholder="Buscar..."
-            className="bg-transparent text-sm outline-none w-full placeholder:text-muted"
+            className="bg-transparent text-sm outline-none w-full placeholder:text-muted-foreground"
           />
         </div>
       </div>
 
-      {/* Right side */}
-      <div className="flex items-center gap-2.5">
-        <button
-          type="button"
+      <div className="flex items-center gap-2">
+        {/* Estado de conexión */}
+        <div className="hidden md:flex items-center gap-1.5">
+          <ConnectionPill label="Instagram" connected={!!igConnected} />
+          <ConnectionPill
+            label={fbConnected ? status?.facebook.pageName || "Facebook" : "Facebook"}
+            connected={!!fbConnected}
+          />
+        </div>
+
+        {!anyConnected && (
+          <Button asChild size="sm" className="h-9">
+            <a href={getLoginUrl()}>
+              <Link2 className="size-4" strokeWidth={1.75} />
+              Conectar cuentas
+            </a>
+          </Button>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9"
           onClick={toggleTheme}
-          className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-border bg-card text-muted hover:text-foreground transition-colors"
           aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-          title={isDark ? "Modo claro" : "Modo oscuro"}
         >
           {isDark ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2" />
-              <path d="M12 20v2" />
-              <path d="m4.93 4.93 1.41 1.41" />
-              <path d="m17.66 17.66 1.41 1.41" />
-              <path d="M2 12h2" />
-              <path d="M20 12h2" />
-              <path d="m6.34 17.66-1.41 1.41" />
-              <path d="m19.07 4.93-1.41 1.41" />
-            </svg>
+            <Sun className="size-4" strokeWidth={1.75} />
           ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9" />
-            </svg>
+            <Moon className="size-4" strokeWidth={1.75} />
           )}
-        </button>
+        </Button>
 
-        {/* Status badges */}
-        <div className="hidden sm:flex items-center gap-2">
-          <span
-            className={`text-xs px-3 py-1.5 rounded-full font-medium border ${
-              igConnected
-                ? "bg-ig-light text-ig border-ig/20"
-                : "bg-card text-muted border-border"
-            }`}
-          >
-            IG {igConnected ? "activo" : "off"}
-          </span>
-          <span
-            className={`text-xs px-3 py-1.5 rounded-full font-medium border ${
-              fbConnected
-                ? "bg-fb-light text-fb border-fb/20"
-                : "bg-card text-muted border-border"
-            }`}
-          >
-            FB{" "}
-            {fbConnected
-              ? status?.facebook.pageName || "conectado"
-              : "off"}
-          </span>
-        </div>
-
-        {/* Auth buttons */}
-        {!anyConnected && (
-          <a
-            href={getLoginUrl()}
-            className="text-xs px-4 py-2 rounded-xl bg-accent text-white font-semibold hover:brightness-110 transition-[filter] shadow-[0_8px_24px_-6px_rgba(30,196,255,0.45)]"
-          >
-            Conectar cuentas
-          </a>
-        )}
-        <button
-          onClick={logout}
-          className="hidden sm:inline-flex text-xs px-4 py-2 rounded-xl border border-border bg-card text-muted hover:text-foreground hover:border-foreground/20 transition-colors"
-        >
-          Cerrar sesión
-        </button>
-
-        {/* Avatar */}
-        <div className="grid h-10 w-10 place-items-center rounded-full bg-accent text-background text-sm font-bold shrink-0">
-          {initial}
-        </div>
+        {/* Menú de usuario */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="size-9 rounded-full bg-muted border border-border flex items-center justify-center text-[13px] font-medium hover:bg-accent transition-colors"
+              aria-label="Menú de usuario"
+            >
+              {initial}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium truncate">{user?.name || "Usuario"}</span>
+                <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <User className="size-4" strokeWidth={1.75} />
+                Perfil
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Settings className="size-4" strokeWidth={1.75} />
+                Configuración
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={logout}>
+              <LogOut className="size-4" strokeWidth={1.75} />
+              Cerrar sesión
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
+  );
+}
+
+function ConnectionPill({ label, connected }: { label: string; connected: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 h-7 rounded-full border border-border bg-card px-2.5 text-xs text-muted-foreground">
+      <span
+        className={`size-1.5 rounded-full ${connected ? "bg-success" : "bg-muted-foreground/40"}`}
+      />
+      <span className="max-w-28 truncate">{label}</span>
+    </span>
   );
 }

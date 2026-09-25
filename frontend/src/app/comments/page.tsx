@@ -116,7 +116,7 @@ export default function CommentsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-xl font-bold">Comentarios</h1>
-        <p className="text-muted text-center py-12">{uiMessages.connect_instagram}</p>
+        <p className="text-muted-foreground text-center py-12">{uiMessages.connect_instagram}</p>
       </div>
     );
   }
@@ -136,7 +136,7 @@ export default function CommentsPage() {
         <Card>
           <h2 className="text-sm font-semibold mb-3">{uiMessages.select_post_title}</h2>
           {loadingMedia ? (
-            <div className="text-sm text-muted text-center py-8">{uiMessages.loading_posts}</div>
+            <div className="text-sm text-muted-foreground text-center py-8">{uiMessages.loading_posts}</div>
           ) : (
             <ul className="space-y-2 max-h-150 overflow-y-auto pr-1">
               {media.map((item) => (
@@ -145,7 +145,7 @@ export default function CommentsPage() {
                     onClick={() => selectMedia(item)}
                     className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors ${
                       selectedMedia?.id === item.id
-                        ? "bg-accent-light border border-accent/20"
+                        ? "bg-accent border border-border/20"
                         : "hover:bg-card border border-transparent"
                     }`}
                   >
@@ -157,10 +157,10 @@ export default function CommentsPage() {
                       />
                     )}
                     <div className="min-w-0">
-                      <p className="text-xs text-muted truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         {item.caption || uiMessages.no_caption}
                       </p>
-                      <p className="text-[11px] text-muted mt-0.5">
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
                         {item.comments_count ?? 0} {uiMessages.comments_count_suffix}
                       </p>
                     </div>
@@ -174,13 +174,13 @@ export default function CommentsPage() {
         {/* Comments panel */}
         <Card>
           {!selectedMedia ? (
-            <div className="text-center py-16 text-muted text-sm">
+            <div className="text-center py-16 text-muted-foreground text-sm">
               {uiMessages.select_post_empty}
             </div>
           ) : loadingComments ? (
-            <div className="text-center py-16 text-muted text-sm">{uiMessages.loading_comments}</div>
+            <div className="text-center py-16 text-muted-foreground text-sm">{uiMessages.loading_comments}</div>
           ) : comments.length === 0 ? (
-            <div className="text-center py-16 text-muted text-sm">{uiMessages.empty_comments}</div>
+            <div className="text-center py-16 text-muted-foreground text-sm">{uiMessages.empty_comments}</div>
           ) : (
             <ul className="space-y-4 max-h-150 overflow-y-auto pr-1">
               {comments.map((comment) => (
@@ -189,7 +189,7 @@ export default function CommentsPage() {
                     <div>
                       <span className="text-xs font-semibold">@{comment.username}</span>
                       <p className="text-sm mt-1">{comment.text}</p>
-                      <p className="text-[11px] text-muted mt-1">
+                      <p className="text-[11px] text-muted-foreground mt-1">
                         {new Date(comment.timestamp).toLocaleString("es-ES")}
                       </p>
                     </div>
@@ -202,7 +202,7 @@ export default function CommentsPage() {
                       </button>
                       <button
                         onClick={() => handleHide(comment.id)}
-                        className="text-[11px] px-2.5 py-1.5 rounded-lg border border-border hover:bg-card transition-colors text-muted"
+                        className="text-[11px] px-2.5 py-1.5 rounded-lg border border-border hover:bg-card transition-colors text-muted-foreground"
                       >
                         {uiMessages.hide}
                       </button>
@@ -224,13 +224,13 @@ export default function CommentsPage() {
                           setReplyText((prev) => ({ ...prev, [comment.id]: e.target.value }))
                         }
                         placeholder={uiMessages.reply_placeholder}
-                        className="flex-1 text-sm bg-background border border-border rounded-xl px-3 py-2 outline-none focus:border-accent"
+                        className="flex-1 text-sm bg-background border border-border rounded-xl px-3 py-2 outline-none focus:border-border"
                         onKeyDown={(e) => e.key === "Enter" && handleReply(comment.id)}
                       />
                       <button
                         onClick={() => handleReply(comment.id)}
                         disabled={submitting}
-                        className="text-xs px-4 py-2 rounded-xl bg-accent text-white font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                        className="text-xs px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
                       >
                         {uiMessages.send}
                       </button>

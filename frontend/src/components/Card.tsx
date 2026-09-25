@@ -22,7 +22,7 @@ export default function Card({
     >
       {(title || action) && (
         <div className="flex items-center justify-between mb-4">
-          {title && <h3 className="text-sm font-semibold">{title}</h3>}
+          {title && <h3 className="text-sm font-medium">{title}</h3>}
           {action}
         </div>
       )}
@@ -34,7 +34,6 @@ export default function Card({
 export function StatCard({
   label,
   value,
-  color,
   icon,
 }: {
   label: string;
@@ -43,19 +42,10 @@ export function StatCard({
   icon?: ReactNode;
 }) {
   return (
-    <div className="teko-card p-4 flex flex-col gap-3 min-w-0">
-      {icon && (
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ backgroundColor: color ? `${color}20` : "var(--card-hover)" }}
-        >
-          {icon}
-        </div>
-      )}
-      <div className="min-w-0">
-        <p className="text-xl font-bold leading-tight truncate">{value}</p>
-        <p className="text-xs text-muted mt-0.5 leading-tight break-words">{label}</p>
-      </div>
+    <div className="teko-card p-4 flex flex-col gap-1 min-w-0">
+      {icon && <div className="text-muted-foreground mb-1">{icon}</div>}
+      <p className="text-xl font-semibold leading-tight truncate tabular-nums">{value}</p>
+      <p className="text-xs text-muted-foreground leading-tight">{label}</p>
     </div>
   );
 }

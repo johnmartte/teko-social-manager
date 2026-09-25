@@ -45,10 +45,11 @@ const TIME_PERIODS = [
 
 /* ── Helpers ────────────────────────────────────────────────── */
 
+/* Paleta categórica desaturada: misma saturación y luminosidad para que
+   ninguna serie domine visualmente. Legible en claro y oscuro. */
 const COLORS = [
-  "#e1306c", "#405de6", "#5851db", "#833ab4", "#c13584",
-  "#fd1d1d", "#f56040", "#f77737", "#fcaf45", "#ffdc80",
-  "#0b6eff", "#1ec4ff", "#0047ff", "#7aa3ff",
+  "#6b93bf", "#7fa87f", "#c49a4a", "#bf7a9c",
+  "#8a86bf", "#5fa3a3", "#bf8f6b", "#9a9a9a",
 ];
 
 function shortDate(iso: string) {
@@ -338,7 +339,7 @@ export default function InsightsPage() {
   if (!igConnected && !fbConnected) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-muted">Conecta una cuenta para ver estadisticas.</p>
+        <p className="text-muted-foreground">Conecta una cuenta para ver estadisticas.</p>
       </div>
     );
   }
@@ -346,7 +347,7 @@ export default function InsightsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-muted animate-pulse">Cargando estadisticas...</p>
+        <p className="text-muted-foreground animate-pulse">Cargando estadisticas...</p>
       </div>
     );
   }
@@ -378,7 +379,7 @@ export default function InsightsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Estadisticas</h1>
-          <p className="text-sm text-muted mt-1">Analisis detallado de tus redes sociales.</p>
+          <p className="text-sm text-muted-foreground mt-1">Analisis detallado de tus redes sociales.</p>
         </div>
         <div className="flex gap-1 bg-card/80 border border-border rounded-xl p-1">
           {TIME_PERIODS.map((tp) => (
@@ -387,8 +388,8 @@ export default function InsightsPage() {
               onClick={() => handlePeriodChange(tp.days)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 selectedDays === tp.days
-                  ? "bg-accent text-white shadow-sm"
-                  : "text-muted hover:text-foreground hover:bg-white/5"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
               }`}
             >
               {tp.label}
@@ -416,19 +417,19 @@ export default function InsightsPage() {
               )}
               <div>
                 <p className="font-bold text-lg">{igProfile.name || igProfile.username}</p>
-                <p className="text-sm text-muted">@{igProfile.username}</p>
+                <p className="text-sm text-muted-foreground">@{igProfile.username}</p>
               </div>
               {igFollowers !== null && (
                 <div className="ml-auto text-right">
                   <p className="text-2xl font-bold" style={{ color: "#e1306c" }}>{formatNum(igFollowers)}</p>
-                  <p className="text-xs text-muted">seguidores</p>
+                  <p className="text-xs text-muted-foreground">seguidores</p>
                 </div>
               )}
             </div>
           )}
 
           {insightsLoading && (
-            <div className="flex items-center gap-2 text-sm text-muted">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="w-4 h-4 border-2 border-[#e1306c] border-t-transparent rounded-full animate-spin" />
               Actualizando...
             </div>
@@ -481,7 +482,7 @@ export default function InsightsPage() {
               <span className="text-warning text-lg mt-0.5">&#9888;</span>
               <div>
                 <p className="text-sm font-medium text-warning">Se necesitan 100+ seguidores para datos demograficos</p>
-                <p className="text-xs text-muted mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Tu cuenta tiene <span className="font-bold text-foreground">{igFollowers}</span> seguidores.
                   Meta requiere un minimo de 100 seguidores para mostrar datos de genero, edad, ciudades y paises.
                   Te faltan <span className="font-bold text-warning">{100 - igFollowers}</span> seguidores.
@@ -492,7 +493,7 @@ export default function InsightsPage() {
                     style={{ width: `${Math.min(100, (igFollowers / 100) * 100)}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-muted mt-1">{igFollowers}/100 seguidores</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{igFollowers}/100 seguidores</p>
               </div>
             </div>
           )}
@@ -527,7 +528,7 @@ export default function InsightsPage() {
                       <div key={g.name} className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: ["#e1306c", "#405de6", "#999"][i] }} />
                         <span className="text-sm font-medium">{g.pct}%</span>
-                        <span className="text-xs text-muted">{g.name}</span>
+                        <span className="text-xs text-muted-foreground">{g.name}</span>
                       </div>
                     ))}
                   </div>
@@ -560,7 +561,7 @@ export default function InsightsPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              {!hasGenderData && <p className="text-[10px] text-muted/60 text-center">Disponible con 100+ seguidores</p>}
+              {!hasGenderData && <p className="text-[10px] text-muted-foreground/60 text-center">Disponible con 100+ seguidores</p>}
             </Card>
           </div>
 
@@ -573,11 +574,11 @@ export default function InsightsPage() {
                     const max = cityData[0].value;
                     return (
                       <div key={c.name} className="flex items-center gap-3">
-                        <span className="text-xs text-muted w-5 text-right">{i + 1}</span>
+                        <span className="text-xs text-muted-foreground w-5 text-right">{i + 1}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-medium truncate">{c.name}</span>
-                            <span className="text-xs text-muted ml-2">{formatNum(c.value)}</span>
+                            <span className="text-xs text-muted-foreground ml-2">{formatNum(c.value)}</span>
                           </div>
                           <div className="h-1.5 bg-background rounded-full overflow-hidden">
                             <div
@@ -601,11 +602,11 @@ export default function InsightsPage() {
                     const max = countryData[0].value;
                     return (
                       <div key={c.name} className="flex items-center gap-3">
-                        <span className="text-xs text-muted w-5 text-right">{i + 1}</span>
+                        <span className="text-xs text-muted-foreground w-5 text-right">{i + 1}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-medium truncate">{c.name}</span>
-                            <span className="text-xs text-muted ml-2">{formatNum(c.value)}</span>
+                            <span className="text-xs text-muted-foreground ml-2">{formatNum(c.value)}</span>
                           </div>
                           <div className="h-1.5 bg-background rounded-full overflow-hidden">
                             <div
@@ -626,7 +627,7 @@ export default function InsightsPage() {
 
           {/* Online followers (always visible) */}
           <Card title="Actividad de seguidores por hora" color="#0047ff">
-            <p className="text-xs text-muted mb-3">Cuando tus seguidores estan mas activos (hora local).</p>
+            <p className="text-xs text-muted-foreground mb-3">Cuando tus seguidores estan mas activos (hora local).</p>
             {hasOnlineData ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
@@ -675,7 +676,7 @@ export default function InsightsPage() {
               );
             })}
             {fbInsights.length === 0 && (
-              <p className="col-span-5 text-sm text-muted text-center py-4">Sin datos disponibles.</p>
+              <p className="col-span-5 text-sm text-muted-foreground text-center py-4">Sin datos disponibles.</p>
             )}
           </div>
 
@@ -714,7 +715,7 @@ function SummaryCard({ label, value, color }: { label: string; value: number | n
       <p className="text-2xl font-bold" style={{ color }}>
         {formatNum(value ?? 0)}
       </p>
-      <p className="text-xs text-muted mt-1">{label}</p>
+      <p className="text-xs text-muted-foreground mt-1">{label}</p>
     </div>
   );
 }
@@ -787,9 +788,9 @@ function EmptyState({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-8 gap-2">
       <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-        <span className="text-lg text-muted/40">0</span>
+        <span className="text-lg text-muted-foreground/40">0</span>
       </div>
-      <p className="text-xs text-muted/60">{label}</p>
+      <p className="text-xs text-muted-foreground/60">{label}</p>
     </div>
   );
 }

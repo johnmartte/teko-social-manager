@@ -1,85 +1,183 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* El tema se activa por clase .dark (shadcn) o por [data-theme="dark"] (ThemeContext). */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+/* ============================================================
+   Paleta neutra. Sin colores saturados ni brillos.
+   El acento fuerte es el propio contraste (negro/blanco).
+   ============================================================ */
 
 :root,
 [data-theme="light"] {
-  --background: #fbfcfe;
-  --foreground: #101828;
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+
   --card: #ffffff;
-  --card-hover: #f7f9fc;
-  --border: #e7ebf2;
-  --muted: #6a7282;
-  --accent: #0047ff;
-  --accent-light: #eaf4ff;
-  --ig: #e1306c;
-  --ig-light: #fde7ef;
-  --fb: #1877f2;
-  --fb-light: #e7f1ff;
-  --warning: #f59e0b;
-  --warning-light: #fef3c7;
-  --success: #22c55e;
-  --success-light: #dcfce7;
-  --error: #ef4444;
-  --error-light: #fef2f2;
-  --error-border: #fecaca;
-  --sidebar: #0a0e1a;
-  --sidebar-text: rgba(242, 243, 245, 0.55);
-  --sidebar-active: #ffffff;
-  --shadow-color: rgba(16, 24, 40, 0.06);
-  --shadow-md: rgba(16, 24, 40, 0.12);
-  --shadow-lg: rgba(16, 24, 40, 0.35);
+  --card-foreground: #0a0a0a;
+  --card-hover: #f5f5f5;
+
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #a3a3a3;
+
+  /* Superficies de navegación */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-muted: #737373;
+  --sidebar-accent: #f5f5f5;
+  --sidebar-border: #e5e5e5;
+
+  /* Estado: tonos apagados, nunca neón */
+  --success: #3f8f5f;
+  --success-light: #eef6f1;
+  --warning: #a8762a;
+  --warning-light: #faf3e8;
+  --error: #b4454a;
+  --error-light: #fbf0f0;
+  --error-border: #eccccd;
+  --info: #3d6a99;
+  --info-light: #eef3f8;
+
+  /* Plataformas: desaturadas para que no griten */
+  --ig: #a8537a;
+  --ig-light: #f7eff3;
+  --fb: #3d6a99;
+  --fb-light: #eef3f8;
+
+  --destructive: #b4454a;
+  --destructive-foreground: #fafafa;
+
+  --shadow-color: rgba(10, 10, 10, 0.05);
+  --shadow-md: rgba(10, 10, 10, 0.08);
+  --shadow-lg: rgba(10, 10, 10, 0.12);
 }
 
+.dark,
 [data-theme="dark"] {
-  --background: #080a0f;
-  --foreground: #f2f3f5;
-  --card: rgba(255, 255, 255, 0.04);
-  --card-hover: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.1);
-  --muted: rgba(242, 243, 245, 0.55);
-  --accent: #1ec4ff;
-  --accent-light: rgba(30, 196, 255, 0.12);
-  --ig: #f0508a;
-  --ig-light: rgba(225, 48, 108, 0.14);
-  --fb: #4599ff;
-  --fb-light: #162438;
-  --warning: #fbbf24;
-  --warning-light: rgba(251, 191, 36, 0.12);
-  --success: #4ade80;
-  --success-light: rgba(74, 222, 128, 0.12);
-  --error: #f87171;
-  --error-light: rgba(248, 113, 113, 0.12);
-  --error-border: rgba(248, 113, 113, 0.25);
-  --sidebar: #05070c;
-  --sidebar-text: rgba(242, 243, 245, 0.55);
-  --sidebar-active: #ffffff;
+  --background: #0a0a0a;
+  --foreground: #ededed;
+
+  --card: #141414;
+  --card-foreground: #ededed;
+  --card-hover: #1a1a1a;
+
+  --popover: #161616;
+  --popover-foreground: #ededed;
+
+  --primary: #ededed;
+  --primary-foreground: #0a0a0a;
+
+  --secondary: #1f1f1f;
+  --secondary-foreground: #ededed;
+
+  --muted: #1a1a1a;
+  --muted-foreground: #8a8a8a;
+
+  --accent: #1f1f1f;
+  --accent-foreground: #ededed;
+
+  --border: #262626;
+  --input: #262626;
+  --ring: #525252;
+
+  --sidebar: #0d0d0d;
+  --sidebar-foreground: #ededed;
+  --sidebar-muted: #8a8a8a;
+  --sidebar-accent: #1f1f1f;
+  --sidebar-border: #1f1f1f;
+
+  --success: #5b9e77;
+  --success-light: rgba(91, 158, 119, 0.12);
+  --warning: #c49a4a;
+  --warning-light: rgba(196, 154, 74, 0.12);
+  --error: #cf6b6b;
+  --error-light: rgba(207, 107, 107, 0.12);
+  --error-border: rgba(207, 107, 107, 0.24);
+  --info: #6b93bf;
+  --info-light: rgba(107, 147, 191, 0.12);
+
+  --ig: #bf7a9c;
+  --ig-light: rgba(191, 122, 156, 0.12);
+  --fb: #6b93bf;
+  --fb-light: rgba(107, 147, 191, 0.12);
+
+  --destructive: #cf6b6b;
+  --destructive-foreground: #0a0a0a;
+
   --shadow-color: rgba(0, 0, 0, 0.3);
-  --shadow-md: rgba(0, 0, 0, 0.5);
-  --shadow-lg: rgba(0, 0, 0, 0.6);
+  --shadow-md: rgba(0, 0, 0, 0.4);
+  --shadow-lg: rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
   --color-card-hover: var(--card-hover);
-  --color-border: var(--border);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
   --color-accent: var(--accent);
-  --color-accent-light: var(--accent-light);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  --color-error: var(--error);
+  --color-error-light: var(--error-light);
+  --color-error-border: var(--error-border);
+  --color-info: var(--info);
+  --color-info-light: var(--info-light);
+
   --color-ig: var(--ig);
   --color-ig-light: var(--ig-light);
   --color-fb: var(--fb);
   --color-fb-light: var(--fb-light);
-  --color-warning: var(--warning);
-  --color-warning-light: var(--warning-light);
-  --color-success: var(--success);
-  --color-success-light: var(--success-light);
-  --color-error: var(--error);
-  --color-error-light: var(--error-light);
-  --color-error-border: var(--error-border);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-text: var(--sidebar-text);
-  --color-sidebar-active: var(--sidebar-active);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -96,154 +194,122 @@ body {
   scrollbar-color: var(--border) transparent;
 }
 
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
 .teko-shell {
   position: relative;
 }
 
-/* Superficie de tarjeta estándar (espejo del admin de TEKO) */
+/* Superficie de tarjeta: plana, borde sutil, sin sombras de color */
 .teko-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: 0.75rem;
 }
 
-[data-theme="dark"] .teko-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
-}
-
-.teko-enter {
-  animation: tekoEnter 0.45s ease-out;
-}
-
-.teko-stagger > * {
-  animation: tekoRise 0.4s ease-out both;
-}
-
-.teko-stagger > *:nth-child(1) {
-  animation-delay: 70ms;
-}
-
-.teko-stagger > *:nth-child(2) {
-  animation-delay: 120ms;
-}
-
-.teko-stagger > *:nth-child(3) {
-  animation-delay: 170ms;
-}
-
-.teko-stagger > *:nth-child(4) {
-  animation-delay: 220ms;
-}
-
-@keyframes dropdownOpen {
-  from {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes tekoEnter {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes tekoRise {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.985);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+/* ── Entradas ──────────────────────────────────────────────── */
 
 .ui-control {
   width: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68));
-  border: 1px solid color-mix(in oklab, var(--border) 86%, #000 14%);
-  border-radius: 0.85rem;
-  padding: 0.62rem 0.8rem;
+  background: var(--card);
+  border: 1px solid var(--input);
+  border-radius: 0.625rem;
+  padding: 0.55rem 0.75rem;
   font-size: 0.875rem;
   color: var(--foreground);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-[data-theme="dark"] .ui-control {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .ui-control::placeholder {
-  color: color-mix(in oklab, var(--muted) 88%, #fff 12%);
+  color: var(--muted-foreground);
 }
 
 .ui-control:hover {
-  border-color: color-mix(in oklab, var(--muted) 60%, var(--border) 40%);
+  border-color: var(--ring);
 }
 
 .ui-control:focus {
   outline: none;
-  border-color: color-mix(in oklab, var(--accent) 72%, #fff 28%);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-light) 70%, #fff 30%);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent);
 }
 
 .ui-select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  padding-right: 2.4rem;
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23655f53' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat;
-  background-position: 0 0, right 0.8rem center;
-  background-size: auto, 0.95rem;
+  padding-right: 2.25rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.9rem;
 }
 
-[data-theme="dark"] .ui-select {
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ea3aa' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+[data-theme="dark"] .ui-select,
+.dark .ui-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .ui-control[type="date"],
 .ui-control[type="time"],
 .ui-control[type="datetime-local"] {
-  min-height: 2.6rem;
+  min-height: 2.5rem;
 }
 
 .ui-control[type="date"]::-webkit-calendar-picker-indicator,
 .ui-control[type="time"]::-webkit-calendar-picker-indicator,
 .ui-control[type="datetime-local"]::-webkit-calendar-picker-indicator {
-  filter: saturate(0.4) contrast(1.25);
+  filter: saturate(0) opacity(0.5);
   cursor: pointer;
 }
 
+/* ── Animaciones (discretas) ───────────────────────────────── */
+
+.teko-enter {
+  animation: tekoEnter 0.3s ease-out;
+}
+
+.teko-stagger > * {
+  animation: tekoRise 0.3s ease-out both;
+}
+
+.teko-stagger > *:nth-child(1) { animation-delay: 40ms; }
+.teko-stagger > *:nth-child(2) { animation-delay: 80ms; }
+.teko-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.teko-stagger > *:nth-child(4) { animation-delay: 160ms; }
+
+@keyframes tekoEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tekoRise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dropdownOpen {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Datepicker ────────────────────────────────────────────── */
+
 .react-datepicker {
-  background: var(--card);
+  background: var(--popover);
   border: 1px solid var(--border);
-  border-radius: 1rem;
-  box-shadow: 0 16px 28px var(--shadow-md);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px var(--shadow-md);
   overflow: hidden;
   font-family: var(--font-sans), system-ui, sans-serif;
 }
@@ -253,7 +319,7 @@ body {
 }
 
 .react-datepicker__header {
-  background: color-mix(in oklab, var(--card) 84%, #fff 16%);
+  background: var(--muted);
   border-bottom: 1px solid var(--border);
 }
 
@@ -261,7 +327,7 @@ body {
 .react-datepicker-time__header,
 .react-datepicker-year-header {
   color: var(--foreground);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .react-datepicker__day,
@@ -270,16 +336,20 @@ body {
   color: var(--foreground);
 }
 
+.react-datepicker__day--outside-month {
+  color: var(--muted-foreground);
+}
+
 .react-datepicker__day:hover,
 .react-datepicker__time-list-item:hover {
-  background: var(--card-hover);
+  background: var(--accent);
 }
 
 .react-datepicker__day--selected,
 .react-datepicker__day--keyboard-selected,
 .react-datepicker__time-list-item--selected {
-  background: var(--accent) !important;
-  color: #fff !important;
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
 }
 
 .react-datepicker__time-container {

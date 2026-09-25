@@ -33,7 +33,7 @@ export default function FacebookPageView() {
   if (!status?.facebook.connected) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <p className="text-muted">Conecta tu cuenta de Facebook primero.</p>
+        <p className="text-muted-foreground">Conecta tu cuenta de Facebook primero.</p>
       </div>
     );
   }
@@ -69,17 +69,17 @@ export default function FacebookPageView() {
             </div>
             <div className="flex-1">
               <p className="text-base font-semibold">{page.name}</p>
-              <p className="text-xs text-muted">ID: {page.id}</p>
-              {page.about && <p className="text-xs text-muted mt-1">{page.about}</p>}
+              <p className="text-xs text-muted-foreground">ID: {page.id}</p>
+              {page.about && <p className="text-xs text-muted-foreground mt-1">{page.about}</p>}
             </div>
             <div className="flex gap-8">
               <div className="text-center">
                 <p className="text-xl font-bold">{formatNum(page.fan_count)}</p>
-                <p className="text-xs text-muted">Me gusta</p>
+                <p className="text-xs text-muted-foreground">Me gusta</p>
               </div>
               <div className="text-center">
                 <p className="text-xl font-bold">{formatNum(page.followers_count)}</p>
-                <p className="text-xs text-muted">Seguidores</p>
+                <p className="text-xs text-muted-foreground">Seguidores</p>
               </div>
             </div>
           </div>
@@ -107,12 +107,12 @@ export default function FacebookPageView() {
             return (
               <div key={m.name} className="bg-background rounded-xl p-4 text-center">
                 <p className="text-xl font-bold">{formatNum(val)}</p>
-                <p className="text-xs text-muted mt-0.5">{metricLabels[m.name] || m.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{metricLabels[m.name] || m.name}</p>
               </div>
             );
           })}
           {insights.length === 0 && (
-            <p className="col-span-5 text-center text-sm text-muted py-4">Sin datos disponibles.</p>
+            <p className="col-span-5 text-center text-sm text-muted-foreground py-4">Sin datos disponibles.</p>
           )}
         </div>
       </Card>
@@ -120,7 +120,7 @@ export default function FacebookPageView() {
       {/* Posts */}
       <Card title="Posts recientes">
         {posts.length === 0 ? (
-          <p className="text-center text-sm text-muted py-8">No hay publicaciones.</p>
+          <p className="text-center text-sm text-muted-foreground py-8">No hay publicaciones.</p>
         ) : (
           <div className="space-y-3">
             {posts.map((post) => {
@@ -143,7 +143,7 @@ export default function FacebookPageView() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm line-clamp-2">{msg}</p>
-                    <div className="flex gap-4 mt-2 text-xs text-muted">
+                    <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                       <span>❤️ {formatNum(likes)}</span>
                       <span>💬 {formatNum(comments)}</span>
                       <span>{date}</span>

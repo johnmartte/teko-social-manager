@@ -78,7 +78,7 @@ export default function SettingsPage() {
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Configuración</h1>
-          <p className="text-sm text-muted mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Administra tus conexiones sociales y la seguridad de tu cuenta.
           </p>
         </div>
@@ -93,7 +93,7 @@ export default function SettingsPage() {
                   <SocialLogo platform="instagram" size="sm" />
                   <div>
                     <p className="text-sm font-medium">Instagram</p>
-                    <p className="text-xs text-muted">
+                    <p className="text-xs text-muted-foreground">
                       {igConnected ? `ID: ${status?.instagram.userId}` : "No conectado"}
                     </p>
                   </div>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
                   <SocialLogo platform="facebook" size="sm" />
                   <div>
                     <p className="text-sm font-medium">Facebook</p>
-                    <p className="text-xs text-muted">
+                    <p className="text-xs text-muted-foreground">
                       {fbConnected
                         ? `${status?.facebook.pageName} (${status?.facebook.pageId})`
                         : "No conectado"}
@@ -132,7 +132,7 @@ export default function SettingsPage() {
             <div className="flex gap-3 mt-5 flex-wrap">
               <a
                 href={getLoginUrl()}
-                className="text-xs px-4 py-2.5 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity"
+                className="text-xs px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
               >
                 {igConnected || fbConnected ? "Reconectar cuentas" : "Conectar cuentas"}
               </a>
@@ -140,7 +140,7 @@ export default function SettingsPage() {
                 <button
                   onClick={async () => { setDisconnecting(true); await disconnectSocial("instagram"); setDisconnecting(false); }}
                   disabled={disconnecting}
-                  className="text-xs px-4 py-2.5 rounded-xl border border-border text-muted hover:text-foreground hover:border-foreground/20 transition-colors disabled:opacity-50"
+                  className="text-xs px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors disabled:opacity-50"
                 >
                   Desconectar Instagram
                 </button>
@@ -149,7 +149,7 @@ export default function SettingsPage() {
                 <button
                   onClick={async () => { setDisconnecting(true); await disconnectSocial("facebook"); setDisconnecting(false); }}
                   disabled={disconnecting}
-                  className="text-xs px-4 py-2.5 rounded-xl border border-border text-muted hover:text-foreground hover:border-foreground/20 transition-colors disabled:opacity-50"
+                  className="text-xs px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors disabled:opacity-50"
                 >
                   Desconectar Facebook
                 </button>
@@ -168,7 +168,7 @@ export default function SettingsPage() {
 
           {fbConnected && !igConnected && (
             <Card title="Cómo conectar Instagram" color="#e1306c">
-              <p className="text-sm text-muted mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Instagram aparece desconectado porque tu página de Facebook{" "}
                 <strong className="text-foreground">{status?.facebook.pageName}</strong> no tiene una cuenta de Instagram Business o Creator vinculada.
               </p>
@@ -191,12 +191,12 @@ export default function SettingsPage() {
                   },
                 ].map(({ n, title, desc }) => (
                   <li key={n} className="flex gap-3">
-                    <span className="w-6 h-6 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                       {n}
                     </span>
                     <div>
                       <p className="text-sm font-medium">{title}</p>
-                      <p className="text-xs text-muted mt-0.5">{desc}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
                     </div>
                   </li>
                 ))}
@@ -206,7 +206,7 @@ export default function SettingsPage() {
 
           {!fbConnected && !igConnected && (
             <Card title="Para empezar">
-              <p className="text-sm text-muted">
+              <p className="text-sm text-muted-foreground">
                 Conecta tu cuenta de Facebook para comenzar. Instagram se detectará automáticamente si tienes una cuenta Business o Creator vinculada a tu página.
               </p>
             </Card>
@@ -216,9 +216,9 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <Card title="Cuenta del sistema">
             <div className="space-y-2">
-              <p className="text-xs text-muted">Nombre</p>
+              <p className="text-xs text-muted-foreground">Nombre</p>
               <p className="text-sm font-semibold">{user?.name || "Sin nombre"}</p>
-              <p className="text-xs text-muted pt-2">Correo</p>
+              <p className="text-xs text-muted-foreground pt-2">Correo</p>
               <p className="text-sm font-semibold break-all">{user?.email || "Sin correo"}</p>
             </div>
           </Card>
@@ -249,7 +249,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={emailLoading}
-              className="text-xs px-4 py-2.5 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-65"
+              className="text-xs px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity disabled:opacity-65"
             >
               {emailLoading ? "Actualizando..." : "Actualizar correo"}
             </button>
@@ -289,7 +289,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={passwordLoading}
-              className="text-xs px-4 py-2.5 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-65"
+              className="text-xs px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity disabled:opacity-65"
             >
               {passwordLoading ? "Actualizando..." : "Actualizar contraseña"}
             </button>
@@ -299,10 +299,10 @@ export default function SettingsPage() {
 
       <Card title="Acerca de" className="overflow-hidden">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-muted md:whitespace-nowrap">
+          <p className="text-sm text-muted-foreground md:whitespace-nowrap">
             Teko Social Manager v1.0 — Sistema de gestión de redes sociales usando la API oficial de Meta.
           </p>
-          <p className="text-xs text-muted md:text-right md:whitespace-nowrap">
+          <p className="text-xs text-muted-foreground md:text-right md:whitespace-nowrap">
             Backend: Laravel 13 | Frontend: Next.js + Tailwind CSS
           </p>
         </div>

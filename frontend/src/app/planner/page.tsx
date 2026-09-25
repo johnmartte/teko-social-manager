@@ -147,7 +147,7 @@ export default function PlannerPage() {
     <div className="space-y-6 teko-enter">
       <section className="rounded-[30px] border border-border bg-card/95 px-6 py-6 shadow-[0_20px_48px_var(--shadow-color)]">
         <h1 className="text-2xl font-bold">Planner editorial</h1>
-        <p className="text-sm text-muted mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Posts programados y pendientes de publicación.
         </p>
       </section>
@@ -161,19 +161,19 @@ export default function PlannerPage() {
         ].map(({ label, count, color }) => (
           <div key={label} className="rounded-2xl border border-border bg-card/95 px-5 py-4 text-center">
             <p className="text-2xl font-bold" style={{ color }}>{count}</p>
-            <p className="text-xs text-muted mt-1">{label}</p>
+            <p className="text-xs text-muted-foreground mt-1">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Calendar */}
       {loading ? (
-        <Card><p className="text-muted text-sm text-center py-12">Cargando...</p></Card>
+        <Card><p className="text-muted-foreground text-sm text-center py-12">Cargando...</p></Card>
       ) : error ? (
         <Card><p className="text-red-500 text-sm text-center py-12">{error}</p></Card>
       ) : posts.length === 0 ? (
         <Card>
-          <div className="text-center py-16 text-muted">
+          <div className="text-center py-16 text-muted-foreground">
             <p className="text-sm">No hay posts programados.</p>
             <p className="text-xs mt-1">Ve a Publicar → Programar para crear uno.</p>
           </div>
@@ -181,7 +181,7 @@ export default function PlannerPage() {
       ) : (
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-3 flex-wrap bg-card/95 border border-border rounded-2xl px-4 py-3">
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted-foreground">
               {selectedIds.length > 0
                 ? `${selectedIds.length} seleccionado(s)`
                 : "Selecciona posts para eliminar varios a la vez"}
@@ -189,14 +189,14 @@ export default function PlannerPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={selectAllPending}
-                className="text-xs px-3 py-2 rounded-lg border border-border text-muted hover:text-foreground"
+                className="text-xs px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground"
               >
                 Seleccionar pendientes
               </button>
               <button
                 onClick={clearSelection}
                 disabled={selectedIds.length === 0}
-                className="text-xs px-3 py-2 rounded-lg border border-border text-muted disabled:opacity-50"
+                className="text-xs px-3 py-2 rounded-lg border border-border text-muted-foreground disabled:opacity-50"
               >
                 Limpiar
               </button>
@@ -212,7 +212,7 @@ export default function PlannerPage() {
 
           {Object.entries(grouped).map(([date, dayPosts]) => (
             <div key={date}>
-              <h2 className="text-xs font-semibold text-muted capitalize tracking-wider mb-3">
+              <h2 className="text-xs font-semibold text-muted-foreground capitalize tracking-wider mb-3">
                 {date}
               </h2>
               <div className="space-y-3">
@@ -221,7 +221,7 @@ export default function PlannerPage() {
                     key={post.id}
                     onClick={() => setModal({ post })}
                     className={`w-full flex items-center gap-4 bg-card/95 border rounded-2xl px-5 py-4 text-left hover:border-foreground/10 transition-colors ${
-                      selectedIds.includes(post.id) ? "border-accent" : "border-border"
+                      selectedIds.includes(post.id) ? "border-border" : "border-border"
                     }`}
                   >
                     <input
@@ -266,7 +266,7 @@ export default function PlannerPage() {
                         >
                           {meta.platforms[post.platform]?.label || post.platform}
                         </span>
-                        <span className="text-[11px] text-muted capitalize">{post.type}</span>
+                        <span className="text-[11px] text-muted-foreground capitalize">{post.type}</span>
                       </div>
                     </div>
 
@@ -295,11 +295,11 @@ export default function PlannerPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-semibold">Post #{modal.post.id}</h3>
-                <p className="text-xs text-muted mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {new Date(modal.post.scheduled_at).toLocaleString("es-ES")}
                 </p>
               </div>
-              <button onClick={() => setModal(null)} className="text-muted hover:text-foreground text-xl leading-none">×</button>
+              <button onClick={() => setModal(null)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
             </div>
 
             {modal.post.media_urls?.[0] && (
@@ -346,7 +346,7 @@ export default function PlannerPage() {
                   <button
                     onClick={() => handlePublishNow(modal.post)}
                     disabled={publishing === modal.post.id}
-                    className="flex-1 py-2.5 bg-accent text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                    className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
                   >
                     {publishing === modal.post.id ? "Publicando..." : "Publicar ahora"}
                   </button>
