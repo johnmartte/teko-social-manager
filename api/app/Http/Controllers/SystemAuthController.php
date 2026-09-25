@@ -7,7 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -158,10 +158,15 @@ class SystemAuthController extends Controller
             ['token' => Hash::make($code), 'created_at' => now()],
         );
 
-        return response()->json([
-            'success' => true,
-            'code' => $code,
-        ]);
+        Mail::raw(
+            "Tu codigo de recuperacion de Tekamp es: {$code}\n\nEste codigo expira en 30 minutos.",
+            function ($message) use ($user) {
+                $message->to($user->email)
+                    ->subject('Codigo de recuperacion - Tekamp');
+            }
+        );
+
+        return response()->json(['success' => true]);
     }
 
     public function resetPassword(Request $request): JsonResponse
