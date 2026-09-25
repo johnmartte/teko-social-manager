@@ -233,7 +233,7 @@ export default function PublishPage() {
   return (
     <div className={`space-y-6 ${mode === "now" ? "max-w-2xl" : "max-w-6xl"}`}>
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Publicar</h1>
+        <h1 className="text-xl font-semibold">Publicar</h1>
 
         {/* Mode toggle */}
         <div className="flex gap-1 bg-card border border-border rounded-xl p-1">
@@ -306,8 +306,8 @@ export default function PublishPage() {
         <div
           className={`fixed bottom-6 right-6 px-5 py-3 rounded-xl text-sm font-medium shadow-lg z-50 ${
             toast.type === "success"
-              ? "bg-success-light text-green-800 border border-success"
-              : "bg-red-50 text-red-700 border border-red-300"
+              ? "bg-success-light text-success border border-success"
+              : "bg-error-light text-error border border-error-border"
           }`}
         >
           {toast.msg}
@@ -368,10 +368,10 @@ function IGPhotoForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar foto en Instagram" color="#e1306c">
+    <Card title="Publicar foto en Instagram" color="var(--ig)">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-3"}>
-        <ImageUpload value={url} onChange={setUrl} accept="image/*" label="imagen" accentColor="#e1306c" />
-        <textarea placeholder="Pie de foto (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-border resize-none" />
+        <ImageUpload value={url} onChange={setUrl} accept="image/*" label="imagen" accentColor="var(--ig)" />
+        <textarea placeholder="Pie de foto (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none" />
         {mode === "schedule" && (
           <div className="lg:col-span-2">
             <ScheduleInput value={scheduledAt} onChange={setScheduledAt} />
@@ -405,10 +405,10 @@ function IGReelForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar Reel en Instagram" color="#f5a623">
+    <Card title="Publicar Reel en Instagram" color="var(--warning)">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-3"}>
-        <ImageUpload value={url} onChange={setUrl} accept="video/*" label="video" accentColor="#f5a623" />
-        <textarea placeholder="Descripción (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-warning resize-none" />
+        <ImageUpload value={url} onChange={setUrl} accept="video/*" label="video" accentColor="var(--warning)" />
+        <textarea placeholder="Descripción (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none" />
         {mode === "schedule" && (
           <div className="lg:col-span-2">
             <ScheduleInput value={scheduledAt} onChange={setScheduledAt} />
@@ -444,7 +444,7 @@ function IGCarouselForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar carrusel en Instagram" color="#7c3aed">
+    <Card title="Publicar carrusel en Instagram" color="var(--info)">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-4"}>
         <div className="space-y-4">
           {images.map((url, i) => (
@@ -452,27 +452,27 @@ function IGCarouselForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground font-medium">Imagen {i + 1}</span>
                 {images.length > 1 && (
-                  <button type="button" onClick={() => setImages(images.filter((_, idx) => idx !== i))} className="text-xs text-red-400 hover:text-red-600">
+                  <button type="button" onClick={() => setImages(images.filter((_, idx) => idx !== i))} className="text-xs text-error hover:text-error">
                     Quitar
                   </button>
                 )}
               </div>
-              <ImageUpload value={url} onChange={(u) => { const next = [...images]; next[i] = u; setImages(next); }} accept="image/*" label="imagen" accentColor="#7c3aed" />
+              <ImageUpload value={url} onChange={(u) => { const next = [...images]; next[i] = u; setImages(next); }} accept="image/*" label="imagen" accentColor="var(--info)" />
             </div>
           ))}
           {images.length < 10 && (
-            <button type="button" onClick={() => setImages([...images, ""])} className="w-full py-2 border border-dashed border-border rounded-xl text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors">
+            <button type="button" onClick={() => setImages([...images, ""])} className="w-full py-2 border border-dashed border-border rounded-md text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors">
               + Agregar imagen ({images.length}/10)
             </button>
           )}
         </div>
         <div className="space-y-4">
-          <textarea placeholder="Descripción del carrusel (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-[#7c3aed] resize-none" />
+          <textarea placeholder="Descripción del carrusel (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none" />
           {mode === "schedule" && <ScheduleInput value={scheduledAt} onChange={setScheduledAt} />}
           <button
             disabled={validUrls.length < 2 || submitting || (mode === "schedule" && !scheduledAt)}
             onClick={handleAction}
-            className="w-full bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+            className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
             {submitting ? "..." : mode === "schedule" ? `Programar carrusel (${validUrls.length})` : `Publicar carrusel (${validUrls.length} imágenes)`}
           </button>
@@ -498,11 +498,11 @@ function FBPostForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar en Facebook" color="#1877f2">
+    <Card title="Publicar en Facebook" color="var(--fb)">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-3"}>
-        <textarea placeholder="¿Qué quieres publicar?" value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-fb resize-none" />
+        <textarea placeholder="¿Qué quieres publicar?" value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none" />
         {mode !== "schedule" ? (
-          <input type="url" placeholder="Enlace (opcional)" value={link} onChange={(e) => setLink(e.target.value)} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-fb" />
+          <input type="url" placeholder="Enlace (opcional)" value={link} onChange={(e) => setLink(e.target.value)} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50" />
         ) : (
           <ScheduleInput value={scheduledAt} onChange={setScheduledAt} />
         )}
@@ -534,10 +534,10 @@ function FBPhotoForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar foto en Facebook" color="#1877f2">
+    <Card title="Publicar foto en Facebook" color="var(--fb)">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-3"}>
-        <ImageUpload value={url} onChange={setUrl} accept="image/*" label="imagen" accentColor="#1877f2" />
-        <textarea placeholder="Descripción (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-fb resize-none" />
+        <ImageUpload value={url} onChange={setUrl} accept="image/*" label="imagen" accentColor="var(--fb)" />
+        <textarea placeholder="Descripción (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none" />
         {mode === "schedule" && (
           <div className="lg:col-span-2">
             <ScheduleInput value={scheduledAt} onChange={setScheduledAt} />
@@ -878,7 +878,7 @@ function BulkScheduler({
             </p>
 
             <div className="grid gap-4 xl:grid-cols-2">
-              <div className="space-y-4 rounded-2xl border border-border bg-background/60 p-4">
+              <div className="space-y-4 rounded-lg border border-border bg-background/60 p-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground font-medium">Fecha inicio</label>
@@ -976,7 +976,7 @@ function BulkScheduler({
                 </div>
               </div>
 
-              <div className="space-y-4 rounded-2xl border border-border bg-background/60 p-4">
+              <div className="space-y-4 rounded-lg border border-border bg-background/60 p-4">
                 <div className="space-y-3">
                   <button
                     type="button"
@@ -1014,7 +1014,7 @@ function BulkScheduler({
                           <button
                             type="button"
                             onClick={() => ensureCaptionSlots(totalPosts)}
-                            className="text-xs px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground"
+                            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md h-8 px-3 text-xs font-medium border border-input bg-transparent shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
                           >
                             Preparar {totalPosts} descripciones
                           </button>
@@ -1101,7 +1101,7 @@ function BulkScheduler({
                           <button
                             type="button"
                             onClick={() => setImagePool([])}
-                            className="text-xs px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground"
+                            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md h-8 px-3 text-xs font-medium border border-input bg-transparent shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
                           >
                             Limpiar selección
                           </button>
@@ -1120,7 +1120,7 @@ function BulkScheduler({
                                 }}
                                 accept={type === "reel" ? "video/*" : "image/*"}
                                 label={type === "reel" ? "video" : "imagen"}
-                                accentColor="#e1306c"
+                                accentColor="var(--ig)"
                               />
                             </div>
                           ))}
@@ -1135,7 +1135,7 @@ function BulkScheduler({
             <button
               onClick={scheduleIntelligent}
               disabled={!canSubmitIntelligent}
-              className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+              className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
             >
               {submitting ? "Programando..." : `Programar ${totalPosts} post(s)`}
             </button>
@@ -1154,7 +1154,7 @@ function BulkScheduler({
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold">Post {idx + 1}</span>
                     {items.length > 1 && (
-                      <button onClick={() => removeItem(item.id)} className="text-xs text-red-400 hover:text-red-600">
+                      <button onClick={() => removeItem(item.id)} className="text-xs text-error hover:text-error">
                         Eliminar
                       </button>
                     )}
@@ -1196,7 +1196,7 @@ function BulkScheduler({
                         onChange={(u) => updateItem(item.id, { mediaUrls: [u] })}
                         accept={item.type === "reel" ? "video/*" : "image/*"}
                         label={item.type === "reel" ? "video" : "imagen"}
-                        accentColor="#e1306c"
+                        accentColor="var(--ig)"
                       />
                       <div className="space-y-3">
                         <textarea
@@ -1234,7 +1234,7 @@ function BulkScheduler({
 
           <button
             onClick={addItem}
-            className="w-full py-3 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+            className="w-full py-3 border border-dashed border-border rounded-md text-sm text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
           >
             + Agregar otro post
           </button>
@@ -1242,7 +1242,7 @@ function BulkScheduler({
           <button
             onClick={scheduleAll}
             disabled={!canSubmit}
-            className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+            className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
             {submitting ? "Programando..." : `Programar ${items.length} post(s)`}
           </button>

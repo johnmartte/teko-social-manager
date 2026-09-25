@@ -149,18 +149,16 @@ export default function InboxPage() {
     );
   }
 
-  const channelColor = (ch: string) => ch === "instagram" ? "#e1306c" : "#1877f2";
-  const channelGradient = (ch: string) =>
-    ch === "instagram"
-      ? "from-[#833ab4] via-[#e1306c] to-[#f77737]"
-      : "from-[#1877f2] to-[#42a5f5]";
+  const channelColor = (ch: string) => ch === "instagram" ? "var(--ig)" : "var(--fb)";
+  /* Avatar plano: fondo neutro y la inicial en el color apagado de la plataforma. */
+  const avatarClass = "bg-muted border border-border";
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)]">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">Inbox unificado</h1>
+          <h1 className="text-xl font-semibold">Inbox unificado</h1>
           <p className="text-xs text-muted-foreground">Mensajes de Instagram y Facebook en un solo lugar</p>
         </div>
         <div className="flex gap-1">
@@ -215,8 +213,8 @@ export default function InboxPage() {
                   style={selected?.id === conv.id ? { borderLeftWidth: 2, borderLeftColor: channelColor(conv.channel) } : undefined}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${channelGradient(conv.channel)} flex items-center justify-center shrink-0`}>
-                      <span className="text-white text-xs font-bold">
+                    <div className={`size-9 rounded-full ${avatarClass} flex items-center justify-center shrink-0`}>
+                      <span className="text-xs font-medium" style={{ color: channelColor(conv.channel) }}>
                         {conv.participant_name[0]?.toUpperCase() || "?"}
                       </span>
                     </div>
@@ -267,8 +265,8 @@ export default function InboxPage() {
                 <button onClick={() => setSelected(null)} className="lg:hidden text-muted-foreground hover:text-foreground text-lg">
                   &larr;
                 </button>
-                <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${channelGradient(selected.channel)} flex items-center justify-center`}>
-                  <span className="text-white text-xs font-bold">
+                <div className={`size-9 rounded-full ${avatarClass} flex items-center justify-center`}>
+                  <span className="text-xs font-medium" style={{ color: channelColor(selected.channel) }}>
                     {selected.participant_name[0]?.toUpperCase() || "?"}
                   </span>
                 </div>
@@ -292,7 +290,7 @@ export default function InboxPage() {
                     return (
                       <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                         <div
-                          className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
+                          className={`max-w-[70%] rounded-lg px-4 py-2.5 ${
                             isOwn
                               ? `text-white rounded-br-sm`
                               : "bg-white/10 text-foreground rounded-bl-sm"
@@ -343,18 +341,15 @@ export default function InboxPage() {
                       }
                     }}
                     placeholder="Escribe un mensaje..."
-                    className="flex-1 rounded-xl border border-border bg-background/80 text-sm px-4 py-2.5 outline-none transition-colors"
-                    style={{ ["--tw-ring-color" as string]: channelColor(selected.channel) }}
+                    className="flex-1 rounded-md border border-input bg-transparent text-sm px-3 py-2 outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50"
                     disabled={sending}
                   />
-                  <button
-                    onClick={() => void sendReply()}
+                  <Button
                     disabled={!replyText.trim() || sending}
-                    className="px-4 py-2.5 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                    style={{ backgroundColor: channelColor(selected.channel) }}
+                    onClick={() => void sendReply()}
                   >
                     {sending ? "..." : "Enviar"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </>

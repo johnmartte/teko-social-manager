@@ -5,6 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { MediaItem, IgComment, WorkspaceSocialMeta } from "@/lib/types";
 import Card from "@/components/Card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const defaultMessages: WorkspaceSocialMeta["comments"]["messages"] = {
   title: "Comentarios",
@@ -115,7 +117,7 @@ export default function CommentsPage() {
   if (!igConnected) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold">Comentarios</h1>
+        <h1 className="text-xl font-semibold">Comentarios</h1>
         <p className="text-muted-foreground text-center py-12">{uiMessages.connect_instagram}</p>
       </div>
     );
@@ -123,10 +125,10 @@ export default function CommentsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">{uiMessages.title}</h1>
+      <h1 className="text-xl font-semibold">{uiMessages.title}</h1>
 
       {error && (
-        <div className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+        <div className="text-sm text-error bg-error-light border border-error-border rounded-xl px-4 py-3">
           {error}
         </div>
       )}
@@ -193,47 +195,52 @@ export default function CommentsPage() {
                         {new Date(comment.timestamp).toLocaleString("es-ES")}
                       </p>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                      <button
+                    <div className="flex gap-1.5 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2.5 text-xs"
                         onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                        className="text-[11px] px-2.5 py-1.5 rounded-lg border border-border hover:bg-card transition-colors"
                       >
                         {uiMessages.reply}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2.5 text-xs text-muted-foreground"
                         onClick={() => handleHide(comment.id)}
-                        className="text-[11px] px-2.5 py-1.5 rounded-lg border border-border hover:bg-card transition-colors text-muted-foreground"
                       >
                         {uiMessages.hide}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2.5 text-xs text-error hover:text-error hover:bg-error-light"
                         onClick={() => handleDelete(comment.id)}
-                        className="text-[11px] px-2.5 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
                       >
                         {uiMessages.delete}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
                   {replyingTo === comment.id && (
                     <div className="mt-3 flex gap-2">
-                      <input
+                      <Input
                         type="text"
                         value={replyText[comment.id] || ""}
                         onChange={(e) =>
                           setReplyText((prev) => ({ ...prev, [comment.id]: e.target.value }))
                         }
                         placeholder={uiMessages.reply_placeholder}
-                        className="flex-1 text-sm bg-background border border-border rounded-xl px-3 py-2 outline-none focus:border-border"
                         onKeyDown={(e) => e.key === "Enter" && handleReply(comment.id)}
                       />
-                      <button
-                        onClick={() => handleReply(comment.id)}
+                      <Button
+                        size="sm"
                         disabled={submitting}
-                        className="text-xs px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                        onClick={() => handleReply(comment.id)}
                       >
                         {uiMessages.send}
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </li>

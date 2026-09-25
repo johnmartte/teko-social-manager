@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { MediaItem, FacebookPost, WorkspaceSocialMeta } from "@/lib/types";
 import Card from "@/components/Card";
+import { Button } from "@/components/ui/button";
 
 type Platform = "instagram" | "facebook";
 
@@ -75,7 +76,7 @@ export default function PostsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">{messages.title}</h1>
+        <h1 className="text-xl font-semibold">{messages.title}</h1>
         <div className="flex gap-1 bg-card border border-border rounded-xl p-1">
           {visiblePlatforms.map((p) => (
             <button
@@ -149,7 +150,7 @@ function IGPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
           <button
             key={post.id}
             onClick={() => setSelected(post)}
-            className="aspect-square rounded-2xl overflow-hidden bg-card border border-border relative group"
+            className="aspect-square rounded-lg overflow-hidden bg-card border border-border relative group"
           >
             {post.media_url || post.thumbnail_url ? (
               <img
@@ -178,7 +179,7 @@ function IGPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-          <div className="bg-card rounded-3xl border border-border w-full max-w-lg space-y-4 p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-xl border border-border w-full max-w-lg space-y-4 p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <h3 className="font-semibold">{messages.details_title}</h3>
               <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
@@ -188,7 +189,7 @@ function IGPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
               <img
                 src={selected.thumbnail_url || selected.media_url}
                 alt=""
-                className="w-full rounded-2xl object-cover max-h-64"
+                className="w-full rounded-lg object-cover max-h-64"
               />
             )}
 
@@ -205,24 +206,22 @@ function IGPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
               {new Date(selected.timestamp).toLocaleString("es-ES")}
             </p>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-2 pt-2">
               {selected.permalink && (
-                <a
-                  href={selected.permalink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 py-2.5 border border-border rounded-xl text-sm text-center font-medium hover:bg-background transition-colors"
-                >
-                  {messages.view_on_instagram}
-                </a>
+                <Button asChild variant="outline" className="flex-1">
+                  <a href={selected.permalink} target="_blank" rel="noopener noreferrer">
+                    {messages.view_on_instagram}
+                  </a>
+                </Button>
               )}
-              <button
-                onClick={() => handleDelete(selected.id)}
+              <Button
+                variant="ghost"
+                className="text-error hover:text-error hover:bg-error-light"
                 disabled={deleting}
-                className="px-4 py-2.5 border border-red-200 text-red-500 rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-red-50 transition-colors"
+                onClick={() => handleDelete(selected.id)}
               >
                 {deleting ? "..." : "Eliminar"}
-              </button>
+              </Button>
             </div>
 
             <p className="text-[11px] text-muted-foreground text-center">
@@ -313,7 +312,7 @@ function FBPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
           <button
             key={post.id}
             onClick={() => openPost(post)}
-            className="w-full flex gap-4 bg-card/95 border border-border rounded-2xl px-5 py-4 text-left hover:border-foreground/10 transition-colors"
+            className="w-full flex gap-4 bg-card/95 border border-border rounded-lg px-5 py-4 text-left hover:border-foreground/10 transition-colors"
           >
             {post.full_picture && (
               <img src={post.full_picture} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
@@ -333,14 +332,14 @@ function FBPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-          <div className="bg-card rounded-3xl border border-border w-full max-w-lg space-y-4 p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-xl border border-border w-full max-w-lg space-y-4 p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <h3 className="font-semibold">{messages.edit_title}</h3>
               <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
             </div>
 
             {selected.full_picture && (
-              <img src={selected.full_picture} alt="" className="w-full rounded-2xl object-cover max-h-48" />
+              <img src={selected.full_picture} alt="" className="w-full rounded-lg object-cover max-h-48" />
             )}
 
             <div className="space-y-1">
@@ -349,7 +348,7 @@ function FBPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
                 value={editMsg}
                 onChange={(e) => setEditMsg(e.target.value)}
                 rows={4}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-fb resize-none"
+                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none"
               />
             </div>
 
@@ -365,21 +364,22 @@ function FBPosts({ messages }: { messages: WorkspaceSocialMeta["posts"]["message
               </span>
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={handleEdit}
+            <div className="flex gap-2 pt-2">
+              <Button
+                className="flex-1"
                 disabled={editing || editMsg === selected.message}
-                className="flex-1 py-2.5 bg-fb text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                onClick={handleEdit}
               >
                 {editing ? "Guardando..." : messages.save_changes}
-              </button>
-              <button
-                onClick={handleDelete}
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-error hover:text-error hover:bg-error-light"
                 disabled={deleting}
-                className="px-4 py-2.5 border border-red-200 text-red-500 rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-red-50 transition-colors"
+                onClick={handleDelete}
               >
                 {deleting ? "..." : "Eliminar"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

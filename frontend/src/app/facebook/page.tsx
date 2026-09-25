@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
 import CustomSelect from "@/components/CustomSelect";
 import { api, formatNum } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 import type { FacebookPage, FacebookPost, InsightMetric } from "@/lib/types";
 
 export default function FacebookPageView() {
@@ -29,7 +30,7 @@ export default function FacebookPageView() {
       .catch(() => {});
   }, [status, period]);
 
-  if (loading) return <div className="animate-pulse h-96 bg-border rounded-2xl" />;
+  if (loading) return <div className="animate-pulse h-96 bg-border rounded-lg" />;
   if (!status?.facebook.connected) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -58,13 +59,13 @@ export default function FacebookPageView() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Facebook</h1>
+      <h1 className="text-xl font-semibold">Facebook</h1>
 
       {/* Page info */}
       {page && (
         <Card>
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-fb to-[#42b0ff] flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+            <div className="size-16 rounded-full bg-muted border border-border flex items-center justify-center text-2xl font-semibold text-fb shrink-0">
               {page.name[0]}
             </div>
             <div className="flex-1">
@@ -74,11 +75,11 @@ export default function FacebookPageView() {
             </div>
             <div className="flex gap-8">
               <div className="text-center">
-                <p className="text-xl font-bold">{formatNum(page.fan_count)}</p>
+                <p className="text-xl font-semibold">{formatNum(page.fan_count)}</p>
                 <p className="text-xs text-muted-foreground">Me gusta</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold">{formatNum(page.followers_count)}</p>
+                <p className="text-xl font-semibold">{formatNum(page.followers_count)}</p>
                 <p className="text-xs text-muted-foreground">Seguidores</p>
               </div>
             </div>
@@ -106,7 +107,7 @@ export default function FacebookPageView() {
             const val = m.values?.[m.values.length - 1]?.value;
             return (
               <div key={m.name} className="bg-background rounded-xl p-4 text-center">
-                <p className="text-xl font-bold">{formatNum(val)}</p>
+                <p className="text-xl font-semibold">{formatNum(val)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{metricLabels[m.name] || m.name}</p>
               </div>
             );
@@ -149,12 +150,14 @@ export default function FacebookPageView() {
                       <span>{date}</span>
                     </div>
                   </div>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs text-error hover:text-error hover:bg-error-light self-start"
                     onClick={() => handleDelete(post.id)}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors self-start"
                   >
                     Eliminar
-                  </button>
+                  </Button>
                 </div>
               );
             })}

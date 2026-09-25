@@ -29,7 +29,7 @@ function getTokenHeaders(): Record<string, string> {
   return headers;
 }
 
-export default function ImageUpload({ value, onChange, accept = "image/*", label = "imagen", accentColor = "#e1306c" }: Props) {
+export default function ImageUpload({ value, onChange, accept = "image/*", label = "imagen", accentColor = "var(--ig)" }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -110,7 +110,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
           placeholder={`URL pública del ${label} (https://...)`}
           value={value}
           onChange={(e) => handleUrlChange(e.target.value)}
-          className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none"
+          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50"
           style={{ "--tw-ring-color": accentColor } as React.CSSProperties}
         />
       ) : (
@@ -161,7 +161,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
         </div>
       )}
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-error">{error}</p>}
     </div>
   );
 }

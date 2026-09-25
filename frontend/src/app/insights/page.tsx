@@ -181,23 +181,23 @@ const IG_LABELS: Record<string, string> = {
 };
 
 const IG_COLORS: Record<string, string> = {
-  reach: "#e1306c",
-  follower_count: "#833ab4",
-  profile_views: "#f56040",
-  accounts_engaged: "#405de6",
-  total_interactions: "#5851db",
-  likes: "#ed4956",
-  comments: "#0095f6",
-  shares: "#0b6eff",
-  saves: "#fcaf45",
-  replies: "#0047ff",
-  follows_and_unfollows: "#c13584",
-  profile_links_taps: "#f77737",
-  views: "#1ec4ff",
-  website_clicks: "#0b6eff",
-  total_likes: "#ed4956",
-  total_comments: "#0095f6",
-  posts_count: "#0b6eff",
+  reach: "var(--ig)",
+  follower_count: "var(--ig)",
+  profile_views: "var(--warning)",
+  accounts_engaged: "var(--fb)",
+  total_interactions: "var(--fb)",
+  likes: "var(--error)",
+  comments: "var(--fb)",
+  shares: "var(--fb)",
+  saves: "var(--warning)",
+  replies: "var(--fb)",
+  follows_and_unfollows: "var(--ig)",
+  profile_links_taps: "var(--warning)",
+  views: "var(--fb)",
+  website_clicks: "var(--fb)",
+  total_likes: "var(--error)",
+  total_comments: "var(--fb)",
+  posts_count: "var(--fb)",
 };
 
 const CUMULATIVE_METRICS = new Set(["follower_count", "total_likes", "total_comments", "posts_count"]);
@@ -209,10 +209,10 @@ export default function InsightsPage() {
   const { isDark } = useTheme();
   const chartTheme = {
     grid: isDark ? "rgba(255,255,255,0.08)" : "rgba(16,24,40,0.08)",
-    axis: isDark ? "rgba(242,243,245,0.55)" : "#6a7282",
+    axis: isDark ? "rgba(242,243,245,0.55)" : "var(--muted-foreground)",
     tooltipBg: isDark ? "rgba(8,10,15,0.95)" : "rgba(255,255,255,0.97)",
     tooltipBorder: isDark ? "rgba(255,255,255,0.1)" : "rgba(16,24,40,0.08)",
-    tooltipText: isDark ? "#f2f3f5" : "#101828",
+    tooltipText: isDark ? "var(--foreground)" : "var(--foreground)",
   };
 
   const [igInsights, setIgInsights] = useState<InsightMetric[]>([]);
@@ -294,7 +294,7 @@ export default function InsightsPage() {
       .map((m) => ({
         name: m.name,
         label: IG_LABELS[m.name] || m.title || m.name,
-        color: IG_COLORS[m.name] || "#e1306c",
+        color: IG_COLORS[m.name] || "var(--ig)",
         isCumulative: CUMULATIVE_METRICS.has(m.name),
         data: m.values.map((v) => ({
           date: shortDate(v.end_time),
@@ -378,7 +378,7 @@ export default function InsightsPage() {
       {/* ── Header + Time filter ──────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Estadisticas</h1>
+          <h1 className="text-2xl font-semibold">Estadisticas</h1>
           <p className="text-sm text-muted-foreground mt-1">Analisis detallado de tus redes sociales.</p>
         </div>
         <div className="flex gap-1 bg-card/80 border border-border rounded-xl p-1">
@@ -403,25 +403,25 @@ export default function InsightsPage() {
         <>
           {/* Profile header */}
           {igProfile && (
-            <div className="flex items-center gap-4 bg-card/95 rounded-2xl border border-border p-4 shadow-sm">
+            <div className="flex items-center gap-4 bg-card/95 rounded-lg border border-border p-4 shadow-sm">
               {igProfile.profile_picture_url ? (
                 <img
                   src={igProfile.profile_picture_url}
                   alt={igProfile.username || ""}
-                  className="w-14 h-14 rounded-full border-2 border-[#e1306c] object-cover"
+                  className="w-14 h-14 rounded-full border-2 border-[var(--ig)] object-cover"
                 />
               ) : (
-                <div className="w-14 h-14 rounded-full border-2 border-[#e1306c] bg-gradient-to-br from-[#833ab4] via-[#e1306c] to-[#f77737] flex items-center justify-center">
-                  <span className="text-white text-lg font-bold">{(igProfile.username || "?")[0].toUpperCase()}</span>
+                <div className="size-14 rounded-full border border-border bg-muted flex items-center justify-center">
+                  <span className="text-white text-lg font-semibold">{(igProfile.username || "?")[0].toUpperCase()}</span>
                 </div>
               )}
               <div>
-                <p className="font-bold text-lg">{igProfile.name || igProfile.username}</p>
+                <p className="font-semibold text-lg">{igProfile.name || igProfile.username}</p>
                 <p className="text-sm text-muted-foreground">@{igProfile.username}</p>
               </div>
               {igFollowers !== null && (
                 <div className="ml-auto text-right">
-                  <p className="text-2xl font-bold" style={{ color: "#e1306c" }}>{formatNum(igFollowers)}</p>
+                  <p className="text-2xl font-semibold" style={{ color: "var(--ig)" }}>{formatNum(igFollowers)}</p>
                   <p className="text-xs text-muted-foreground">seguidores</p>
                 </div>
               )}
@@ -430,7 +430,7 @@ export default function InsightsPage() {
 
           {insightsLoading && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="w-4 h-4 border-2 border-[#e1306c] border-t-transparent rounded-full animate-spin" />
+              <span className="w-4 h-4 border-2 border-[var(--ig)] border-t-transparent rounded-full animate-spin" />
               Actualizando...
             </div>
           )}
@@ -452,7 +452,7 @@ export default function InsightsPage() {
           {igChartMetrics.length === 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {["Alcance", "Seguidores", "Visitas al perfil", "Interacciones"].map((label) => (
-                <SummaryCard key={label} label={label} value={0} color="#e1306c" />
+                <SummaryCard key={label} label={label} value={0} color="var(--ig)" />
               ))}
             </div>
           )}
@@ -471,8 +471,8 @@ export default function InsightsPage() {
           )}
 
           {/* ── Demographics (always visible) ────────── */}
-          <h2 className="text-lg font-bold mt-4 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#c13584]" />
+          <h2 className="text-lg font-semibold mt-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[var(--ig)]" />
             Audiencia
           </h2>
 
@@ -483,9 +483,9 @@ export default function InsightsPage() {
               <div>
                 <p className="text-sm font-medium text-warning">Se necesitan 100+ seguidores para datos demograficos</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Tu cuenta tiene <span className="font-bold text-foreground">{igFollowers}</span> seguidores.
+                  Tu cuenta tiene <span className="font-semibold text-foreground">{igFollowers}</span> seguidores.
                   Meta requiere un minimo de 100 seguidores para mostrar datos de genero, edad, ciudades y paises.
-                  Te faltan <span className="font-bold text-warning">{100 - igFollowers}</span> seguidores.
+                  Te faltan <span className="font-semibold text-warning">{100 - igFollowers}</span> seguidores.
                 </p>
                 <div className="mt-2 h-2 bg-white/5 rounded-full overflow-hidden w-48">
                   <div
@@ -500,7 +500,7 @@ export default function InsightsPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Gender */}
-            <Card title="Genero de la audiencia" color="#c13584">
+            <Card title="Genero de la audiencia" color="var(--ig)">
               {hasGenderData ? (
                 <div className="flex items-center justify-center gap-8 py-2">
                   <div className="w-40 h-40">
@@ -517,7 +517,7 @@ export default function InsightsPage() {
                           paddingAngle={3}
                         >
                           {genderAgeRaw!.genderData.map((_, i) => (
-                            <Cell key={i} fill={["#e1306c", "#405de6", "#999"][i]} />
+                            <Cell key={i} fill={["var(--ig)", "var(--fb)", "#999"][i]} />
                           ))}
                         </Pie>
                       </PieChart>
@@ -526,7 +526,7 @@ export default function InsightsPage() {
                   <div className="space-y-2">
                     {genderAgeRaw!.genderData.map((g, i) => (
                       <div key={g.name} className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: ["#e1306c", "#405de6", "#999"][i] }} />
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: ["var(--ig)", "var(--fb)", "#999"][i] }} />
                         <span className="text-sm font-medium">{g.pct}%</span>
                         <span className="text-xs text-muted-foreground">{g.name}</span>
                       </div>
@@ -539,7 +539,7 @@ export default function InsightsPage() {
             </Card>
 
             {/* Age */}
-            <Card title="Edad de la audiencia" color="#5851db">
+            <Card title="Edad de la audiencia" color="var(--fb)">
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hasGenderData ? genderAgeRaw!.ageData : emptyAgeData} barGap={2}>
@@ -555,8 +555,8 @@ export default function InsightsPage() {
                         color: chartTheme.tooltipText,
                       }}
                     />
-                    <Bar dataKey="female" name="Mujeres" fill="#e1306c" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="male" name="Hombres" fill="#405de6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="female" name="Mujeres" fill="var(--ig)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="male" name="Hombres" fill="var(--fb)" radius={[4, 4, 0, 0]} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -567,7 +567,7 @@ export default function InsightsPage() {
 
           {/* Locations (always visible) */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card title="Principales ciudades" color="#0b6eff">
+            <Card title="Principales ciudades" color="var(--fb)">
               {hasCityData ? (
                 <div className="space-y-2">
                   {cityData.map((c, i) => {
@@ -595,7 +595,7 @@ export default function InsightsPage() {
                 <EmptyState label="Disponible con 100+ seguidores" />
               )}
             </Card>
-            <Card title="Principales paises" color="#1ec4ff">
+            <Card title="Principales paises" color="var(--fb)">
               {hasCountryData ? (
                 <div className="space-y-2">
                   {countryData.map((c, i) => {
@@ -626,7 +626,7 @@ export default function InsightsPage() {
           </div>
 
           {/* Online followers (always visible) */}
-          <Card title="Actividad de seguidores por hora" color="#0047ff">
+          <Card title="Actividad de seguidores por hora" color="var(--fb)">
             <p className="text-xs text-muted-foreground mb-3">Cuando tus seguidores estan mas activos (hora local).</p>
             {hasOnlineData ? (
               <div className="h-56">
@@ -645,7 +645,7 @@ export default function InsightsPage() {
                       }}
                       formatter={(v) => [formatNum(v as number), "Seguidores activos"]}
                     />
-                    <Bar dataKey="followers" fill="#0047ff" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="followers" fill="var(--fb)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -659,8 +659,8 @@ export default function InsightsPage() {
       {/* ── Facebook ─────────────────────────────────── */}
       {fbConnected && (
         <>
-          <h2 className="text-lg font-bold mt-8 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#1877f2]" />
+          <h2 className="text-lg font-semibold mt-8 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[var(--fb)]" />
             Facebook
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
@@ -671,7 +671,7 @@ export default function InsightsPage() {
                   key={m.name}
                   label={FB_LABELS[m.name] || m.title || m.name}
                   value={val}
-                  color="#1877f2"
+                  color="var(--fb)"
                 />
               );
             })}
@@ -683,10 +683,10 @@ export default function InsightsPage() {
           {fbInsights.length > 0 && (
             <div className="grid gap-6 lg:grid-cols-2">
               {fbInsights.filter(m => m.values?.length > 1).slice(0, 4).map((m) => (
-                <Card key={m.name} title={FB_LABELS[m.name] || m.title || m.name} color="#1877f2">
+                <Card key={m.name} title={FB_LABELS[m.name] || m.title || m.name} color="var(--fb)">
                   <ChartArea
                     data={m.values.map((v) => ({ date: shortDate(v.end_time), value: v.value }))}
-                    color="#1877f2"
+                    color="var(--fb)"
                     theme={chartTheme}
                   />
                 </Card>
@@ -711,8 +711,8 @@ const FB_LABELS: Record<string, string> = {
 
 function SummaryCard({ label, value, color }: { label: string; value: number | null; color: string }) {
   return (
-    <div className="bg-card/95 rounded-2xl border border-border p-4 shadow-sm">
-      <p className="text-2xl font-bold" style={{ color }}>
+    <div className="bg-card/95 rounded-lg border border-border p-4 shadow-sm">
+      <p className="text-2xl font-semibold" style={{ color }}>
         {formatNum(value ?? 0)}
       </p>
       <p className="text-xs text-muted-foreground mt-1">{label}</p>

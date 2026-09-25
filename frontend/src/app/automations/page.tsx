@@ -55,8 +55,8 @@ export default function AutomationsPage() {
 
   return (
     <div className="space-y-6 teko-enter">
-      <section className="rounded-[30px] border border-border bg-card/95 px-6 py-6 shadow-[0_20px_48px_var(--shadow-color)]">
-        <h1 className="text-2xl font-bold">Automatizaciones</h1>
+      <section className="rounded-xl border border-border bg-card/95 px-6 py-6 shadow-[0_20px_48px_var(--shadow-color)]">
+        <h1 className="text-2xl font-semibold">Automatizaciones</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Activa reglas para escalar moderacion, rendimiento y operacion diaria.
         </p>
@@ -66,7 +66,7 @@ export default function AutomationsPage() {
         <div className="space-y-3">
           {loading ? <p className="text-sm text-muted-foreground text-center py-6">Cargando reglas...</p> : null}
           {rules.map((rule) => (
-            <div key={rule.id} className="rounded-2xl border border-border bg-background/80 p-4 flex items-center justify-between gap-3">
+            <div key={rule.id} className="rounded-lg border border-border bg-background/80 p-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">{rule.name}</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xl">{rule.description}</p>
@@ -111,15 +111,15 @@ function MetricCard({
   tone: "success" | "info" | "warning";
 }) {
   const tones: Record<string, string> = {
-    success: "bg-success-light text-green-800 border-green-200",
-    info: "bg-fb-light text-fb border-blue-200",
-    warning: "bg-warning-light text-amber-700 border-amber-200",
+    success: "bg-success-light text-success border-success/25",
+    info: "bg-fb-light text-fb border-border",
+    warning: "bg-warning-light text-warning border-warning/25",
   };
 
   return (
-    <div className={`rounded-2xl border px-4 py-4 ${tones[tone]}`}>
+    <div className={`rounded-lg border px-4 py-4 ${tones[tone]}`}>
       <p className="text-xs">{label}</p>
-      <p className="text-2xl font-bold mt-1">{value}</p>
+      <p className="text-2xl font-semibold mt-1">{value}</p>
     </div>
   );
 }

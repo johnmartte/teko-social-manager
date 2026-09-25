@@ -5,6 +5,10 @@ import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
 import { getLoginUrl } from "@/lib/api";
 import SocialLogo from "@/components/SocialLogo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 export default function SettingsPage() {
   const { status, user, disconnectSocial, updateEmail, updatePassword } = useAuth();
@@ -77,7 +81,7 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">Configuración</h1>
+          <h1 className="text-2xl font-semibold">Configuración</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Administra tus conexiones sociales y la seguridad de tu cuenta.
           </p>
@@ -98,13 +102,9 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <span
-                  className={`text-xs px-3 py-1.5 rounded-full font-medium ${
-                    igConnected ? "bg-success-light text-green-700" : "bg-red-50 text-red-500"
-                  }`}
-                >
+                <Badge variant={igConnected ? "secondary" : "outline"}>
                   {igConnected ? "Activo" : "Inactivo"}
-                </span>
+                </Badge>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-background rounded-xl">
@@ -119,55 +119,54 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <span
-                  className={`text-xs px-3 py-1.5 rounded-full font-medium ${
-                    fbConnected ? "bg-success-light text-green-700" : "bg-red-50 text-red-500"
-                  }`}
-                >
+                <Badge variant={fbConnected ? "secondary" : "outline"}>
                   {fbConnected ? "Activo" : "Inactivo"}
-                </span>
+                </Badge>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-5 flex-wrap">
-              <a
-                href={getLoginUrl()}
-                className="text-xs px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
-              >
-                {igConnected || fbConnected ? "Reconectar cuentas" : "Conectar cuentas"}
-              </a>
+            <div className="flex gap-2 mt-5 flex-wrap">
+              <Button asChild size="sm">
+                <a href={getLoginUrl()}>
+                  {igConnected || fbConnected ? "Reconectar cuentas" : "Conectar cuentas"}
+                </a>
+              </Button>
               {igConnected && (
-                <button
-                  onClick={async () => { setDisconnecting(true); await disconnectSocial("instagram"); setDisconnecting(false); }}
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={disconnecting}
-                  className="text-xs px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors disabled:opacity-50"
+                  onClick={async () => { setDisconnecting(true); await disconnectSocial("instagram"); setDisconnecting(false); }}
                 >
                   Desconectar Instagram
-                </button>
+                </Button>
               )}
               {fbConnected && (
-                <button
-                  onClick={async () => { setDisconnecting(true); await disconnectSocial("facebook"); setDisconnecting(false); }}
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={disconnecting}
-                  className="text-xs px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors disabled:opacity-50"
+                  onClick={async () => { setDisconnecting(true); await disconnectSocial("facebook"); setDisconnecting(false); }}
                 >
                   Desconectar Facebook
-                </button>
+                </Button>
               )}
               {igConnected && fbConnected && (
-                <button
-                  onClick={async () => { setDisconnecting(true); await disconnectSocial(); setDisconnecting(false); }}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-error hover:text-error hover:bg-error-light"
                   disabled={disconnecting}
-                  className="text-xs px-4 py-2.5 rounded-xl border border-red-300 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                  onClick={async () => { setDisconnecting(true); await disconnectSocial(); setDisconnecting(false); }}
                 >
                   Desconectar todo
-                </button>
+                </Button>
               )}
             </div>
           </Card>
 
           {fbConnected && !igConnected && (
-            <Card title="Cómo conectar Instagram" color="#e1306c">
+            <Card title="Cómo conectar Instagram" color="var(--ig)">
               <p className="text-sm text-muted-foreground mb-4">
                 Instagram aparece desconectado porque tu página de Facebook{" "}
                 <strong className="text-foreground">{status?.facebook.pageName}</strong> no tiene una cuenta de Instagram Business o Creator vinculada.
@@ -191,7 +190,7 @@ export default function SettingsPage() {
                   },
                 ].map(({ n, title, desc }) => (
                   <li key={n} className="flex gap-3">
-                    <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
                       {n}
                     </span>
                     <div>
@@ -227,72 +226,79 @@ export default function SettingsPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Cambiar correo">
-          <form className="space-y-3" onSubmit={submitEmail}>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="nuevo-correo@dominio.com"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
-              required
-            />
-            <input
-              type="password"
-              value={emailPassword}
-              onChange={(event) => setEmailPassword(event.target.value)}
-              placeholder="Contraseña actual"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
-              required
-            />
-            {emailError ? <p className="text-xs text-red-500">{emailError}</p> : null}
-            {emailMessage ? <p className="text-xs text-green-700">{emailMessage}</p> : null}
-            <button
-              type="submit"
-              disabled={emailLoading}
-              className="text-xs px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity disabled:opacity-65"
-            >
+          <form className="space-y-4" onSubmit={submitEmail}>
+            <div className="space-y-2">
+              <Label htmlFor="new-email">Nuevo correo</Label>
+              <Input
+                id="new-email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="nuevo-correo@dominio.com"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email-current-password">Contraseña actual</Label>
+              <Input
+                id="email-current-password"
+                type="password"
+                value={emailPassword}
+                onChange={(event) => setEmailPassword(event.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            {emailError ? <p className="text-xs text-error">{emailError}</p> : null}
+            {emailMessage ? <p className="text-xs text-success">{emailMessage}</p> : null}
+            <Button type="submit" size="sm" disabled={emailLoading}>
               {emailLoading ? "Actualizando..." : "Actualizar correo"}
-            </button>
+            </Button>
           </form>
         </Card>
 
         <Card title="Cambiar contraseña">
-          <form className="space-y-3" onSubmit={submitPassword}>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-              placeholder="Contraseña actual"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
-              required
-            />
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              placeholder="Nueva contraseña"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
-              required
-              minLength={8}
-            />
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Confirmar nueva contraseña"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground/30"
-              required
-              minLength={8}
-            />
-            {passwordError ? <p className="text-xs text-red-500">{passwordError}</p> : null}
-            {passwordMessage ? <p className="text-xs text-green-700">{passwordMessage}</p> : null}
-            <button
-              type="submit"
-              disabled={passwordLoading}
-              className="text-xs px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity disabled:opacity-65"
-            >
+          <form className="space-y-4" onSubmit={submitPassword}>
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Contraseña actual</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nueva contraseña</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirmar nueva contraseña</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="Repite la nueva contraseña"
+                required
+                minLength={8}
+              />
+            </div>
+            {passwordError ? <p className="text-xs text-error">{passwordError}</p> : null}
+            {passwordMessage ? <p className="text-xs text-success">{passwordMessage}</p> : null}
+            <Button type="submit" size="sm" disabled={passwordLoading}>
               {passwordLoading ? "Actualizando..." : "Actualizar contraseña"}
-            </button>
+            </Button>
           </form>
         </Card>
       </div>

@@ -29,7 +29,7 @@ export default function InstagramPage() {
       .catch(() => {});
   }, [status, period]);
 
-  if (loading) return <div className="animate-pulse h-96 bg-border rounded-2xl" />;
+  if (loading) return <div className="animate-pulse h-96 bg-border rounded-lg" />;
   if (!status?.instagram.connected) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -47,13 +47,13 @@ export default function InstagramPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Instagram</h1>
+      <h1 className="text-xl font-semibold">Instagram</h1>
 
       {/* Profile */}
       {profile && (
         <Card>
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-ig to-[#fcaf45] flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+            <div className="size-16 rounded-full bg-muted border border-border flex items-center justify-center text-2xl font-semibold text-ig shrink-0">
               {profile.username[0].toUpperCase()}
             </div>
             <div className="flex-1">
@@ -63,11 +63,11 @@ export default function InstagramPage() {
             </div>
             <div className="flex gap-8">
               <div className="text-center">
-                <p className="text-xl font-bold">{formatNum(profile.followers_count)}</p>
+                <p className="text-xl font-semibold">{formatNum(profile.followers_count)}</p>
                 <p className="text-xs text-muted-foreground">Seguidores</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold">{formatNum(profile.media_count)}</p>
+                <p className="text-xl font-semibold">{formatNum(profile.media_count)}</p>
                 <p className="text-xs text-muted-foreground">Posts</p>
               </div>
             </div>
@@ -95,7 +95,7 @@ export default function InstagramPage() {
             const val = m.values?.[m.values.length - 1]?.value;
             return (
               <div key={m.name} className="bg-background rounded-xl p-4 text-center">
-                <p className="text-xl font-bold">{formatNum(val)}</p>
+                <p className="text-xl font-semibold">{formatNum(val)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{metricLabels[m.name] || m.name}</p>
               </div>
             );
