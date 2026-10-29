@@ -56,7 +56,7 @@ export default function AutomationsPage() {
   return (
     <div className="space-y-6 teko-enter">
       <section className="rounded-xl border border-border bg-card/95 px-6 py-6 shadow-[0_20px_48px_var(--shadow-color)]">
-        <h1 className="text-2xl font-semibold">Automatizaciones</h1>
+        <h1 className="sr-only">Automatizaciones</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Activa reglas para escalar moderacion, rendimiento y operacion diaria.
         </p>

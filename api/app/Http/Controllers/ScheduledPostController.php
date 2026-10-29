@@ -12,25 +12,98 @@ class ScheduledPostController extends Controller
 
     public function index(): \Illuminate\Http\JsonResponse
     {
-        $posts = ScheduledPost::orderBy('scheduled_at')->get();
+        $posts = ScheduledPost::orderByRaw('feed_position is null')
+            ->orderBy('feed_position')
+            ->orderBy('scheduled_at')
+            ->get();
         return response()->json($posts);
     }
 
     public function store(Request $request): \Illuminate\Http\JsonResponse
     {
+        $isDraft = $request->input('status') === 'draft';
+
         $data = $request->validate([
-            'platform'     => 'required|in:instagram,facebook,both',
-            'type'         => 'required|in:photo,reel,carousel,text',
-            'caption'      => 'nullable|string',
-            'media_urls'   => 'nullable|array',
-            'media_urls.*' => 'url',
-            'scheduled_at' => 'required|date|after:' . now()->subMinutes(5)->toDateTimeString(),
+            'platform'      => 'required|in:instagram,facebook,both',
+            'type'          => 'required|in:photo,reel,carousel,text',
+            'caption'       => 'nullable|string',
+            'media_urls'    => 'nullable|array',
+            'media_urls.*'  => 'url',
+            'status'        => 'sometimes|in:pending,draft',
+            'campaign_id'   => 'nullable|exists:campaigns,id',
+            'feed_position' => 'nullable|integer',
+            'scheduled_at'  => ($isDraft ? 'nullable' : 'required') . '|date|after:' . now()->subMinutes(5)->toDateTimeString(),
         ]);
 
-        // ── Resolve tokens ────────────────────────────────────────────────────
+        // Los borradores del planificador no necesitan credenciales hasta que se programan.
+        if (!$isDraft && ($error = $this->attachCredentials($request, $data))) {
+            return response()->json(['error' => $error], 422);
+        }
+
+        $post = ScheduledPost::create($data);
+
+        return response()->json($post, 201);
+    }
+
+    public function update(Request $request, ScheduledPost $scheduledPost): \Illuminate\Http\JsonResponse
+    {
+        if ($scheduledPost->status === 'published') {
+            return response()->json(['error' => 'No se puede editar un post ya publicado'], 422);
+        }
+
+        $data = $request->validate([
+            'platform'      => 'sometimes|in:instagram,facebook,both',
+            'type'          => 'sometimes|in:photo,reel,carousel,text',
+            'caption'       => 'nullable|string',
+            'media_urls'    => 'nullable|array',
+            'media_urls.*'  => 'url',
+            'status'        => 'sometimes|in:pending,draft',
+            'campaign_id'   => 'nullable|exists:campaigns,id',
+            'scheduled_at'  => 'nullable|date',
+        ]);
+
+        $scheduledPost->fill($data);
+
+        if ($scheduledPost->status !== 'draft') {
+            if (!$scheduledPost->scheduled_at) {
+                return response()->json(['error' => 'Asigna una fecha antes de programar el post.'], 422);
+            }
+            // Pasar de borrador (o fallido) a programado: refrescar credenciales.
+            $creds = ['platform' => $scheduledPost->platform];
+            if ($error = $this->attachCredentials($request, $creds)) {
+                return response()->json(['error' => $error], 422);
+            }
+            unset($creds['platform']);
+            $scheduledPost->fill($creds + ['status' => 'pending', 'error_message' => null]);
+        }
+
+        $scheduledPost->save();
+
+        return response()->json($scheduledPost);
+    }
+
+    public function reorder(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'ids'   => 'required|array',
+            'ids.*' => 'integer|exists:scheduled_posts,id',
+        ]);
+
+        // ids llega en orden de feed: el primero es el post más reciente (arriba a la izquierda).
+        \DB::transaction(function () use ($data) {
+            foreach (array_values($data['ids']) as $i => $id) {
+                ScheduledPost::where('id', $id)->update(['feed_position' => $i]);
+            }
+        });
+
+        return response()->json(['success' => true]);
+    }
+
+    /** Rellena tokens de Meta en $data; devuelve un mensaje de error si faltan. */
+    private function attachCredentials(Request $request, array &$data): ?string
+    {
         // Priority 1: Sanctum authenticated user → read from social_credentials DB
         // Priority 2: Legacy header tokens (backward compat)
-
         $user = auth('sanctum')->user();
 
         if ($user) {
@@ -43,28 +116,24 @@ class ScheduledPostController extends Controller
             $data['fb_token']   = $fb?->access_token;
             $data['fb_page_id'] = $fb?->meta_user_id;
         } else {
-            // Fallback: read from legacy custom headers
             $data['ig_token']   = $request->header('X-IG-Token');
             $data['ig_user_id'] = $request->header('X-IG-User-Id');
             $data['fb_token']   = $request->header('X-FB-Token');
             $data['fb_page_id'] = $request->header('X-FB-Page-Id');
         }
 
-        // Validate that we have credentials for the selected platform
         $needsIg = in_array($data['platform'], ['instagram', 'both']);
         $needsFb = in_array($data['platform'], ['facebook', 'both']);
 
         if ($needsIg && (empty($data['ig_token']) || empty($data['ig_user_id']))) {
-            return response()->json(['error' => 'No hay credenciales de Instagram. Reconecta tu cuenta.'], 422);
+            return 'No hay credenciales de Instagram. Reconecta tu cuenta.';
         }
 
         if ($needsFb && empty($data['fb_token'])) {
-            return response()->json(['error' => 'No hay credenciales de Facebook. Reconecta tu cuenta.'], 422);
+            return 'No hay credenciales de Facebook. Reconecta tu cuenta.';
         }
 
-        $post = ScheduledPost::create($data);
-
-        return response()->json($post, 201);
+        return null;
     }
 
     public function destroy(ScheduledPost $scheduledPost): \Illuminate\Http\JsonResponse
@@ -80,6 +149,9 @@ class ScheduledPostController extends Controller
     {
         if ($scheduledPost->status === 'published') {
             return response()->json(['error' => 'Ya fue publicado'], 422);
+        }
+        if ($scheduledPost->status === 'draft') {
+            return response()->json(['error' => 'Programa el borrador antes de publicarlo.'], 422);
         }
 
         try {

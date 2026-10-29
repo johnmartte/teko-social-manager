@@ -7,7 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import BrandMark from "@/components/BrandMark";
+import AuthLayout from "@/components/AuthLayout";
 
 export default function LoginPage() {
   const { loginWithEmail } = useAuth();
@@ -38,14 +38,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm">
-        <div className="flex justify-center mb-8">
-          <BrandMark />
-        </div>
+    <AuthLayout>
 
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold tracking-tight">Inicia sesión</h1>
+        <div className="mb-9">
+          <h1 className="font-semibold">Inicia sesión</h1>
           <p className="text-sm text-muted-foreground mt-1.5">
             Ingresa con tus credenciales para continuar.
           </p>
@@ -119,7 +115,6 @@ export default function LoginPage() {
             Regístrate
           </Link>
         </p>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

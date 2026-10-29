@@ -6,125 +6,121 @@
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 /* ============================================================
-   Paleta neutra. Sin colores saturados ni brillos.
-   El acento fuerte es el propio contraste (negro/blanco).
+   "Studio": oscuro cálido, superficies por capas, un solo acento
+   (lima) para estado activo, y pasteles solo para contenido
+   (campañas, tipos de post, eventos del calendario).
    ============================================================ */
 
 :root,
 [data-theme="light"] {
-  --background: #fafafa;
-  --foreground: #0a0a0a;
+  --background: #ecebe6;
+  --foreground: #121212;
+  --card: #f7f6f2;
+  --card-foreground: #121212;
+  --card-hover: #efeee9;
+  --popover: #fbfaf7;
+  --popover-foreground: #121212;
+  --primary: #121212;
+  --primary-foreground: #f7f6f2;
+  --secondary: #e3e1db;
+  --secondary-foreground: #121212;
+  --muted: #e6e4de;
+  --muted-foreground: #6d6b66;
+  --accent: #e3e1db;
+  --accent-foreground: #121212;
+  --border: #dad8d1;
+  --input: #d3d1ca;
+  --ring: #8b8a85;
+  --sidebar: #f7f6f2;
+  --sidebar-foreground: #121212;
+  --sidebar-muted: #6d6b66;
+  --sidebar-accent: #e6e4de;
+  --sidebar-border: #dad8d1;
+  --signal: #4c7a12;
+  --signal-soft: rgba(76, 122, 18, 0.12);
+  --frame: #dedcd5;
 
-  --card: #ffffff;
-  --card-foreground: #0a0a0a;
-  --card-hover: #f5f5f5;
-
-  --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
-
-  --primary: #171717;
-  --primary-foreground: #fafafa;
-
-  --secondary: #f5f5f5;
-  --secondary-foreground: #171717;
-
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
-
-  --accent: #f5f5f5;
-  --accent-foreground: #171717;
-
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #a3a3a3;
-
-  /* Superficies de navegación */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0a0a0a;
-  --sidebar-muted: #737373;
-  --sidebar-accent: #f5f5f5;
-  --sidebar-border: #e5e5e5;
-
-  /* Estado: tonos apagados, nunca neón */
   --success: #3f8f5f;
-  --success-light: #eef6f1;
+  --success-light: #e3efe7;
   --warning: #a8762a;
-  --warning-light: #faf3e8;
+  --warning-light: #f3ebdc;
   --error: #b4454a;
-  --error-light: #fbf0f0;
-  --error-border: #eccccd;
+  --error-light: #f4e4e4;
+  --error-border: #e5c2c3;
   --info: #3d6a99;
-  --info-light: #eef3f8;
-
-  /* Plataformas: desaturadas para que no griten */
+  --info-light: #e2eaf3;
   --ig: #a8537a;
-  --ig-light: #f7eff3;
+  --ig-light: #f1e4ea;
   --fb: #3d6a99;
-  --fb-light: #eef3f8;
-
+  --fb-light: #e2eaf3;
   --destructive: #b4454a;
   --destructive-foreground: #fafafa;
 
-  --shadow-color: rgba(10, 10, 10, 0.05);
-  --shadow-md: rgba(10, 10, 10, 0.08);
-  --shadow-lg: rgba(10, 10, 10, 0.12);
+  --shadow-color: rgba(18, 18, 18, 0.05);
+  --shadow-md: rgba(18, 18, 18, 0.08);
+  --shadow-lg: rgba(18, 18, 18, 0.12);
 }
 
 .dark,
 [data-theme="dark"] {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #0e0e10;
+  --foreground: #efefec;
+  --card: #18181b;
+  --card-foreground: #efefec;
+  --card-hover: #1e1e22;
+  --popover: #1b1b1e;
+  --popover-foreground: #efefec;
+  --primary: #d7f36a;
+  --primary-foreground: #141414;
+  --secondary: #222226;
+  --secondary-foreground: #efefec;
+  --muted: #1f1f23;
+  --muted-foreground: #8d8d93;
+  --accent: #26262b;
+  --accent-foreground: #efefec;
+  --border: #29292e;
+  --input: #2e2e34;
+  --ring: #5a5a62;
+  --sidebar: #141416;
+  --sidebar-foreground: #efefec;
+  --sidebar-muted: #8d8d93;
+  --sidebar-accent: #222226;
+  --sidebar-border: #232327;
+  --signal: #9cf06b;
+  --signal-soft: rgba(156, 240, 107, 0.14);
+  --frame: #0a0a0b;
 
-  --card: #141414;
-  --card-foreground: #ededed;
-  --card-hover: #1a1a1a;
+  --success: #7fcf95;
+  --success-light: rgba(127, 207, 149, 0.12);
+  --warning: #e5c26b;
+  --warning-light: rgba(229, 194, 107, 0.12);
+  --error: #ef8a85;
+  --error-light: rgba(239, 138, 133, 0.12);
+  --error-border: rgba(239, 138, 133, 0.26);
+  --info: #8fb4ef;
+  --info-light: rgba(143, 180, 239, 0.12);
+  --ig: #f0a3c8;
+  --ig-light: rgba(240, 163, 200, 0.12);
+  --fb: #8fb4ef;
+  --fb-light: rgba(143, 180, 239, 0.12);
+  --destructive: #ef8a85;
+  --destructive-foreground: #141414;
 
-  --popover: #161616;
-  --popover-foreground: #ededed;
+  --shadow-color: rgba(0, 0, 0, 0.35);
+  --shadow-md: rgba(0, 0, 0, 0.45);
+  --shadow-lg: rgba(0, 0, 0, 0.6);
+}
 
-  --primary: #ededed;
-  --primary-foreground: #0a0a0a;
-
-  --secondary: #1f1f1f;
-  --secondary-foreground: #ededed;
-
-  --muted: #1a1a1a;
-  --muted-foreground: #8a8a8a;
-
-  --accent: #1f1f1f;
-  --accent-foreground: #ededed;
-
-  --border: #262626;
-  --input: #262626;
-  --ring: #525252;
-
-  --sidebar: #0d0d0d;
-  --sidebar-foreground: #ededed;
-  --sidebar-muted: #8a8a8a;
-  --sidebar-accent: #1f1f1f;
-  --sidebar-border: #1f1f1f;
-
-  --success: #5b9e77;
-  --success-light: rgba(91, 158, 119, 0.12);
-  --warning: #c49a4a;
-  --warning-light: rgba(196, 154, 74, 0.12);
-  --error: #cf6b6b;
-  --error-light: rgba(207, 107, 107, 0.12);
-  --error-border: rgba(207, 107, 107, 0.24);
-  --info: #6b93bf;
-  --info-light: rgba(107, 147, 191, 0.12);
-
-  --ig: #bf7a9c;
-  --ig-light: rgba(191, 122, 156, 0.12);
-  --fb: #6b93bf;
-  --fb-light: rgba(107, 147, 191, 0.12);
-
-  --destructive: #cf6b6b;
-  --destructive-foreground: #0a0a0a;
-
-  --shadow-color: rgba(0, 0, 0, 0.3);
-  --shadow-md: rgba(0, 0, 0, 0.4);
-  --shadow-lg: rgba(0, 0, 0, 0.5);
+/* Pasteles de contenido: iguales en ambos temas, siempre con texto oscuro encima. */
+:root {
+  --lilac: #c4b5fd;
+  --mint: #a7e8c9;
+  --butter: #f6e27f;
+  --rose: #f7a8cf;
+  --sky: #a9cdf5;
+  --peach: #f7c09b;
+  --ink: #141414;
+  --radius: 0.875rem;
 }
 
 @theme inline {
@@ -175,11 +171,27 @@
   --color-fb: var(--fb);
   --color-fb-light: var(--fb-light);
 
+  --color-signal: var(--signal);
+  --color-signal-soft: var(--signal-soft);
+  --color-frame: var(--frame);
+  --color-lilac: var(--lilac);
+  --color-mint: var(--mint);
+  --color-butter: var(--butter);
+  --color-rose: var(--rose);
+  --color-sky: var(--sky);
+  --color-peach: var(--peach);
+  --color-ink: var(--ink);
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.5rem;
 }
 
 body {
@@ -203,11 +215,78 @@ body {
   position: relative;
 }
 
-/* Superficie de tarjeta: plana, borde sutil, sin sombras de color */
+/* Superficie de tarjeta: capa elevada con filo de luz arriba (como vidrio oscuro). */
 .teko-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border-radius: 1.125rem;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+/* Navegación en píldora: contenedor hundido, opción activa en relieve. */
+.pill-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--frame) 70%, var(--background));
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 2px var(--shadow-color);
+}
+.pill-track > button,
+.pill-track > a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  transition: color .15s ease, background .15s ease;
+}
+.pill-track > *:hover { color: var(--foreground); }
+.pill-track > [data-active="true"] {
+  color: var(--foreground);
+  background: linear-gradient(180deg, var(--accent), var(--secondary));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent) inset, 0 2px 6px var(--shadow-color);
+}
+
+/* Punto de estado activo con halo. */
+.glow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px var(--signal-soft), 0 0 12px var(--signal);
+}
+
+/* Campos tipo vidrio para el acceso. */
+.glass-field {
+  width: 100%;
+  height: 52px;
+  padding: 0 18px;
+  border-radius: 14px;
+  color: #f2f2ef;
+  font-size: 15px;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.glass-field::placeholder { color: rgba(242,242,239,.42); }
+.glass-field:focus {
+  outline: none;
+  border-color: rgba(156,240,107,.55);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 4px rgba(156,240,107,.10);
+}
+
+/* Fondo punteado para lienzos (feed / calendario). */
+.dot-grid {
+  background-image: radial-gradient(color-mix(in srgb, var(--foreground) 9%, transparent) 1px, transparent 1px);
+  background-size: 18px 18px;
 }
 
 /* ── Entradas ──────────────────────────────────────────────── */
@@ -368,4 +447,30 @@ body {
 
 .react-datepicker-popper {
   z-index: 70 !important;
+}
+
+/* ── Acceso: inputs y botón principal de vidrio ─────────────── */
+.auth-scope h1 {
+  font-size: 2rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.auth-scope [data-slot="input"] {
+  height: 52px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.auth-scope [data-slot="input"]:focus-visible {
+  border-color: rgba(156,240,107,.55);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 4px rgba(156,240,107,.10);
+}
+.auth-scope [data-slot="label"] { color: rgba(239,239,236,.7); font-weight: 500; }
+.auth-scope [data-slot="button"] {
+  height: 52px;
+  border-radius: 14px;
+  font-size: 15px;
 }

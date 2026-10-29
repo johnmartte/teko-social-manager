@@ -99,6 +99,7 @@ class WorkspaceController extends Controller
                 'pending' => ['label' => 'Pendiente', 'color' => '#e8a126'],
                 'published' => ['label' => 'Publicado', 'color' => '#22c55e'],
                 'failed' => ['label' => 'Fallido', 'color' => '#ef4444'],
+                'draft' => ['label' => 'Borrador', 'color' => '#8a8a8a'],
             ],
         ]);
     }

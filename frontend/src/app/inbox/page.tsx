@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
 /* ── Types ──────────────────────────────────────────────────── */
 
@@ -158,7 +159,7 @@ export default function InboxPage() {
       {/* Header */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Inbox unificado</h1>
+          <h1 className="sr-only">Inbox unificado</h1>
           <p className="text-xs text-muted-foreground">Mensajes de Instagram y Facebook en un solo lugar</p>
         </div>
         <div className="flex gap-1">

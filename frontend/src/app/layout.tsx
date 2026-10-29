@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, IBM_Plex_Mono } from "next/font/google";
+import { Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import "react-datepicker/dist/react-datepicker.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AppShell from "@/components/AppShell";
 
-const geistSans = Geist({
+const geistSans = Manrope({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
@@ -34,7 +34,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`dark ${geistSans.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex teko-shell">
+      <body className="min-h-full teko-shell">
         <ThemeProvider>
           <AuthProvider>
             <AppShell>{children}</AppShell>

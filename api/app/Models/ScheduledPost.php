@@ -19,6 +19,8 @@ class ScheduledPost extends Model
         'ig_user_id',
         'fb_token',
         'fb_page_id',
+        'campaign_id',
+        'feed_position',
     ];
 
     protected $casts = [

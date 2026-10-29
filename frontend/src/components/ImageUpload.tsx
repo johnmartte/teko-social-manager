@@ -32,7 +32,7 @@ function getTokenHeaders(): Record<string, string> {
 export default function ImageUpload({ value, onChange, accept = "image/*", label = "imagen", accentColor = "var(--ig)" }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(value || null);
   const [mode, setMode] = useState<"upload" | "url">("upload");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -89,7 +89,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
         <button
           type="button"
           onClick={() => setMode("upload")}
-          className={`px-3 py-1 rounded-lg transition-colors ${mode === "upload" ? "text-white" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
+          className={`px-3 py-1 rounded-lg transition-colors ${mode === "upload" ? "text-background" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
           style={mode === "upload" ? { backgroundColor: accentColor } : {}}
         >
           Subir archivo
@@ -97,7 +97,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
         <button
           type="button"
           onClick={() => setMode("url")}
-          className={`px-3 py-1 rounded-lg transition-colors ${mode === "url" ? "text-white" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
+          className={`px-3 py-1 rounded-lg transition-colors ${mode === "url" ? "text-background" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
           style={mode === "url" ? { backgroundColor: accentColor } : {}}
         >
           URL pública

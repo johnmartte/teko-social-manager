@@ -233,7 +233,7 @@ export default function PublishPage() {
   return (
     <div className={`space-y-6 ${mode === "now" ? "max-w-2xl" : "max-w-6xl"}`}>
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Publicar</h1>
+        <h1 className="sr-only">Publicar</h1>
 
         {/* Mode toggle */}
         <div className="flex gap-1 bg-card border border-border rounded-xl p-1">
@@ -270,7 +270,7 @@ export default function PublishPage() {
                     activeTab === tab.id
                       ? tab.platform === "ig"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-fb text-white"
+                        : "bg-fb text-background"
                       : disabled
                       ? "bg-background text-muted-foreground/50 border border-border cursor-not-allowed"
                       : "bg-background text-foreground border border-border hover:border-foreground/20"
@@ -417,7 +417,7 @@ function IGReelForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
         <button
           disabled={!url || submitting || (mode === "schedule" && !scheduledAt)}
           onClick={handleAction}
-          className={`bg-warning text-white px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity ${mode === "schedule" ? "lg:col-span-2" : ""}`}
+          className={`bg-warning text-background px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity ${mode === "schedule" ? "lg:col-span-2" : ""}`}
         >
           {submitting ? "..." : mode === "schedule" ? "Programar Reel" : "Publicar Reel"}
         </button>
@@ -509,7 +509,7 @@ function FBPostForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
         <button
           disabled={!message || submitting || (mode === "schedule" && !scheduledAt)}
           onClick={handleAction}
-          className={`bg-fb text-white px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity ${mode === "schedule" ? "lg:col-span-2" : ""}`}
+          className={`bg-fb text-background px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity ${mode === "schedule" ? "lg:col-span-2" : ""}`}
         >
           {submitting ? "..." : mode === "schedule" ? "Programar en Facebook" : "Publicar en Facebook"}
         </button>
@@ -546,7 +546,7 @@ function FBPhotoForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
         <button
           disabled={!url || submitting || (mode === "schedule" && !scheduledAt)}
           onClick={handleAction}
-          className={`bg-fb text-white px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity ${mode === "schedule" ? "lg:col-span-2" : ""}`}
+          className={`bg-fb text-background px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity ${mode === "schedule" ? "lg:col-span-2" : ""}`}
         >
           {submitting ? "..." : mode === "schedule" ? "Programar foto" : "Publicar foto"}
         </button>

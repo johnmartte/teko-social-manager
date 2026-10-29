@@ -81,7 +81,7 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold">Configuración</h1>
+          <h1 className="sr-only">Configuración</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Administra tus conexiones sociales y la seguridad de tu cuenta.
           </p>

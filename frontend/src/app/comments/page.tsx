@@ -117,7 +117,7 @@ export default function CommentsPage() {
   if (!igConnected) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-semibold">Comentarios</h1>
+        <h1 className="sr-only">Comentarios</h1>
         <p className="text-muted-foreground text-center py-12">{uiMessages.connect_instagram}</p>
       </div>
     );
@@ -125,7 +125,7 @@ export default function CommentsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">{uiMessages.title}</h1>
+      <h1 className="sr-only">{uiMessages.title}</h1>
 
       {error && (
         <div className="text-sm text-error bg-error-light border border-error-border rounded-xl px-4 py-3">

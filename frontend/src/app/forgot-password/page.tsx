@@ -7,7 +7,7 @@ import { Eye, EyeOff, Check, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import BrandMark from "@/components/BrandMark";
+import AuthLayout from "@/components/AuthLayout";
 
 type Step = "email" | "code" | "done";
 
@@ -66,16 +66,12 @@ export default function ForgotPasswordPage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm">
-        <div className="flex justify-center mb-8">
-          <BrandMark />
-        </div>
+    <AuthLayout>
 
         {step === "email" && (
           <>
-            <div className="mb-6">
-              <h1 className="text-xl font-semibold tracking-tight">Recupera tu contraseña</h1>
+            <div className="mb-9">
+              <h1 className="font-semibold">Recupera tu contraseña</h1>
               <p className="text-sm text-muted-foreground mt-1.5">
                 Te enviaremos un código de verificación a tu correo.
               </p>
@@ -107,7 +103,7 @@ export default function ForgotPasswordPage() {
         {step === "code" && (
           <>
             <div className="mb-6">
-              <h1 className="text-xl font-semibold tracking-tight">Ingresa el código</h1>
+              <h1 className="font-semibold">Ingresa el código</h1>
               <p className="text-sm text-muted-foreground mt-1.5">
                 Revisa tu correo e introduce el código de 6 dígitos junto con tu nueva contraseña.
               </p>
@@ -176,7 +172,7 @@ export default function ForgotPasswordPage() {
             <div className="size-10 rounded-full bg-success-light border border-success/20 flex items-center justify-center mx-auto mb-4">
               <Check className="size-5 text-success" strokeWidth={2} />
             </div>
-            <h1 className="text-xl font-semibold tracking-tight">Contraseña actualizada</h1>
+            <h1 className="font-semibold">Contraseña actualizada</h1>
             <p className="text-sm text-muted-foreground mt-1.5 mb-6">
               Tu contraseña se restableció correctamente.
             </p>
@@ -195,7 +191,6 @@ export default function ForgotPasswordPage() {
             Volver al inicio de sesión
           </Link>
         )}
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

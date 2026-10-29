@@ -68,8 +68,10 @@ export type ScheduledPost = {
   type: "photo" | "reel" | "carousel" | "text";
   caption: string | null;
   media_urls: string[] | null;
-  scheduled_at: string;
-  status: "pending" | "published" | "failed";
+  scheduled_at: string | null;
+  status: "pending" | "published" | "failed" | "draft";
+  campaign_id: number | null;
+  feed_position: number | null;
   error_message: string | null;
   meta_post_id: string | null;
   ig_user_id: string | null;
@@ -141,4 +143,14 @@ export type WorkspaceSocialMeta = {
       message_label: string;
     };
   };
+};
+
+export type Campaign = {
+  id: number;
+  name: string;
+  color: string;
+  description: string | null;
+  starts_on: string | null;
+  ends_on: string | null;
+  posts_count?: number;
 };

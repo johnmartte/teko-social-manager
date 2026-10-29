@@ -27,24 +27,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, isAuthRoute, loading, router]);
 
   if (loading) {
-    return <div className="min-h-screen" />;
+    return <div className="min-h-screen bg-frame" />;
   }
 
   if (!isAuthenticated && !isAuthRoute) {
-    return <div className="min-h-screen" />;
+    return <div className="min-h-screen bg-frame" />;
   }
 
   if (isAuthRoute) {
     return <main className="min-h-screen w-full">{children}</main>;
   }
 
+  // Marco tipo "app de escritorio": la navegación vive sobre el marco y el contenido en un panel inset.
   return (
-    <>
+    <div className="flex min-h-screen bg-frame p-2 gap-2">
       <Sidebar />
-      <div className="flex-1 ml-60 flex flex-col min-h-screen relative z-10">
+      <div className="flex-1 min-w-0 flex flex-col rounded-[22px] bg-background border border-border overflow-hidden">
         <Header />
-        <main className="flex-1 px-5 py-6 sm:px-6">{children}</main>
+        <main className="flex-1 px-4 py-6 sm:px-7">{children}</main>
       </div>
-    </>
+    </div>
   );
 }

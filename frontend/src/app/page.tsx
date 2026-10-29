@@ -9,6 +9,7 @@ import SocialLogo from "@/components/SocialLogo";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link2, ArrowUpRight } from "lucide-react";
+import PlanningOverview from "@/components/PlanningOverview";
 
 type SocialTask = {
   id: string;
@@ -39,28 +40,33 @@ export default function DashboardPage() {
 
   const connected = status?.instagram.connected || status?.facebook.connected;
 
-  if (!connected) return <ConnectPrompt />;
+  if (!connected) {
+    return (
+      <div className="space-y-5 teko-enter">
+        <ConnectPrompt />
+        <PlanningOverview />
+      </div>
+    );
+  }
 
   return <DashboardContent />;
 }
 
 function ConnectPrompt() {
   return (
-    <div className="flex items-center justify-center min-h-[70vh] teko-enter">
-      <div className="teko-card w-full max-w-md px-8 py-10 text-center">
-        <div className="size-11 mx-auto mb-5 rounded-lg bg-muted border border-border flex items-center justify-center">
-          <Link2 className="size-5 text-muted-foreground" strokeWidth={1.75} />
-        </div>
-
-        <h1 className="text-xl font-semibold tracking-tight">Conecta tus cuentas</h1>
-        <p className="text-muted-foreground mt-2 mb-7 text-sm">
-          Vincula Instagram y Facebook para gestionar contenido, conversaciones y
-          estadísticas desde un solo lugar.
-        </p>
-        <Button asChild className="w-full">
-          <a href={getLoginUrl()}>Conectar Instagram y Facebook</a>
-        </Button>
+    <div className="teko-card flex flex-col sm:flex-row sm:items-center gap-4 p-5">
+      <div className="size-11 rounded-2xl bg-muted border border-border flex items-center justify-center shrink-0">
+        <Link2 className="size-5 text-muted-foreground" strokeWidth={1.75} />
       </div>
+      <div className="flex-1">
+        <h2 className="text-[15px] font-semibold">Conecta Instagram y Facebook</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Puedes planificar sin conectar; para programar, publicar y ver estadísticas hace falta vincular tus cuentas.
+        </p>
+      </div>
+      <Button asChild className="h-10 rounded-full px-5">
+        <a href={getLoginUrl()}>Conectar cuentas</a>
+      </Button>
     </div>
   );
 }
@@ -124,6 +130,8 @@ function DashboardContent() {
             )}
           </div>
       </section>
+
+      <PlanningOverview />
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <Card title="Tareas del dia" className="xl:col-span-2">

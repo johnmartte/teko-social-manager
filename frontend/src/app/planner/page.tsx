@@ -41,7 +41,7 @@ export default function PlannerPage() {
     setLoading(true);
     try {
       const data = await api<ScheduledPost[]>("/scheduled-posts");
-      setPosts(data);
+      setPosts(data.filter((p) => p.status !== "draft" && p.scheduled_at)); // los borradores viven en /feed
     } catch {
       setError("Error cargando posts programados");
     } finally {
@@ -130,7 +130,7 @@ export default function PlannerPage() {
 
   // Group posts by date
   const grouped = posts.reduce<Record<string, ScheduledPost[]>>((acc, post) => {
-    const date = new Date(post.scheduled_at).toLocaleDateString("es-ES", {
+    const date = new Date(post.scheduled_at!).toLocaleDateString("es-ES", {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -147,7 +147,7 @@ export default function PlannerPage() {
   return (
     <div className="space-y-6 teko-enter">
       <section className="rounded-xl border border-border bg-card/95 px-6 py-6 shadow-[0_20px_48px_var(--shadow-color)]">
-        <h1 className="text-2xl font-semibold">Planner editorial</h1>
+        <h1 className="sr-only">Planner editorial</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Posts programados y pendientes de publicación.
         </p>
@@ -237,7 +237,7 @@ export default function PlannerPage() {
                     {/* Time */}
                     <div className="shrink-0 text-center w-14">
                       <p className="text-sm font-semibold">
-                        {new Date(post.scheduled_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(post.scheduled_at!).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
 
@@ -297,7 +297,7 @@ export default function PlannerPage() {
               <div>
                 <h3 className="font-semibold">Post #{modal.post.id}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {new Date(modal.post.scheduled_at).toLocaleString("es-ES")}
+                  {new Date(modal.post.scheduled_at!).toLocaleString("es-ES")}
                 </p>
               </div>
               <button onClick={() => setModal(null)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>

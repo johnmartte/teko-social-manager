@@ -378,7 +378,7 @@ export default function InsightsPage() {
       {/* ── Header + Time filter ──────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Estadisticas</h1>
+          <h1 className="sr-only">Estadisticas</h1>
           <p className="text-sm text-muted-foreground mt-1">Analisis detallado de tus redes sociales.</p>
         </div>
         <div className="flex gap-1 bg-card/80 border border-border rounded-xl p-1">

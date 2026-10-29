@@ -47,7 +47,7 @@ export default function InstagramPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Instagram</h1>
+      <h1 className="sr-only">Instagram</h1>
 
       {/* Profile */}
       {profile && (

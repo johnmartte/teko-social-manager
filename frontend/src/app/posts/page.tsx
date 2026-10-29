@@ -68,7 +68,7 @@ export default function PostsPage() {
       return "px-4 py-1.5 rounded-lg text-xs font-medium transition-colors text-muted-foreground hover:text-foreground";
     }
     if (p.color === "fb") {
-      return "px-4 py-1.5 rounded-lg text-xs font-medium transition-colors bg-fb text-white";
+      return "px-4 py-1.5 rounded-lg text-xs font-medium transition-colors bg-fb text-background";
     }
     return "px-4 py-1.5 rounded-lg text-xs font-medium transition-colors bg-primary text-primary-foreground";
   }
@@ -76,7 +76,7 @@ export default function PostsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{messages.title}</h1>
+        <h1 className="sr-only">{messages.title}</h1>
         <div className="flex gap-1 bg-card border border-border rounded-xl p-1">
           {visiblePlatforms.map((p) => (
             <button
