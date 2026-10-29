@@ -34,3 +34,6 @@ Thumbs.db
 # Build
 dist/
 build/
+
+# Grafo de código generado por graphify (local)
+graphify-out/
