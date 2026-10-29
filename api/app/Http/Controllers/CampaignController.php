@@ -38,6 +38,9 @@ class CampaignController extends Controller
             'name'        => "$req|string|max:120",
             'color'       => ['sometimes', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'description' => 'nullable|string|max:2000',
+            'profile_name' => 'nullable|string|max:120',
+            'profile_bio' => 'nullable|string|max:150',
+            'profile_website' => 'nullable|url|max:500',
             'starts_on'   => 'nullable|date',
             'ends_on'     => 'nullable|date|after_or_equal:starts_on',
         ]);

@@ -18,11 +18,12 @@ type FetchOptions = {
 function getTokenHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
   const headers: Record<string, string> = {};
-  const appToken = localStorage.getItem("app_token");
-  const ig = localStorage.getItem("ig_token");
-  const igUser = localStorage.getItem("ig_user_id");
-  const fb = localStorage.getItem("fb_token");
-  const fbPage = localStorage.getItem("fb_page_id");
+  const read = (key: string) => localStorage.getItem(key) ?? sessionStorage.getItem(key);
+  const appToken = read("app_token");
+  const ig = read("ig_token");
+  const igUser = read("ig_user_id");
+  const fb = read("fb_token");
+  const fbPage = read("fb_page_id");
   if (appToken) headers.Authorization = `Bearer ${appToken}`;
   if (ig) headers["X-IG-Token"] = ig;
   if (igUser) headers["X-IG-User-Id"] = igUser;
@@ -59,7 +60,7 @@ export async function api<T = unknown>(
 export function getLoginUrl(): string {
   const base = `${API_URL}/auth/login`;
   if (typeof window === "undefined") return base;
-  const token = localStorage.getItem("app_token");
+  const token = localStorage.getItem("app_token") ?? sessionStorage.getItem("app_token");
   if (!token) return base;
   return `${base}?link_token=${encodeURIComponent(token)}`;
 }

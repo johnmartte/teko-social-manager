@@ -99,6 +99,27 @@ class ScheduledPostController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function duplicate(ScheduledPost $scheduledPost): \Illuminate\Http\JsonResponse
+    {
+        $copy = $scheduledPost->replicate([
+            'scheduled_at',
+            'status',
+            'error_message',
+            'meta_post_id',
+            'ig_token',
+            'ig_user_id',
+            'fb_token',
+            'fb_page_id',
+            'feed_position',
+        ]);
+        $copy->status = 'draft';
+        $copy->scheduled_at = null;
+        $copy->feed_position = null;
+        $copy->save();
+
+        return response()->json($copy, 201);
+    }
+
     /** Rellena tokens de Meta en $data; devuelve un mensaje de error si faltan. */
     private function attachCredentials(Request $request, array &$data): ?string
     {

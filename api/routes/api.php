@@ -150,6 +150,7 @@ Route::prefix('facebook')->middleware('social:facebook')->group(function () {
 Route::get('/scheduled-posts', [ScheduledPostController::class, 'index']);
 Route::post('/scheduled-posts', [ScheduledPostController::class, 'store']);
 Route::post('/scheduled-posts/reorder', [ScheduledPostController::class, 'reorder']);
+Route::post('/scheduled-posts/{scheduledPost}/duplicate', [ScheduledPostController::class, 'duplicate']);
 Route::patch('/scheduled-posts/{scheduledPost}', [ScheduledPostController::class, 'update']);
 Route::delete('/scheduled-posts/{scheduledPost}', [ScheduledPostController::class, 'destroy']);
 Route::post('/scheduled-posts/{scheduledPost}/publish', [ScheduledPostController::class, 'publish']);

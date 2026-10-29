@@ -77,6 +77,7 @@ function FeedPlanner() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
   const [showCampaignForm, setShowCampaignForm] = useState(params.get("new") === "campaign");
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
 
   const campaignFilter = params.get("campaign") ? Number(params.get("campaign")) : null;
 
@@ -236,10 +237,16 @@ function FeedPlanner() {
               </button>
             ))}
           </div>
-          <Button onClick={createDraft} className="h-10 rounded-full px-4">
-            <Plus className="size-4" />
-            Nuevo borrador
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => { setSelectedId(null); setShowCampaignForm(true); }} className="h-10 rounded-full px-4">
+              <Plus className="size-4" />
+              Nueva campaña
+            </Button>
+            <Button onClick={createDraft} className="h-10 rounded-full px-4">
+              <Plus className="size-4" />
+              Nuevo borrador
+            </Button>
+          </div>
         </div>
 
         {error && (
@@ -438,7 +445,13 @@ function FeedPlanner() {
               setShowCampaignForm(false);
               setFilter(c.id);
             }}
+            onUpdated={(updated) => {
+              setCampaigns((prev) => prev.map((campaign) => campaign.id === updated.id ? updated : campaign));
+              setEditingCampaign(null);
+            }}
             onDelete={deleteCampaign}
+            editingCampaign={editingCampaign}
+            setEditingCampaign={setEditingCampaign}
           />
         )}
       </aside>
@@ -472,12 +485,26 @@ function ProfileHeader({
           <Stat value={String(plannedCount)} label="en plan" />
         </div>
       </div>
-      <p className="mt-3 text-sm font-semibold">{profile ? `@${profile.username}` : "Vista previa del perfil"}</p>
+      <p className="mt-3 text-sm font-semibold">
+        {campaign?.profile_name || (profile ? `@${profile.username}` : "Vista previa del perfil")}
+      </p>
       {campaign ? (
-        <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5">
-          <span className="size-2 rounded-[3px]" style={{ background: campaign.color }} />
-          Mostrando la campaña <span className="text-foreground">{campaign.name}</span>
-        </p>
+        <div className="mt-1 space-y-1">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <span className="size-2 rounded-[3px]" style={{ background: campaign.color }} />
+            Mostrando la campaña <span className="text-foreground">{campaign.name}</span>
+          </p>
+          {(campaign.profile_bio || campaign.description) && (
+            <p className="whitespace-pre-line text-xs text-muted-foreground">
+              {campaign.profile_bio || campaign.description}
+            </p>
+          )}
+          {campaign.profile_website && (
+            <a href={campaign.profile_website} target="_blank" rel="noreferrer" className="block truncate text-xs text-primary hover:underline">
+              {campaign.profile_website.replace(/^https?:\/\//, "")}
+            </a>
+          )}
+        </div>
       ) : (
         !profile && <p className="mt-1 text-xs text-muted-foreground">Conecta Instagram para mezclar con tus publicaciones reales.</p>
       )}
@@ -547,7 +574,10 @@ function CampaignPanel({
   setShowForm,
   onSelect,
   onCreated,
+  onUpdated,
   onDelete,
+  editingCampaign,
+  setEditingCampaign,
 }: {
   campaigns: Campaign[];
   posts: ScheduledPost[];
@@ -556,7 +586,10 @@ function CampaignPanel({
   setShowForm: (v: boolean) => void;
   onSelect: (id: number | null) => void;
   onCreated: (c: Campaign) => void;
+  onUpdated: (c: Campaign) => void;
   onDelete: (c: Campaign) => void;
+  editingCampaign: Campaign | null;
+  setEditingCampaign: (campaign: Campaign | null) => void;
 }) {
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   return (
@@ -571,7 +604,14 @@ function CampaignPanel({
         )}
       </div>
 
-      {showForm && <CampaignForm onCancel={() => setShowForm(false)} onCreated={onCreated} />}
+      {showForm && (
+        <CampaignForm
+          onCancel={() => setShowForm(false)}
+          onCreated={onCreated}
+          onUpdated={onUpdated}
+          campaign={null}
+        />
+      )}
 
       {campaigns.length === 0 && !showForm ? (
         <p className="text-sm text-muted-foreground">
@@ -615,17 +655,29 @@ function CampaignPanel({
                   </button>
                   {isActive && (
                     <div className="flex justify-end mt-3">
-                      {confirmingId === c.id ? (
+                      {editingCampaign?.id === c.id ? (
+                        <div className="w-full">
+                          <CampaignForm
+                            campaign={c}
+                            onCancel={() => setEditingCampaign(null)}
+                            onCreated={onCreated}
+                            onUpdated={onUpdated}
+                          />
+                        </div>
+                      ) : confirmingId === c.id ? (
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">Sus posts se conservan.</span>
                           <Button size="sm" variant="destructive" onClick={() => onDelete(c)}>Eliminar</Button>
                           <Button size="sm" variant="ghost" onClick={() => setConfirmingId(null)}>Cancelar</Button>
                         </div>
                       ) : (
-                        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setConfirmingId(c.id)}>
-                          <Trash2 className="size-3.5" />
-                          Eliminar campaña
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setEditingCampaign(c)}>Editar campaña</Button>
+                          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setConfirmingId(c.id)}>
+                            <Trash2 className="size-3.5" />
+                            Eliminar
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -641,11 +693,25 @@ function CampaignPanel({
   );
 }
 
-function CampaignForm({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: Campaign) => void }) {
-  const [name, setName] = useState("");
-  const [color, setColor] = useState(SWATCHES[0]);
-  const [startsOn, setStartsOn] = useState("");
-  const [endsOn, setEndsOn] = useState("");
+function CampaignForm({
+  onCancel,
+  onCreated,
+  onUpdated,
+  campaign,
+}: {
+  onCancel: () => void;
+  onCreated: (c: Campaign) => void;
+  onUpdated: (c: Campaign) => void;
+  campaign: Campaign | null;
+}) {
+  const [name, setName] = useState(campaign?.name ?? "");
+  const [color, setColor] = useState(campaign?.color ?? SWATCHES[0]);
+  const [description, setDescription] = useState(campaign?.description ?? "");
+  const [profileName, setProfileName] = useState(campaign?.profile_name ?? "");
+  const [profileBio, setProfileBio] = useState(campaign?.profile_bio ?? "");
+  const [profileWebsite, setProfileWebsite] = useState(campaign?.profile_website ?? "");
+  const [startsOn, setStartsOn] = useState(campaign?.starts_on ?? "");
+  const [endsOn, setEndsOn] = useState(campaign?.ends_on ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -654,11 +720,21 @@ function CampaignForm({ onCancel, onCreated }: { onCancel: () => void; onCreated
     setSaving(true);
     setError(null);
     try {
-      const c = await api<Campaign>("/campaigns", {
-        method: "POST",
-        body: { name: name.trim(), color, starts_on: startsOn || null, ends_on: endsOn || null },
+      const payload = {
+        name: name.trim(),
+        color,
+        description: description.trim() || null,
+        profile_name: profileName.trim() || null,
+        profile_bio: profileBio.trim() || null,
+        profile_website: profileWebsite.trim() || null,
+        starts_on: startsOn || null,
+        ends_on: endsOn || null,
+      };
+      const c = await api<Campaign>(campaign ? `/campaigns/${campaign.id}` : "/campaigns", {
+        method: campaign ? "PATCH" : "POST",
+        body: payload,
       });
-      onCreated(c);
+      campaign ? onUpdated(c) : onCreated(c);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear");
     } finally {
@@ -671,6 +747,29 @@ function CampaignForm({ onCancel, onCreated }: { onCancel: () => void; onCreated
       <div className="space-y-1.5">
         <Label htmlFor="c-name">Nombre</Label>
         <Input id="c-name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} placeholder="Ej. Colección de invierno" />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="c-description">Descripción interna</Label>
+        <Textarea id="c-description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} placeholder="Objetivo, audiencia y mensaje de la campaña…" />
+      </div>
+      <div className="rounded-xl border border-border bg-card/60 p-3.5 space-y-3">
+        <div>
+          <p className="text-sm font-medium">Perfil para esta campaña</p>
+          <p className="text-xs text-muted-foreground mt-1">Se muestra en la vista previa del Feed. No cambia automáticamente tu perfil real de Instagram.</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="c-profile-name">Nombre visible</Label>
+          <Input id="c-profile-name" value={profileName} onChange={(e) => setProfileName(e.target.value)} maxLength={120} placeholder="Ej. Teko — Colección de invierno" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="c-profile-bio">Biografía de campaña</Label>
+          <Textarea id="c-profile-bio" rows={3} value={profileBio} onChange={(e) => setProfileBio(e.target.value)} maxLength={150} placeholder="Una bio específica para esta campaña…" />
+          <p className="text-right text-[11px] text-muted-foreground">{profileBio.length}/150</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="c-profile-website">Enlace del perfil</Label>
+          <Input id="c-profile-website" type="url" value={profileWebsite} onChange={(e) => setProfileWebsite(e.target.value)} placeholder="https://teko.do/campana" />
+        </div>
       </div>
       <fieldset>
         <legend className="text-sm font-medium mb-1.5">Color</legend>
@@ -704,7 +803,7 @@ function CampaignForm({ onCancel, onCreated }: { onCancel: () => void; onCreated
           Cancelar
         </Button>
         <Button type="submit" disabled={saving || !name.trim()}>
-          {saving ? "Creando…" : "Crear campaña"}
+          {saving ? "Guardando…" : campaign ? "Guardar cambios" : "Crear campaña"}
         </Button>
       </div>
     </form>

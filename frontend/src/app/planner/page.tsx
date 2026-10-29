@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ImageOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import { api } from "@/lib/api";
 import { ScheduledPost } from "@/lib/types";
 import Card from "@/components/Card";
@@ -16,6 +16,42 @@ type DetailModal = {
   post: ScheduledPost;
 };
 
+type CalendarView = "month" | "week" | "list";
+
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function monthDays(month: Date) {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const offset = (first.getDay() + 6) % 7;
+  return Array.from({ length: 42 }, (_, index) => {
+    const day = index - offset + 1;
+    return new Date(month.getFullYear(), month.getMonth(), day);
+  }).map((date, index) => ({ date, index, inMonth: date.getMonth() === month.getMonth() }));
+}
+
+function weekDays(date: Date) {
+  const start = new Date(date);
+  const day = (start.getDay() + 6) % 7;
+  start.setDate(start.getDate() - day);
+  return Array.from({ length: 7 }, (_, index) => {
+    const current = new Date(start);
+    current.setDate(start.getDate() + index);
+    return current;
+  });
+}
+
+function movePostToDate(post: ScheduledPost, targetDate: Date) {
+  const original = new Date(post.scheduled_at!);
+  const next = new Date(targetDate);
+  next.setHours(original.getHours(), original.getMinutes(), 0, 0);
+  return next.toISOString();
+}
+
 export default function PlannerPage() {
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +61,12 @@ export default function PlannerPage() {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
+  const [duplicating, setDuplicating] = useState<number | null>(null);
+  const [rescheduling, setRescheduling] = useState<number | null>(null);
+  const [dropDate, setDropDate] = useState<string | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [calendarView, setCalendarView] = useState<CalendarView>("month");
   const [meta, setMeta] = useState<PlannerMeta>({
     platforms: {
       instagram: { label: "Instagram", color: "var(--ig)" },
@@ -84,9 +126,107 @@ export default function PlannerPage() {
     }
   }
 
+  async function handleDuplicate(post: ScheduledPost) {
+    setDuplicating(post.id);
+    try {
+      const copy = await api<ScheduledPost>(`/scheduled-posts/${post.id}/duplicate`, { method: "POST" });
+      setModal(null);
+      setPosts((current) => [...current, copy]);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Error al duplicar");
+    } finally {
+      setDuplicating(null);
+    }
+  }
+
+  async function handleReschedule(post: ScheduledPost, targetDate: Date) {
+    if (post.status === "published") return;
+    const nextScheduledAt = movePostToDate(post, targetDate);
+    setRescheduling(post.id);
+    try {
+      const updated = await api<ScheduledPost>(`/scheduled-posts/${post.id}`, {
+        method: "PATCH",
+        body: { scheduled_at: nextScheduledAt },
+      });
+      setPosts((current) => current.map((item) => (item.id === post.id ? updated : item)));
+      setSelectedDate(dateKey(targetDate));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "No se pudo mover la publicación");
+    } finally {
+      setRescheduling(null);
+      setDropDate(null);
+    }
+  }
+
   function toggleSelect(postId: number) {
     setSelectedIds((prev) =>
       prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]
+    );
+  }
+
+  function PostRow({
+    post,
+    selected,
+    meta,
+    onSelect,
+    onOpen,
+  }: {
+    post: ScheduledPost;
+    selected: boolean;
+    meta: PlannerMeta;
+    onSelect: (id: number) => void;
+    onOpen: () => void;
+  }) {
+    return (
+      <button
+        onClick={onOpen}
+        className="teko-card flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-card-hover"
+      >
+        <input
+          type="checkbox"
+          checked={selected}
+          disabled={post.status === "published"}
+          onClick={(event) => event.stopPropagation()}
+          onChange={() => onSelect(post.id)}
+          className="h-4 w-4 shrink-0"
+        />
+        <div className="w-14 shrink-0 text-center">
+          <p className="text-sm font-semibold">
+            {new Date(post.scheduled_at!).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+          </p>
+        </div>
+        {post.media_urls?.[0] ? (
+          <img src={post.media_urls[0]} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+        ) : (
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted">
+            <ImageOff className="size-5 text-muted-foreground" strokeWidth={1.5} />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm">{post.caption || "(Sin caption)"}</p>
+          <div className="mt-1 flex items-center gap-2">
+            <span
+              className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+              style={{
+                backgroundColor: `${meta.platforms[post.platform]?.color || "var(--muted-foreground)"}20`,
+                color: meta.platforms[post.platform]?.color || "var(--muted-foreground)",
+              }}
+            >
+              {meta.platforms[post.platform]?.label || post.platform}
+            </span>
+            <span className="text-[11px] capitalize text-muted-foreground">{post.type}</span>
+          </div>
+        </div>
+        <span
+          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium"
+          style={{
+            backgroundColor: `${meta.statuses[post.status]?.color || "var(--muted-foreground)"}20`,
+            color: meta.statuses[post.status]?.color || "var(--muted-foreground)",
+          }}
+        >
+          {meta.statuses[post.status]?.label || post.status}
+        </span>
+      </button>
     );
   }
 
@@ -129,17 +269,14 @@ export default function PlannerPage() {
     alert(`${deleted} post(s) eliminados correctamente.`);
   }
 
-  // Group posts by date
-  const grouped = posts.reduce<Record<string, ScheduledPost[]>>((acc, post) => {
-    const date = new Date(post.scheduled_at!).toLocaleDateString("es-ES", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(post);
+  const postsByDate = posts.reduce<Record<string, ScheduledPost[]>>((acc, post) => {
+    const key = dateKey(new Date(post.scheduled_at!));
+    (acc[key] ??= []).push(post);
     return acc;
   }, {});
+  const days = monthDays(currentMonth);
+  const currentWeek = weekDays(selectedDate ? new Date(`${selectedDate}T12:00:00`) : new Date());
+  const visiblePosts = selectedDate ? postsByDate[selectedDate] ?? [] : posts;
 
   const pending = posts.filter((p) => p.status === "pending");
   const published = posts.filter((p) => p.status === "published");
@@ -167,23 +304,18 @@ export default function PlannerPage() {
         <Card><p className="text-muted-foreground text-sm text-center py-12">Cargando...</p></Card>
       ) : error ? (
         <Card><p className="text-error text-sm text-center py-12">{error}</p></Card>
-      ) : posts.length === 0 ? (
-        <Card>
-          <div className="text-center py-16 text-muted-foreground">
-            <p className="text-sm">No hay posts programados.</p>
-            <p className="text-xs mt-1">Ve a Publicar → Programar para crear uno.</p>
-          </div>
-        </Card>
       ) : (
         <div className="space-y-6">
           <div className="teko-card flex items-center justify-between gap-3 flex-wrap px-5 py-3">
             <p className="text-xs text-muted-foreground">
-              {selectedIds.length > 0
+              {posts.length === 0
+                ? "No hay publicaciones programadas todavía."
+                : selectedIds.length > 0
                 ? `${selectedIds.length} seleccionado(s)`
                 : "Selecciona posts para eliminar varios a la vez"}
             </p>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={selectAllPending}>
+              <Button variant="outline" size="sm" onClick={selectAllPending} disabled={posts.length === 0}>
                 Seleccionar pendientes
               </Button>
               <Button
@@ -206,81 +338,129 @@ export default function PlannerPage() {
             </div>
           </div>
 
-          {Object.entries(grouped).map(([date, dayPosts]) => (
-            <div key={date}>
-              <h2 className="text-xs font-semibold text-muted-foreground capitalize tracking-wider mb-3">
-                {date}
-              </h2>
-              <div className="space-y-3">
-                {dayPosts.map((post) => (
+          <Card className="overflow-hidden p-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
+              <div>
+                <h2 className="font-semibold capitalize">
+                  {currentMonth.toLocaleDateString("es-ES", { month: "long", year: "numeric" })}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {selectedDate ? `${visiblePosts.length} publicación(es) ese día` : "Selecciona un día para ver sus publicaciones"}
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="pill-track mr-2" role="tablist" aria-label="Vista del calendario">
+                  {(["month", "week", "list"] as CalendarView[]).map((view) => (
+                    <button key={view} role="tab" aria-selected={calendarView === view} data-active={calendarView === view} onClick={() => setCalendarView(view)}>
+                      {view === "month" ? "Mes" : view === "week" ? "Semana" : "Lista"}
+                    </button>
+                  ))}
+                </div>
+                <Button variant="ghost" size="icon" aria-label="Mes anterior" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setCurrentMonth(new Date()); setSelectedDate(dateKey(new Date())); }}>
+                  Hoy
+                </Button>
+                <Button variant="ghost" size="icon" aria-label="Mes siguiente" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}>
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+            {calendarView === "month" && <div className="grid grid-cols-7 border-b border-border bg-muted/30">
+              {["lun", "mar", "mié", "jue", "vie", "sáb", "dom"].map((day) => (
+                <span key={day} className="px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{day}</span>
+              ))}
+            </div>}
+            {calendarView === "month" && <div className="grid grid-cols-7">
+              {days.map(({ date, index, inMonth }) => {
+                const key = dateKey(date);
+                const dayPosts = postsByDate[key] ?? [];
+                const isToday = key === dateKey(new Date());
+                const isSelected = selectedDate === key;
+                return (
                   <button
-                    key={post.id}
-                    onClick={() => setModal({ post })}
-                    className={`w-full flex items-center gap-4 teko-card px-5 py-4 text-left hover:bg-card-hover transition-colors ${
-                      selectedIds.includes(post.id) ? "border-border" : "border-border"
-                    }`}
+                    key={index}
+                    type="button"
+                    onClick={() => setSelectedDate(isSelected ? null : key)}
+                    className={`min-h-[82px] border-b border-r border-border p-2 text-left transition-colors hover:bg-card-hover ${!inMonth ? "bg-muted/20 text-muted-foreground/50" : ""} ${isSelected ? "bg-accent ring-2 ring-inset ring-primary" : ""}`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(post.id)}
-                      disabled={post.status === "published"}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={() => toggleSelect(post.id)}
-                      className="h-4 w-4 shrink-0"
-                    />
-
-                    {/* Time */}
-                    <div className="shrink-0 text-center w-14">
-                      <p className="text-sm font-semibold">
-                        {new Date(post.scheduled_at!).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
-
-                    {/* Thumbnail */}
-                    {post.media_urls?.[0] ? (
-                      <img
-                        src={post.media_urls[0]}
-                        alt=""
-                        className="w-12 h-12 rounded-xl object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0">
-                        <ImageOff className="size-5 text-muted-foreground" strokeWidth={1.5} />
-                      </div>
-                    )}
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{post.caption || "(Sin caption)"}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span
-                          className="text-[11px] px-2 py-0.5 rounded-full font-medium"
-                          style={{
-                            backgroundColor: `${meta.platforms[post.platform]?.color || "var(--muted-foreground)"}20`,
-                            color: meta.platforms[post.platform]?.color || "var(--muted-foreground)",
-                          }}
-                        >
-                          {meta.platforms[post.platform]?.label || post.platform}
+                    <span className={`inline-flex size-6 items-center justify-center rounded-full text-xs ${isToday ? "bg-primary font-semibold text-primary-foreground" : ""}`}>{date.getDate()}</span>
+                    <span className="mt-1 flex flex-col gap-1">
+                      {dayPosts.slice(0, 3).map((post) => (
+                        <span key={post.id} className="truncate rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-foreground">
+                          {new Date(post.scheduled_at!).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} {post.caption || "Sin caption"}
                         </span>
-                        <span className="text-[11px] text-muted-foreground capitalize">{post.type}</span>
-                      </div>
-                    </div>
-
-                    {/* Status */}
-                    <span
-                      className="shrink-0 text-[11px] px-2.5 py-1 rounded-full font-medium"
-                      style={{
-                        backgroundColor: `${meta.statuses[post.status]?.color || "var(--muted-foreground)"}20`,
-                        color: meta.statuses[post.status]?.color || "var(--muted-foreground)",
-                      }}
-                    >
-                      {meta.statuses[post.status]?.label || post.status}
+                      ))}
+                      {dayPosts.length > 3 && <span className="text-[10px] text-muted-foreground">+{dayPosts.length - 3} más</span>}
                     </span>
                   </button>
+                );
+              })}
+            </div>}
+            {calendarView === "week" && <div className="grid grid-cols-7 divide-x divide-border">
+              {currentWeek.map((date) => {
+                const key = dateKey(date);
+                const dayPosts = postsByDate[key] ?? [];
+                return (
+                  <div
+                    key={key}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setDropDate(key);
+                    }}
+                    onDragLeave={() => setDropDate((current) => current === key ? null : current)}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const postId = Number(event.dataTransfer.getData("text/plain"));
+                      const post = posts.find((item) => item.id === postId);
+                      if (post) void handleReschedule(post, date);
+                    }}
+                    className={`min-h-[260px] p-2 transition-colors ${dropDate === key ? "bg-primary/10" : ""}`}
+                  >
+                    <button type="button" onClick={() => setSelectedDate(key)} className={`mb-3 w-full rounded-lg px-1 py-2 text-center ${key === dateKey(new Date()) ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
+                      <span className="block text-[10px] uppercase opacity-70">{date.toLocaleDateString("es-ES", { weekday: "short" })}</span>
+                      <span className="text-sm font-semibold">{date.getDate()}</span>
+                    </button>
+                    <div className="space-y-2">
+                      {dayPosts.map((post) => (
+                        <button
+                          key={post.id}
+                          type="button"
+                          draggable={post.status !== "published" && rescheduling !== post.id}
+                          onDragStart={(event) => {
+                            event.dataTransfer.setData("text/plain", String(post.id));
+                            event.dataTransfer.effectAllowed = "move";
+                          }}
+                          onClick={() => setModal({ post })}
+                          className={`w-full rounded-xl border border-border bg-muted/40 p-2 text-left hover:bg-card-hover ${rescheduling === post.id ? "opacity-50" : ""}`}
+                        >
+                          <span className="text-[10px] font-semibold">{new Date(post.scheduled_at!).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span>
+                          <span className="mt-1 block line-clamp-2 text-[11px]">{post.caption || "Sin caption"}</span>
+                        </button>
+                      ))}
+                      {dayPosts.length === 0 && <p className="pt-4 text-center text-[10px] text-muted-foreground">Sin posts</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>}
+          </Card>
+
+          {calendarView === "list" && visiblePosts.length > 0 ? (
+            <div>
+              <h2 className="mb-3 text-xs font-semibold capitalize tracking-wider text-muted-foreground">
+                {selectedDate ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }) : "Próximas publicaciones"}
+              </h2>
+              <div className="space-y-3">
+                {visiblePosts.map((post) => (
+                  <PostRow key={post.id} post={post} selected={selectedIds.includes(post.id)} meta={meta} onSelect={toggleSelect} onOpen={() => setModal({ post })} />
                 ))}
               </div>
             </div>
-          ))}
+          ) : (
+            <Card><p className="py-8 text-center text-sm text-muted-foreground">{posts.length === 0 ? "Ve a Feed para crear un borrador o a Publicar para programar contenido." : "No hay publicaciones para este día."}</p></Card>
+          )}
         </div>
       )}
 
@@ -337,6 +517,14 @@ export default function PlannerPage() {
             )}
 
             <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                disabled={duplicating === modal.post.id}
+                onClick={() => handleDuplicate(modal.post)}
+              >
+                {duplicating === modal.post.id ? "Duplicando..." : "Duplicar como borrador"}
+              </Button>
               {modal.post.status !== "published" && (
                 <>
                   <Button

@@ -3,7 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
+import { Check, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,7 +28,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await loginWithEmail(email.trim(), password);
+      await loginWithEmail(email.trim(), password, remember);
       window.location.href = "/";
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo iniciar sesion";
@@ -60,6 +61,20 @@ export default function LoginPage() {
               required
             />
           </div>
+
+          <label className="flex items-center gap-2.5 text-sm text-muted-foreground cursor-pointer select-none">
+            <span className="relative flex size-4 items-center justify-center">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="peer absolute inset-0 size-4 cursor-pointer opacity-0"
+              />
+              <span className="size-4 rounded border border-border bg-background peer-checked:border-primary peer-checked:bg-primary transition-colors" />
+              <Check className="pointer-events-none absolute size-3 text-primary-foreground opacity-0 peer-checked:opacity-100" strokeWidth={3} />
+            </span>
+            Recordarme en este dispositivo
+          </label>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">

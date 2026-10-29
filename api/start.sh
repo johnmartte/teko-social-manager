@@ -9,11 +9,14 @@ echo "[start] Setting up persistent storage at /data..."
 mkdir -p /data/uploads
 touch /data/database.sqlite
 
-# Point Laravel at the volume-backed SQLite
-export DB_DATABASE=/data/database.sqlite
-
-echo "[start] DB_DATABASE=${DB_DATABASE}"
-echo "[start] SQLite size: $(wc -c < /data/database.sqlite) bytes"
+if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
+    export DB_DATABASE=/data/database.sqlite
+    echo "[start] DB_DATABASE=${DB_DATABASE}"
+    echo "[start] SQLite size: $(wc -c < /data/database.sqlite) bytes"
+else
+    export DB_SQLITE_PATH=/data/database.sqlite
+    echo "[start] Database connection: ${DB_CONNECTION}"
+fi
 
 # ── Clear any cached config from the build step ─────────────────────
 rm -f /app/bootstrap/cache/config.php
@@ -23,12 +26,16 @@ rm -f /app/bootstrap/cache/packages.php
 
 # ── Run migrations ──────────────────────────────────────────────────
 USERS_EXISTS=$(php -r "
+    if (getenv('DB_CONNECTION') !== 'sqlite') { echo 'skip'; exit; }
     \$db = new SQLite3('/data/database.sqlite');
     \$result = \$db->querySingle(\"SELECT name FROM sqlite_master WHERE type='table' AND name='users'\");
     echo \$result ? 'yes' : 'no';
 " 2>/dev/null || echo "no")
 
-if [ "$USERS_EXISTS" = "yes" ]; then
+if [ "${DB_CONNECTION:-sqlite}" != "sqlite" ]; then
+    echo "[start] Running migrations on ${DB_CONNECTION}..."
+    php artisan migrate --force 2>&1
+elif [ "$USERS_EXISTS" = "yes" ]; then
     echo "[start] Tables exist, running migrate..."
     php artisan migrate --force 2>&1
 else

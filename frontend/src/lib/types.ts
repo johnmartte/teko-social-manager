@@ -150,6 +150,9 @@ export type Campaign = {
   name: string;
   color: string;
   description: string | null;
+  profile_name: string | null;
+  profile_bio: string | null;
+  profile_website: string | null;
   starts_on: string | null;
   ends_on: string | null;
   posts_count?: number;

@@ -32,7 +32,7 @@ type AuthContextType = {
   loading: boolean;
   refresh: () => void;
   registerWithEmail: (name: string, email: string, password: string) => Promise<void>;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string, remember?: boolean) => Promise<void>;
   updateEmail: (newEmail: string, currentPassword: string) => Promise<void>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   disconnectSocial: (platform?: string) => Promise<void>;
@@ -56,11 +56,11 @@ const AuthContext = createContext<AuthContextType>({
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function readStatusFromStorage(): AuthStatus {
-  const igToken   = localStorage.getItem("ig_token");
-  const igUserId  = localStorage.getItem("ig_user_id");
-  const fbToken   = localStorage.getItem("fb_token");
-  const fbPageId  = localStorage.getItem("fb_page_id");
-  const fbPageName = localStorage.getItem("fb_page_name");
+  const igToken   = getStoredValue("ig_token");
+  const igUserId  = getStoredValue("ig_user_id");
+  const fbToken   = getStoredValue("fb_token");
+  const fbPageId  = getStoredValue("fb_page_id");
+  const fbPageName = getStoredValue("fb_page_name");
 
   return {
     instagram: { connected: !!(igToken && igUserId), userId: igUserId },
@@ -69,14 +69,30 @@ function readStatusFromStorage(): AuthStatus {
 }
 
 function readUserFromStorage(): AppUser | null {
-  const token   = localStorage.getItem("app_token");
-  const userRaw = localStorage.getItem("app_user");
+  const token   = getStoredValue("app_token");
+  const userRaw = getStoredValue("app_user");
   if (!token || !userRaw) return null;
   try {
     return JSON.parse(userRaw) as AppUser;
   } catch {
     return null;
   }
+}
+
+function getStoredValue(key: string): string | null {
+  return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+}
+
+function storeAuthValue(key: string, value: string, remember: boolean) {
+  const target = remember ? localStorage : sessionStorage;
+  const other = remember ? sessionStorage : localStorage;
+  other.removeItem(key);
+  target.setItem(key, value);
+}
+
+function removeAuthValue(key: string) {
+  localStorage.removeItem(key);
+  sessionStorage.removeItem(key);
 }
 
 async function postSystemAuth<T>(path: string, payload: Record<string, string>): Promise<T> {
@@ -138,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * or /auth/status as fallback). Updates both status + user state.
    */
   const fetchStatus = useCallback(async () => {
-    const appToken = localStorage.getItem("app_token");
+    const appToken = getStoredValue("app_token");
 
     if (appToken) {
       try {
@@ -149,15 +165,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }>("/auth/me");
 
         setUser(data.user);
-        localStorage.setItem("app_user", JSON.stringify(data.user));
+        storeAuthValue("app_user", JSON.stringify(data.user), !!localStorage.getItem("app_token"));
         setStatus({ instagram: data.instagram, facebook: data.facebook });
         setLoading(false);
         return;
       } catch {
         // Token is stale (DB was wiped on redeploy, etc.) — clear it
         // so we don't keep retrying /auth/me in an infinite loop.
-        localStorage.removeItem("app_token");
-        localStorage.removeItem("app_user");
+        removeAuthValue("app_token");
+        removeAuthValue("app_user");
       }
     }
 
@@ -168,7 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refresh = useCallback(() => {
-    void fetchStatus();
+    window.setTimeout(() => void fetchStatus(), 0);
   }, [fetchStatus]);
 
   const registerWithEmail = useCallback(async (name: string, email: string, password: string) => {
@@ -176,38 +192,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       "/auth/system/register",
       { name, email, password }
     );
-    localStorage.setItem("app_token", data.token);
-    localStorage.setItem("app_user", JSON.stringify(data.user));
+    storeAuthValue("app_token", data.token, true);
+    storeAuthValue("app_user", JSON.stringify(data.user), true);
     setUser(data.user);
     await fetchStatus();
   }, [fetchStatus]);
 
-  const loginWithEmail = useCallback(async (email: string, password: string) => {
+  const loginWithEmail = useCallback(async (email: string, password: string, remember = true) => {
     const data = await postSystemAuth<{ token: string; user: AppUser }>(
       "/auth/system/login",
       { email, password }
     );
-    localStorage.setItem("app_token", data.token);
-    localStorage.setItem("app_user", JSON.stringify(data.user));
+    storeAuthValue("app_token", data.token, remember);
+    storeAuthValue("app_user", JSON.stringify(data.user), remember);
     setUser(data.user);
     // Fetch social status now that we have a token
     await fetchStatus();
   }, [fetchStatus]);
 
   const updateEmail = useCallback(async (newEmail: string, currentPassword: string) => {
-    const appToken = localStorage.getItem("app_token");
+    const appToken = getStoredValue("app_token");
     if (!appToken) throw new Error("Tu sesion expiro. Inicia sesion nuevamente.");
     const data = await requestSystemAuth<{ user: AppUser }>("/auth/system/email", {
       method: "PATCH",
       payload: { email: newEmail, current_password: currentPassword },
       token: appToken,
     });
-    localStorage.setItem("app_user", JSON.stringify(data.user));
+    storeAuthValue("app_user", JSON.stringify(data.user), !!localStorage.getItem("app_token"));
     setUser(data.user);
   }, []);
 
   const updatePassword = useCallback(async (currentPassword: string, newPassword: string) => {
-    const appToken = localStorage.getItem("app_token");
+    const appToken = getStoredValue("app_token");
     if (!appToken) throw new Error("Tu sesion expiro. Inicia sesion nuevamente.");
     await requestSystemAuth<{ success: boolean }>("/auth/system/password", {
       method: "PATCH",
@@ -217,7 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const disconnectSocial = useCallback(async (platform?: string) => {
-    const appToken = localStorage.getItem("app_token");
+    const appToken = getStoredValue("app_token");
     if (!appToken) return;
     await requestSystemAuth<{ success: boolean }>("/auth/disconnect", {
       method: "POST",
@@ -228,15 +244,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchStatus]);
 
   const logout = useCallback(() => {
-    const appToken = localStorage.getItem("app_token");
+    const appToken = getStoredValue("app_token");
     if (appToken) {
       void requestSystemAuth<{ success: boolean }>("/auth/system/logout", {
         method: "POST",
         token: appToken,
       });
     }
-    localStorage.removeItem("app_token");
-    localStorage.removeItem("app_user");
+    removeAuthValue("app_token");
+    removeAuthValue("app_user");
     setStatus(null);
     setUser(null);
     window.location.href = "/login";
@@ -258,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         // Clean URL then fetch full status from backend
         window.history.replaceState({}, "", "/");
-        void fetchStatus();
+        window.setTimeout(() => void fetchStatus(), 0);
         return;
       }
 
@@ -278,7 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.history.replaceState({}, "", "/");
     }
 
-    void fetchStatus();
+    window.setTimeout(() => void fetchStatus(), 0);
   }, [fetchStatus]);
 
   return (
