@@ -13,8 +13,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const isAuthRoute = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
 
+  const isPublicRoute = pathname === "/privacy" || pathname === "/data-deletion"; // requeridas por Meta, sin login
+
   useEffect(() => {
-    if (loading) return;
+    if (loading || isPublicRoute) return;
 
     if (!isAuthenticated && !isAuthRoute) {
       router.replace("/login");
@@ -24,7 +26,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && isAuthRoute) {
       router.replace("/");
     }
-  }, [isAuthenticated, isAuthRoute, loading, router]);
+  }, [isAuthenticated, isAuthRoute, isPublicRoute, loading, router]);
+
+  if (isPublicRoute) return <main className="min-h-screen w-full">{children}</main>;
 
   if (loading) {
     return <div className="min-h-screen bg-frame" />;
