@@ -1,125 +1,167 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Card from "@/components/Card";
+import { MessageSquareWarning, Inbox, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 type Rule = {
   id: string;
+  key: string;
   name: string;
   description: string;
   enabled: boolean;
+  keywords: string[];
 };
 
-type AutomationsResponse = {
-  rules: Rule[];
-  impact: {
-    operational_savings_hours: string;
-    response_time_reduction_percent: number;
-    crisis_risk_reduction_percent: number;
-  };
+// Cada regla se aplica en una pantalla concreta; se dice dónde para que no sean interruptores mudos.
+const RULE_META: Record<string, { icon: typeof Inbox; tone: string; where: string; placeholder: string }> = {
+  "comment-moderation": {
+    icon: MessageSquareWarning,
+    tone: "bg-butter",
+    where: "Se aplica en Comentarios: los que coinciden aparecen marcados.",
+    placeholder: "Añadir palabra o enlace",
+  },
+  "support-escalation": {
+    icon: Inbox,
+    tone: "bg-sky",
+    where: "Se aplica en Inbox: los mensajes que coinciden suben a prioridad alta.",
+    placeholder: "Añadir palabra",
+  },
 };
 
 export default function AutomationsPage() {
   const [rules, setRules] = useState<Rule[]>([]);
-  const [impact, setImpact] = useState<AutomationsResponse["impact"] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  async function loadData() {
-    setLoading(true);
+  useEffect(() => {
+    api<{ rules: Rule[] }>("/workspace/automations")
+      .then((d) => setRules(d.rules))
+      .catch((e) => setError(e instanceof Error ? e.message : "No se pudieron cargar las reglas"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function replace(rule: Rule) {
+    setRules((prev) => prev.map((r) => (r.id === rule.id ? rule : r)));
+  }
+
+  async function toggle(rule: Rule) {
+    replace({ ...rule, enabled: !rule.enabled });
     try {
-      const data = await api<AutomationsResponse>("/workspace/automations");
-      setRules(data.rules || []);
-      setImpact(data.impact || null);
-    } finally {
-      setLoading(false);
+      const { rule: saved } = await api<{ rule: Rule }>(`/workspace/automations/${rule.id}/toggle`, { method: "PATCH" });
+      replace(saved);
+    } catch (e) {
+      replace(rule);
+      setError(e instanceof Error ? e.message : "No se pudo cambiar la regla");
     }
   }
 
-  useEffect(() => {
-    void loadData();
-  }, []);
-
-  async function toggleRule(id: string) {
-    setRules((prev) =>
-      prev.map((rule) => (rule.id === id ? { ...rule, enabled: !rule.enabled } : rule))
-    );
-
+  async function saveKeywords(rule: Rule, keywords: string[]) {
+    replace({ ...rule, keywords });
     try {
-      await api(`/workspace/automations/${id}/toggle`, { method: "PATCH" });
-      await loadData();
-    } catch {
-      await loadData();
+      const { rule: saved } = await api<{ rule: Rule }>(`/workspace/automations/${rule.id}/keywords`, {
+        method: "PUT",
+        body: { keywords },
+      });
+      replace(saved);
+    } catch (e) {
+      replace(rule);
+      setError(e instanceof Error ? e.message : "No se pudieron guardar las palabras");
     }
   }
 
   return (
-    <div className="space-y-6 teko-enter">
-      <section className="rounded-xl border border-border bg-card/95 px-6 py-6 shadow-[0_20px_48px_var(--shadow-color)]">
-        <h1 className="sr-only">Automatizaciones</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Activa reglas para escalar moderacion, rendimiento y operacion diaria.
+    <div className="space-y-5 teko-enter max-w-3xl">
+      <h1 className="sr-only">Automatizaciones</h1>
+      {error && (
+        <p className="text-sm text-error border border-error-border bg-error-light rounded-xl px-4 py-2.5 flex justify-between gap-3">
+          {error}
+          <button onClick={() => setError(null)} aria-label="Cerrar aviso">
+            <X className="size-4" />
+          </button>
         </p>
-      </section>
+      )}
 
-      <Card title="Reglas activas">
-        <div className="space-y-3">
-          {loading ? <p className="text-sm text-muted-foreground text-center py-6">Cargando reglas...</p> : null}
-          {rules.map((rule) => (
-            <div key={rule.id} className="rounded-lg border border-border bg-background/80 p-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold">{rule.name}</p>
-                <p className="text-xs text-muted-foreground mt-1 max-w-xl">{rule.description}</p>
+      {loading && <div className="teko-card h-40 animate-pulse" />}
+
+      {rules.map((rule) => {
+        const meta = RULE_META[rule.key];
+        const Icon = meta?.icon ?? Inbox;
+        return (
+          <section key={rule.id} className="teko-card p-5">
+            <div className="flex items-start gap-4">
+              <span className={cn("size-11 rounded-2xl flex items-center justify-center text-ink shrink-0", meta?.tone ?? "bg-lilac")}>
+                <Icon className="size-5" strokeWidth={1.75} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-[15px] font-semibold">{rule.name}</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">{rule.description}</p>
+                {meta && <p className="text-xs text-muted-foreground/80 mt-1">{meta.where}</p>}
               </div>
-              <button
-                type="button"
-                onClick={() => toggleRule(rule.id)}
-                className={`w-14 h-8 rounded-full transition-colors ${
-                  rule.enabled ? "bg-success" : "bg-border"
-                }`}
-                aria-label={`toggle-${rule.id}`}
-              >
-                <span
-                  className={`block h-6 w-6 bg-white rounded-full transition-transform ${
-                    rule.enabled ? "translate-x-7" : "translate-x-1"
-                  }`}
-                />
-              </button>
+              <Switch checked={rule.enabled} onCheckedChange={() => toggle(rule)} aria-label={`Activar ${rule.name}`} />
             </div>
-          ))}
-        </div>
-      </Card>
 
-      <Card title="Impacto estimado">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <MetricCard label="Ahorro operativo" value={`${impact?.operational_savings_hours || "0.0"} h/sem`} tone="success" />
-          <MetricCard label="Tiempo de respuesta" value={`-${impact?.response_time_reduction_percent ?? 0}%`} tone="info" />
-          <MetricCard label="Riesgo de crisis" value={`-${impact?.crisis_risk_reduction_percent ?? 0}%`} tone="warning" />
-        </div>
-      </Card>
+            <div className={cn("mt-5 transition-opacity", !rule.enabled && "opacity-45")}>
+              <KeywordEditor
+                keywords={rule.keywords}
+                placeholder={meta?.placeholder ?? "Añadir"}
+                onChange={(k) => saveKeywords(rule, k)}
+              />
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  tone,
+function KeywordEditor({
+  keywords,
+  placeholder,
+  onChange,
 }: {
-  label: string;
-  value: string;
-  tone: "success" | "info" | "warning";
+  keywords: string[];
+  placeholder: string;
+  onChange: (k: string[]) => void;
 }) {
-  const tones: Record<string, string> = {
-    success: "bg-success-light text-success border-success/25",
-    info: "bg-fb-light text-fb border-border",
-    warning: "bg-warning-light text-warning border-warning/25",
-  };
+  const [draft, setDraft] = useState("");
+
+  function add() {
+    const word = draft.trim().toLowerCase();
+    setDraft("");
+    if (word.length >= 2 && !keywords.includes(word)) onChange([...keywords, word]);
+  }
 
   return (
-    <div className={`rounded-lg border px-4 py-4 ${tones[tone]}`}>
-      <p className="text-xs">{label}</p>
-      <p className="text-2xl font-semibold mt-1">{value}</p>
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-2.5">
+      {keywords.map((k) => (
+        <span key={k} className="inline-flex items-center gap-1.5 h-8 pl-3 pr-1.5 rounded-full bg-secondary text-sm">
+          {k}
+          <button
+            onClick={() => onChange(keywords.filter((x) => x !== k))}
+            aria-label={`Quitar ${k}`}
+            className="size-5 rounded-full hover:bg-background flex items-center justify-center text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            add();
+          }
+        }}
+        onBlur={add}
+        placeholder={placeholder}
+        maxLength={40}
+        className="flex-1 min-w-32 h-8 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground"
+      />
     </div>
   );
 }

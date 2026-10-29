@@ -11,9 +11,11 @@ class AutomationRule extends Model
         'name',
         'description',
         'enabled',
+        'keywords',
     ];
 
     protected $casts = [
         'enabled' => 'boolean',
+        'keywords' => 'array',
     ];
 }

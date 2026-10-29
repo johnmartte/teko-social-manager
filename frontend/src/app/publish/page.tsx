@@ -236,17 +236,10 @@ export default function PublishPage() {
         <h1 className="sr-only">Publicar</h1>
 
         {/* Mode toggle */}
-        <div className="flex gap-1 bg-card border border-border rounded-xl p-1">
+        <div className="pill-track" role="tablist" aria-label="Modo de publicación">
           {(["now", "schedule", "bulk"] as Mode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                mode === m
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
+            <button key={m} role="tab" aria-selected={mode === m} data-active={mode === m} onClick={() => setMode(m)}>
+              {mode === m && <span className="glow-dot" />}
               {m === "now" ? "Ahora" : m === "schedule" ? "Programar" : "Múltiples"}
             </button>
           ))}
@@ -258,23 +251,18 @@ export default function PublishPage() {
       ) : (
         <>
           {/* Tabs */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="pill-track max-w-full overflow-x-auto" role="tablist" aria-label="Formato">
             {tabs.map((tab) => {
               const disabled = tab.platform === "ig" ? !igConnected : !fbConnected;
               return (
                 <button
                   key={tab.id}
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  data-active={activeTab === tab.id}
                   disabled={disabled}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
-                    activeTab === tab.id
-                      ? tab.platform === "ig"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-fb text-background"
-                      : disabled
-                      ? "bg-background text-muted-foreground/50 border border-border cursor-not-allowed"
-                      : "bg-background text-foreground border border-border hover:border-foreground/20"
-                  }`}
+                  className="whitespace-nowrap disabled:opacity-40 disabled:pointer-events-none"
                 >
                   {tab.label}
                 </button>
@@ -368,7 +356,7 @@ function IGPhotoForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar foto en Instagram" color="var(--ig)">
+    <Card title="Publicar foto en Instagram">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-3"}>
         <ImageUpload value={url} onChange={setUrl} accept="image/*" label="imagen" accentColor="var(--ig)" />
         <textarea placeholder="Pie de foto (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none" />
@@ -405,7 +393,7 @@ function IGReelForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar Reel en Instagram" color="var(--warning)">
+    <Card title="Publicar Reel en Instagram">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-3"}>
         <ImageUpload value={url} onChange={setUrl} accept="video/*" label="video" accentColor="var(--warning)" />
         <textarea placeholder="Descripción (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none" />
@@ -444,7 +432,7 @@ function IGCarouselForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar carrusel en Instagram" color="var(--info)">
+    <Card title="Publicar carrusel en Instagram">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-4"}>
         <div className="space-y-4">
           {images.map((url, i) => (
@@ -498,7 +486,7 @@ function FBPostForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar en Facebook" color="var(--fb)">
+    <Card title="Publicar en Facebook">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-3"}>
         <textarea placeholder="¿Qué quieres publicar?" value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none" />
         {mode !== "schedule" ? (
@@ -534,7 +522,7 @@ function FBPhotoForm({ onSubmit, onSchedule, submitting, mode }: FormProps) {
   }
 
   return (
-    <Card title="Publicar foto en Facebook" color="var(--fb)">
+    <Card title="Publicar foto en Facebook">
       <div className={mode === "schedule" ? "grid gap-4 lg:grid-cols-2" : "space-y-3"}>
         <ImageUpload value={url} onChange={setUrl} accept="image/*" label="imagen" accentColor="var(--fb)" />
         <textarea placeholder="Descripción (opcional)..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-none" />

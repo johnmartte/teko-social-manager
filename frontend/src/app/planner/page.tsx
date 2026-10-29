@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ImageOff } from "lucide-react";
 import { api } from "@/lib/api";
 import { ScheduledPost } from "@/lib/types";
 import Card from "@/components/Card";
@@ -146,23 +147,17 @@ export default function PlannerPage() {
 
   return (
     <div className="space-y-6 teko-enter">
-      <section className="rounded-xl border border-border bg-card/95 px-6 py-6 shadow-[0_20px_48px_var(--shadow-color)]">
-        <h1 className="sr-only">Planner editorial</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Posts programados y pendientes de publicación.
-        </p>
-      </section>
+      <h1 className="sr-only">Calendario</h1>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Pendientes", count: pending.length, color: "var(--warning)" },
-          { label: "Publicados", count: published.length, color: "var(--success)" },
-          { label: "Fallidos", count: failed.length, color: "var(--error)" },
-        ].map(({ label, count, color }) => (
-          <div key={label} className="rounded-lg border border-border bg-card/95 px-5 py-4 text-center">
-            <p className="text-2xl font-semibold" style={{ color }}>{count}</p>
-            <p className="text-xs text-muted-foreground mt-1">{label}</p>
+          { label: "Pendientes", count: pending.length, tone: "bg-butter" },
+          { label: "Publicados", count: published.length, tone: "bg-mint" },
+          { label: "Fallidos", count: failed.length, tone: "bg-rose" },
+        ].map(({ label, count, tone }) => (
+          <div key={label} className={`rounded-[18px] p-4 text-ink ${tone}`}>
+            <p className="text-[28px] font-semibold leading-none tabular-nums">{count}</p>
+            <p className="text-xs mt-2 opacity-70">{label}</p>
           </div>
         ))}
       </div>
@@ -181,7 +176,7 @@ export default function PlannerPage() {
         </Card>
       ) : (
         <div className="space-y-6">
-          <div className="flex items-center justify-between gap-3 flex-wrap bg-card/95 border border-border rounded-lg px-4 py-3">
+          <div className="teko-card flex items-center justify-between gap-3 flex-wrap px-5 py-3">
             <p className="text-xs text-muted-foreground">
               {selectedIds.length > 0
                 ? `${selectedIds.length} seleccionado(s)`
@@ -221,7 +216,7 @@ export default function PlannerPage() {
                   <button
                     key={post.id}
                     onClick={() => setModal({ post })}
-                    className={`w-full flex items-center gap-4 bg-card/95 border rounded-lg px-5 py-4 text-left hover:border-foreground/10 transition-colors ${
+                    className={`w-full flex items-center gap-4 teko-card px-5 py-4 text-left hover:bg-card-hover transition-colors ${
                       selectedIds.includes(post.id) ? "border-border" : "border-border"
                     }`}
                   >
@@ -249,8 +244,8 @@ export default function PlannerPage() {
                         className="w-12 h-12 rounded-xl object-cover shrink-0"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-xl bg-background border border-border flex items-center justify-center shrink-0">
-                        <span className="text-lg">✏️</span>
+                      <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                        <ImageOff className="size-5 text-muted-foreground" strokeWidth={1.5} />
                       </div>
                     )}
 

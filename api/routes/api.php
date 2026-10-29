@@ -99,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/messages/send', [MessagesController::class, 'send']);
     Route::get('/workspace/automations', [WorkspaceController::class, 'automations']);
     Route::patch('/workspace/automations/{automationRule}/toggle', [WorkspaceController::class, 'toggleAutomation']);
+    Route::put('/workspace/automations/{automationRule}/keywords', [WorkspaceController::class, 'updateAutomationKeywords']);
 });
 
 // File upload & serve

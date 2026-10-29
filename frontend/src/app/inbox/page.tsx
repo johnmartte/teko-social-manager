@@ -55,6 +55,13 @@ function formatTime(iso: string | null) {
 export default function InboxPage() {
   const { status } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [priorityWords, setPriorityWords] = useState<string[]>([]);
+
+  useEffect(() => {
+    api<{ rules: { key: string; enabled: boolean; keywords: string[] }[] }>("/workspace/automations")
+      .then((d) => setPriorityWords(d.rules.find((r) => r.key === "support-escalation" && r.enabled)?.keywords ?? []))
+      .catch(() => {});
+  }, []);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,9 +145,10 @@ export default function InboxPage() {
     }
   }
 
-  const filtered = filter === "all"
-    ? conversations
-    : conversations.filter((c) => c.channel === filter);
+  const isPriority = (c: Conversation) => priorityWords.some((w) => c.last_message?.toLowerCase().includes(w));
+  const filtered = (filter === "all" ? conversations : conversations.filter((c) => c.channel === filter))
+    .slice()
+    .sort((a, b) => Number(isPriority(b)) - Number(isPriority(a)));
 
   if (!connected) {
     return (
@@ -231,6 +239,9 @@ export default function InboxPage() {
                         >
                           {conv.channel === "instagram" ? "IG" : "FB"}
                         </span>
+                        {isPriority(conv) && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold bg-butter text-ink shrink-0">Prioridad</span>
+                        )}
                         <p className="text-xs text-muted-foreground truncate">{conv.last_message}</p>
                       </div>
                     </div>

@@ -29,7 +29,8 @@ function getTokenHeaders(): Record<string, string> {
   return headers;
 }
 
-export default function ImageUpload({ value, onChange, accept = "image/*", label = "imagen", accentColor = "var(--ig)" }: Props) {
+export default function ImageUpload({ value, onChange, accept = "image/*", label = "imagen" }: Props) {
+  const accentColor = "var(--primary)"; // un solo acento; el prop se conserva por compatibilidad con los llamadores
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(value || null);
@@ -89,7 +90,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
         <button
           type="button"
           onClick={() => setMode("upload")}
-          className={`px-3 py-1 rounded-lg transition-colors ${mode === "upload" ? "text-background" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
+          className={`px-3 py-1 rounded-lg transition-colors ${mode === "upload" ? "text-primary-foreground" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
           style={mode === "upload" ? { backgroundColor: accentColor } : {}}
         >
           Subir archivo
@@ -97,7 +98,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
         <button
           type="button"
           onClick={() => setMode("url")}
-          className={`px-3 py-1 rounded-lg transition-colors ${mode === "url" ? "text-background" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
+          className={`px-3 py-1 rounded-lg transition-colors ${mode === "url" ? "text-primary-foreground" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
           style={mode === "url" ? { backgroundColor: accentColor } : {}}
         >
           URL pública
@@ -145,7 +146,7 @@ export default function ImageUpload({ value, onChange, accept = "image/*", label
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${accentColor}20` }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "color-mix(in srgb, var(--primary) 16%, transparent)" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />

@@ -75,6 +75,7 @@ function FeedPlanner() {
   const [dragId, setDragId] = useState<number | null>(null);
   const [overId, setOverId] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null);
   const [showCampaignForm, setShowCampaignForm] = useState(params.get("new") === "campaign");
 
   const campaignFilter = params.get("campaign") ? Number(params.get("campaign")) : null;
@@ -187,18 +188,17 @@ function FeedPlanner() {
   }
 
   async function deletePost(id: number) {
-    if (!confirm("¿Eliminar este post del plan?")) return;
     try {
       await api(`/scheduled-posts/${id}`, { method: "DELETE" });
       setPosts((prev) => prev.filter((p) => p.id !== id));
-      setSelectedId(null);
+      setSelectedId((cur) => (cur === id ? null : cur));
+      setPendingDelete(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo eliminar");
     }
   }
 
   async function deleteCampaign(c: Campaign) {
-    if (!confirm(`¿Eliminar la campaña "${c.name}"? Sus posts se conservan sin campaña.`)) return;
     try {
       await api(`/campaigns/${c.id}`, { method: "DELETE" });
       setFilter(null);
@@ -271,8 +271,14 @@ function FeedPlanner() {
                   const campaign = p.campaign_id ? campaignById.get(p.campaign_id) : undefined;
                   const dimmed = campaignFilter != null && p.campaign_id !== campaignFilter;
                   return (
-                    <button
+                    <div
                       key={p.id}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setSelectedId(p.id);
+                        if (e.key === "Delete" || e.key === "Backspace") setPendingDelete(p.id);
+                      }}
                       draggable
                       onDragStart={(e) => {
                         setDragId(p.id);
@@ -313,7 +319,34 @@ function FeedPlanner() {
                         <StatusChip status={p.status} />
                       </span>
                       <GripVertical className="absolute top-2 left-2 size-4 text-white/80 opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
-                    </button>
+                      <button
+                        type="button"
+                        aria-label="Eliminar post"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPendingDelete(p.id);
+                        }}
+                        className="absolute top-1.5 right-1.5 size-7 rounded-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-error hover:text-ink transition"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                      {pendingDelete === p.id && (
+                        <span
+                          className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-2 text-white"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="text-xs font-medium">¿Eliminar este post?</span>
+                          <span className="flex gap-1.5">
+                            <button type="button" onClick={() => deletePost(p.id)} className="h-7 px-3 rounded-full bg-error text-ink text-xs font-semibold">
+                              Eliminar
+                            </button>
+                            <button type="button" onClick={() => setPendingDelete(null)} className="h-7 px-3 rounded-full bg-white/15 text-xs">
+                              Cancelar
+                            </button>
+                          </span>
+                        </span>
+                      )}
+                    </div>
                   );
                 })}
 
@@ -344,8 +377,31 @@ function FeedPlanner() {
             )}
           </div>
 
+          {dragId != null && (
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setOverId(-1);
+              }}
+              onDragLeave={() => setOverId((o) => (o === -1 ? null : o))}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragId != null) deletePost(dragId);
+                setDragId(null);
+                setOverId(null);
+              }}
+              className={cn(
+                "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 h-14 px-7 rounded-full border-2 border-dashed text-sm font-medium backdrop-blur transition-colors",
+                overId === -1 ? "bg-error text-ink border-transparent" : "bg-popover/95 text-foreground border-ring"
+              )}
+            >
+              <Trash2 className="size-4" />
+              Suelta aquí para eliminar
+            </div>
+          )}
+
           <p className="text-center text-xs text-muted-foreground mt-5">
-            Arrastra para reordenar. Arriba a la izquierda va lo próximo en publicarse
+            Arrastra para reordenar o suéltalo en la papelera para eliminarlo. Arriba a la izquierda va lo próximo en publicarse
             {live.length > 0 ? "; después aparece lo que ya está en tu perfil." : "."}
           </p>
         </div>
@@ -502,6 +558,7 @@ function CampaignPanel({
   onCreated: (c: Campaign) => void;
   onDelete: (c: Campaign) => void;
 }) {
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
   return (
     <div className="teko-card p-5">
       <div className="flex items-center justify-between mb-4">
@@ -558,10 +615,18 @@ function CampaignPanel({
                   </button>
                   {isActive && (
                     <div className="flex justify-end mt-3">
-                      <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => onDelete(c)}>
-                        <Trash2 className="size-3.5" />
-                        Eliminar campaña
-                      </Button>
+                      {confirmingId === c.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Sus posts se conservan.</span>
+                          <Button size="sm" variant="destructive" onClick={() => onDelete(c)}>Eliminar</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setConfirmingId(null)}>Cancelar</Button>
+                        </div>
+                      ) : (
+                        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setConfirmingId(c.id)}>
+                          <Trash2 className="size-3.5" />
+                          Eliminar campaña
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -671,6 +736,7 @@ function PostEditor({
   const [when, setWhen] = useState(toLocalInput(post.scheduled_at));
   const [campaignId, setCampaignId] = useState<number | null>(post.campaign_id);
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const draftPatch = {
     caption,
@@ -763,10 +829,18 @@ function PostEditor({
           Programar
         </Button>
       </div>
-      <button onClick={onDelete} className="w-full text-xs text-muted-foreground hover:text-error flex items-center justify-center gap-1.5 pt-1">
-        <Trash2 className="size-3.5" />
-        Quitar del plan
-      </button>
+      {confirmingDelete ? (
+        <div className="flex items-center justify-center gap-2 pt-1">
+          <span className="text-xs text-muted-foreground">¿Quitar este post del plan?</span>
+          <Button size="sm" variant="destructive" onClick={onDelete}>Eliminar</Button>
+          <Button size="sm" variant="ghost" onClick={() => setConfirmingDelete(false)}>Cancelar</Button>
+        </div>
+      ) : (
+        <button onClick={() => setConfirmingDelete(true)} className="w-full text-xs text-muted-foreground hover:text-error flex items-center justify-center gap-1.5 pt-1">
+          <Trash2 className="size-3.5" />
+          Quitar del plan
+        </button>
+      )}
     </div>
   );
 }

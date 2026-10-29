@@ -239,36 +239,34 @@ class WorkspaceController extends Controller
     {
         $this->seedAutomationDefaults();
 
-        $rules = AutomationRule::query()->orderBy('id')->get()->map(function (AutomationRule $rule) {
-            return [
-                'id' => (string) $rule->id,
-                'name' => $rule->name,
-                'description' => $rule->description,
-                'enabled' => $rule->enabled,
-            ];
-        })->values();
-
-        $activeRules = AutomationRule::query()->where('enabled', true)->count();
-        $pendingPosts = ScheduledPost::query()->where('status', 'pending')->count();
-        $operationalSavingsHours = (string) (($activeRules * 17) / 10);
-        $responseReduction = $activeRules * 7;
-        if ($responseReduction > 40) {
-            $responseReduction = 40;
-        }
-
-        $crisisReduction = (int) (($pendingPosts * 8) / 10) + ($activeRules * 5);
-        if ($crisisReduction > 60) {
-            $crisisReduction = 60;
-        }
-
         return response()->json([
-            'rules' => $rules,
-            'impact' => [
-                'operational_savings_hours' => $operationalSavingsHours,
-                'response_time_reduction_percent' => $responseReduction,
-                'crisis_risk_reduction_percent' => $crisisReduction,
-            ],
+            'rules' => AutomationRule::query()->orderBy('id')->get()->map(fn (AutomationRule $r) => $this->ruleResource($r))->values(),
         ]);
+    }
+
+    private function ruleResource(AutomationRule $rule): array
+    {
+        return [
+            'id' => (string) $rule->id,
+            'key' => $rule->key,
+            'name' => $rule->name,
+            'description' => $rule->description,
+            'enabled' => $rule->enabled,
+            'keywords' => $rule->keywords ?? [],
+        ];
+    }
+
+    public function updateAutomationKeywords(Request $request, AutomationRule $automationRule): JsonResponse
+    {
+        $data = $request->validate([
+            'keywords' => ['present', 'array', 'max:50'],
+            'keywords.*' => ['string', 'min:2', 'max:40'],
+        ]);
+
+        $automationRule->keywords = array_values(array_unique(array_map(fn ($k) => mb_strtolower(trim($k)), $data['keywords'])));
+        $automationRule->save();
+
+        return response()->json(['rule' => $this->ruleResource($automationRule)]);
     }
 
     public function toggleAutomation(AutomationRule $automationRule): JsonResponse
@@ -276,14 +274,7 @@ class WorkspaceController extends Controller
         $automationRule->enabled = !$automationRule->enabled;
         $automationRule->save();
 
-        return response()->json([
-            'rule' => [
-                'id' => (string) $automationRule->id,
-                'name' => $automationRule->name,
-                'description' => $automationRule->description,
-                'enabled' => $automationRule->enabled,
-            ],
-        ]);
+        return response()->json(['rule' => $this->ruleResource($automationRule)]);
     }
 
     private function seedInboxDefaults(): void
@@ -330,28 +321,18 @@ class WorkspaceController extends Controller
 
         $defaults = [
             [
-                'key' => 'smart-publish',
-                'name' => 'Publicacion inteligente',
-                'description' => 'Sugiere hora de posteo segun rendimiento de las ultimas 4 semanas.',
-                'enabled' => true,
-            ],
-            [
                 'key' => 'comment-moderation',
-                'name' => 'Moderacion automatica',
-                'description' => 'Marca comentarios con spam o lenguaje toxico para revision rapida.',
+                'name' => 'Moderación de comentarios',
+                'description' => 'Marca los comentarios que contengan estas palabras o enlaces para revisarlos primero.',
                 'enabled' => true,
+                'keywords' => ['gratis', 'sorteo', 'sigueme', 'http', 'www.', 'estafa'],
             ],
             [
                 'key' => 'support-escalation',
-                'name' => 'Escalamiento de soporte',
-                'description' => 'Cuando un mensaje incluye palabras clave, lo envia a prioridad alta.',
-                'enabled' => false,
-            ],
-            [
-                'key' => 'daily-summary',
-                'name' => 'Resumen ejecutivo diario',
-                'description' => 'Genera un resumen de KPIs y actividad de comunidad al final del dia.',
+                'name' => 'Prioridad en el inbox',
+                'description' => 'Los mensajes que contengan estas palabras suben a prioridad alta.',
                 'enabled' => true,
+                'keywords' => ['reembolso', 'queja', 'urgente', 'cancelar', 'problema'],
             ],
         ];
 

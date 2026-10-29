@@ -44,6 +44,18 @@ export default function CommentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uiMessages, setUiMessages] = useState(defaultMessages);
+  const [flagWords, setFlagWords] = useState<string[]>([]);
+
+  useEffect(() => {
+    api<{ rules: { key: string; enabled: boolean; keywords: string[] }[] }>("/workspace/automations")
+      .then((d) => {
+        const rule = d.rules.find((r) => r.key === "comment-moderation" && r.enabled);
+        setFlagWords(rule?.keywords ?? []);
+      })
+      .catch(() => {});
+  }, []);
+
+  const isFlagged = (text: string) => flagWords.some((w) => text.toLowerCase().includes(w));
 
   useEffect(() => {
     api<WorkspaceSocialMeta>("/workspace/social/meta")
@@ -185,8 +197,14 @@ export default function CommentsPage() {
             <div className="text-center py-16 text-muted-foreground text-sm">{uiMessages.empty_comments}</div>
           ) : (
             <ul className="space-y-4 max-h-150 overflow-y-auto pr-1">
-              {comments.map((comment) => (
-                <li key={comment.id} className="border border-border rounded-xl p-4">
+              {[...comments].sort((a, b) => Number(isFlagged(b.text)) - Number(isFlagged(a.text))).map((comment) => (
+                <li
+                  key={comment.id}
+                  className={`border rounded-2xl p-4 ${isFlagged(comment.text) ? "border-warning/50 bg-warning-light" : "border-border"}`}
+                >
+                  {isFlagged(comment.text) && (
+                    <p className="text-[11px] font-medium text-warning mb-1.5">Marcado por moderación</p>
+                  )}
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <span className="text-xs font-semibold">@{comment.username}</span>

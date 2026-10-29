@@ -13,12 +13,10 @@ export default function Card({
   action,
   children,
   className = "",
-  color,
 }: CardProps) {
   return (
     <div
       className={`teko-card p-5 ${className}`}
-      style={color ? { borderLeftColor: color, borderLeftWidth: 3 } : undefined}
     >
       {(title || action) && (
         <div className="flex items-center justify-between mb-4">
