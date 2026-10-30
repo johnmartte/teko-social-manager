@@ -35,6 +35,12 @@ return [
         ],
     ],
 
+    // TEKO Planner: fuente única de cuentas y accesos (ver App\Services\PlannerAccess).
+    'planner' => [
+        'url' => env('PLANNER_API_URL'),
+        'key' => env('PLANNER_INTEGRATION_KEY'),
+    ],
+
     'cloudinary' => [
         'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
         'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),

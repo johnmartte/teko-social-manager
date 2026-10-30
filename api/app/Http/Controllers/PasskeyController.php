@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Passkey;
+use App\Services\PlannerAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -198,6 +199,12 @@ class PasskeyController extends Controller
         // El contador sube en cada uso: así se detectan passkeys clonados.
         $passkey->update(['record' => $this->serializer->serialize($updated, 'json'), 'last_used_at' => now()]);
         $user = $passkey->user;
+
+        // Un passkey no salta el control de acceso: el Planner decide si la cuenta sigue habilitada.
+        $planner = app(PlannerAccess::class);
+        if ($planner->enabled() && !$planner->allowed($user->email)) {
+            return response()->json(['error' => 'Tu cuenta no tiene acceso a Teko Social.'], 403);
+        }
 
         return response()->json([
             'token' => $user->createToken('teko-frontend')->plainTextToken,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\PlannerAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +14,24 @@ use Illuminate\Validation\ValidationException;
 
 class SystemAuthController extends Controller
 {
+    public function __construct(private PlannerAccess $planner)
+    {
+    }
+
+    /** Con el Planner activo, las cuentas y contraseñas se gestionan allá. */
+    private function managedByPlanner(): ?JsonResponse
+    {
+        return $this->planner->enabled()
+            ? response()->json(['message' => 'Las cuentas de Teko Social se gestionan desde TEKO Planner.'], 403)
+            : null;
+    }
+
     public function register(Request $request): JsonResponse
     {
+        if ($blocked = $this->managedByPlanner()) {
+            return $blocked;
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:180', 'unique:users,email'],
@@ -46,12 +63,16 @@ class SystemAuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        if ($this->planner->enabled()) {
+            $user = $this->planner->login($validated['email'], $validated['password']);
+        } else {
+            $user = User::where('email', $validated['email'])->first();
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Credenciales invalidas.'],
-            ]);
+            if (!$user || !Hash::check($validated['password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'email' => ['Credenciales invalidas.'],
+                ]);
+            }
         }
 
         $token = $user->createToken('teko-frontend')->plainTextToken;
@@ -161,6 +182,10 @@ class SystemAuthController extends Controller
 
     public function forgotPassword(Request $request): JsonResponse
     {
+        if ($blocked = $this->managedByPlanner()) {
+            return $blocked;
+        }
+
         $validated = $request->validate([
             'email' => ['required', 'email'],
         ]);
@@ -191,6 +216,10 @@ class SystemAuthController extends Controller
 
     public function resetPassword(Request $request): JsonResponse
     {
+        if ($blocked = $this->managedByPlanner()) {
+            return $blocked;
+        }
+
         $validated = $request->validate([
             'email' => ['required', 'email'],
             'code' => ['required', 'string', 'size:6'],
