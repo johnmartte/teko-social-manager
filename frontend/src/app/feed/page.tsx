@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "@/components/ImageUpload";
+import FolderImport from "@/components/FolderImport";
 
 const SWATCHES = ["#d7f36a", "#c4b5fd", "#a7e8c9", "#f6e27f", "#f7a8cf", "#a9cdf5", "#f7c09b"];
 
@@ -242,6 +243,7 @@ function FeedPlanner() {
               <Plus className="size-4" />
               Nueva campaña
             </Button>
+            <FolderImport campaignId={campaignFilter} onImported={load} />
             <Button onClick={createDraft} className="h-10 rounded-full px-4">
               <Plus className="size-4" />
               Nuevo borrador

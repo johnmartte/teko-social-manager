@@ -15,7 +15,7 @@ type FetchOptions = {
   body?: unknown;
 };
 
-function getTokenHeaders(): Record<string, string> {
+export function getTokenHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
   const headers: Record<string, string> = {};
   const read = (key: string) => localStorage.getItem(key) ?? sessionStorage.getItem(key);

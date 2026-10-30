@@ -5,6 +5,7 @@ use App\Http\Controllers\FacebookController;
 use App\Http\Controllers\InstagramController;
 use App\Http\Controllers\MessagesController;
 use App\Http\Controllers\ScheduledPostController;
+use App\Http\Controllers\StorageController;
 use App\Http\Controllers\SystemAuthController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\WorkspaceController;
@@ -88,6 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/auth/system/email', [SystemAuthController::class, 'updateEmail']);
     Route::patch('/auth/system/password', [SystemAuthController::class, 'updatePassword']);
 
+    Route::get('/storage/usage', [StorageController::class, 'usage']);
     Route::get('/workspace/dashboard', [WorkspaceController::class, 'dashboard']);
     Route::get('/workspace/planner/meta', [WorkspaceController::class, 'plannerMeta']);
     Route::get('/workspace/social/meta', [WorkspaceController::class, 'socialMeta']);

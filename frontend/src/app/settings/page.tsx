@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import StorageUsage from "@/components/StorageUsage";
 
 export default function SettingsPage() {
   const { status, user, disconnectSocial, updateEmail, updatePassword } = useAuth();
@@ -90,6 +91,10 @@ export default function SettingsPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          <Card title="Almacenamiento de imágenes">
+            <StorageUsage />
+          </Card>
+
           <Card title="Cuentas conectadas">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex items-center justify-between p-4 bg-background rounded-xl">
