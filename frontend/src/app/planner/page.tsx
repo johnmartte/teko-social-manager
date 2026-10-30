@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/components/Toaster";
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import { api } from "@/lib/api";
@@ -53,6 +54,7 @@ function movePostToDate(post: ScheduledPost, targetDate: Date) {
 }
 
 export default function PlannerPage() {
+  const toast = useToast();
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +108,7 @@ export default function PlannerPage() {
       setModal(null);
       await loadPosts();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error al publicar");
+      toast("error", "No se pudo publicar", e instanceof Error ? e.message : undefined);
     } finally {
       setPublishing(null);
     }
@@ -120,7 +122,7 @@ export default function PlannerPage() {
       setModal(null);
       await loadPosts();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error al eliminar");
+      toast("error", "No se pudo eliminar", e instanceof Error ? e.message : undefined);
     } finally {
       setDeleting(null);
     }
@@ -133,7 +135,7 @@ export default function PlannerPage() {
       setModal(null);
       setPosts((current) => [...current, copy]);
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error al duplicar");
+      toast("error", "No se pudo duplicar", e instanceof Error ? e.message : undefined);
     } finally {
       setDuplicating(null);
     }
@@ -151,7 +153,7 @@ export default function PlannerPage() {
       setPosts((current) => current.map((item) => (item.id === post.id ? updated : item)));
       setSelectedDate(dateKey(targetDate));
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "No se pudo mover la publicación");
+      toast("error", "No se pudo mover la publicación", e instanceof Error ? e.message : undefined);
     } finally {
       setRescheduling(null);
       setDropDate(null);
@@ -262,11 +264,11 @@ export default function PlannerPage() {
     await loadPosts();
 
     if (failed > 0) {
-      alert(`${deleted} eliminados, ${failed} no se pudieron eliminar.`);
+      toast("error", `${failed} no se pudieron eliminar`, `${deleted} eliminados correctamente.`);
       return;
     }
 
-    alert(`${deleted} post(s) eliminados correctamente.`);
+    toast("success", `${deleted} post(s) eliminados`);
   }
 
   const postsByDate = posts.reduce<Record<string, ScheduledPost[]>>((acc, post) => {

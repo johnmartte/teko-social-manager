@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/components/Toaster";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
@@ -54,6 +55,7 @@ function formatTime(iso: string | null) {
 
 export default function InboxPage() {
   const { status } = useAuth();
+  const toast = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [priorityWords, setPriorityWords] = useState<string[]>([]);
 
@@ -148,7 +150,17 @@ export default function InboxPage() {
         { id: `temp-${Date.now()}`, message: text, from_id: "__me__", from_name: "", created_time: new Date().toISOString(), attachments: [] },
       ]);
     } catch (e) {
-      alert((e as Error).message || "Error enviando mensaje");
+      const msg = (e as Error).message || "";
+      // Error #10 de Meta: solo se puede responder dentro de las 24 h del último mensaje del usuario.
+      if (/#10|fuera del per[ií]odo|outside of allowed window/i.test(msg)) {
+        toast(
+          "error",
+          `No puedes contactar a ${selected.participant_name}`,
+          "Te escribió hace más de 24 horas y Instagram solo permite responder dentro de ese plazo. Podrás escribirle cuando te envíe un mensaje nuevo.",
+        );
+      } else {
+        toast("error", "No se pudo enviar el mensaje", msg || "Inténtalo de nuevo en unos segundos.");
+      }
     } finally {
       setSending(false);
     }

@@ -5,6 +5,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AppShell from "@/components/AppShell";
+import { ToastProvider } from "@/components/Toaster";
 
 const geistSans = Manrope({
   variable: "--font-geist-sans",
@@ -37,7 +38,9 @@ export default function RootLayout({
       <body className="min-h-full teko-shell">
         <ThemeProvider>
           <AuthProvider>
-            <AppShell>{children}</AppShell>
+            <ToastProvider>
+              <AppShell>{children}</AppShell>
+            </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

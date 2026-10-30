@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/components/Toaster";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Card from "@/components/Card";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { FacebookPage, FacebookPost, InsightMetric } from "@/lib/types";
 
 export default function FacebookPageView() {
+  const toast = useToast();
   const { status, loading } = useAuth();
   const [page, setPage] = useState<FacebookPage | null>(null);
   const [posts, setPosts] = useState<FacebookPost[]>([]);
@@ -53,7 +55,7 @@ export default function FacebookPageView() {
       await api(`/facebook/posts/${postId}`, { method: "DELETE" });
       setPosts((prev) => prev.filter((p) => p.id !== postId));
     } catch {
-      alert("Error al eliminar.");
+      toast("error", "No se pudo eliminar");
     }
   }
 
