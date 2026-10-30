@@ -12,7 +12,9 @@ import {
   Trash2,
   CalendarClock,
   ImageOff,
+  Merge,
   Scissors,
+  Check,
   X,
 } from "lucide-react";
 import { api, formatNum } from "@/lib/api";
@@ -83,6 +85,9 @@ function FeedPlanner() {
   const [overId, setOverId] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
+  const [view, setView] = useState<"feed" | "carousels">("feed");
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<number[]>([]);
   const [showCampaignForm, setShowCampaignForm] = useState(params.get("new") === "campaign");
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
 
@@ -195,6 +200,46 @@ function FeedPlanner() {
     }
   }
 
+  function togglePick(id: number) {
+    setPicked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  }
+
+  function stopSelecting() {
+    setSelecting(false);
+    setPicked([]);
+  }
+
+  /** Une los posts elegidos (en el orden del feed) en un solo carrusel; el primero lo conserva. Se puede deshacer separando. */
+  async function mergePicked() {
+    const chosen = planned.filter((p) => picked.includes(p.id));
+    if (chosen.length < 2) return;
+    const urls = chosen.flatMap((p) => p.media_urls ?? []);
+    if (urls.length > MAX_SLIDES) {
+      toast("error", "Demasiadas láminas", `Un carrusel admite ${MAX_SLIDES} y seleccionaste ${urls.length}.`);
+      return;
+    }
+    if (urls.some(isVideoUrl)) {
+      toast("error", "No se pueden unir videos", "Los carruseles solo admiten imágenes.");
+      return;
+    }
+    const [target, ...rest] = chosen;
+    try {
+      const updated = await api<ScheduledPost>(`/scheduled-posts/${target.id}`, {
+        method: "PATCH",
+        body: { media_urls: urls, type: "carousel" },
+      });
+      await Promise.all(rest.map((p) => api(`/scheduled-posts/${p.id}`, { method: "DELETE" })));
+      const gone = new Set(rest.map((p) => p.id));
+      setPosts((prev) => prev.filter((p) => !gone.has(p.id)).map((p) => (p.id === target.id ? { ...p, ...updated } : p)));
+      stopSelecting();
+      setSelectedId(target.id);
+      toast("success", `${chosen.length} posts unidos en un carrusel`, "Si te arrepientes, ábrelo y sepáralo.");
+    } catch (e) {
+      toast("error", "No se pudo unir", e instanceof Error ? e.message : undefined);
+      load();
+    }
+  }
+
   /** Saca láminas de un carrusel: cada una pasa a ser un borrador propio, justo detrás del original. */
   async function extractSlides(post: ScheduledPost, base: string[], urls: string[]): Promise<string[] | null> {
     try {
@@ -292,6 +337,22 @@ function FeedPlanner() {
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="pill-track" role="tablist" aria-label="Vista">
+            {(["feed", "carousels"] as const).map((v) => (
+              <button key={v} role="tab" data-active={view === v} aria-selected={view === v} onClick={() => { setView(v); stopSelecting(); }}>
+                {v === "feed" ? "Feed" : "Carruseles"}
+              </button>
+            ))}
+          </div>
+          {view === "feed" && (
+            <Button variant={selecting ? "default" : "outline"} onClick={() => (selecting ? stopSelecting() : (setSelectedId(null), setSelecting(true)))} className="h-10 rounded-full px-4">
+              <Merge className="size-4" />
+              {selecting ? "Cancelar selección" : "Seleccionar y unir"}
+            </Button>
+          )}
+        </div>
+
         {error && (
           <p className="text-sm text-error border border-error-border bg-error-light rounded-xl px-4 py-2.5 flex items-center justify-between gap-3">
             {error}
@@ -301,6 +362,14 @@ function FeedPlanner() {
           </p>
         )}
 
+        {view === "carousels" ? (
+          <CarouselsView
+            posts={planned.filter((p) => (p.media_urls?.length ?? 0) > 1 && (campaignFilter == null || p.campaign_id === campaignFilter))}
+            campaignById={campaignById}
+            selectedId={selectedId}
+            onOpen={setSelectedId}
+          />
+        ) : (
         <div className="teko-card dot-grid p-4 sm:p-8">
           <div className="mx-auto max-w-[520px] rounded-[28px] bg-card border border-border shadow-[0_30px_80px_-30px_var(--shadow-lg)] overflow-hidden">
             <ProfileHeader
@@ -329,7 +398,7 @@ function FeedPlanner() {
                         if (e.key === "Enter") setSelectedId(p.id);
                         if (e.key === "Delete" || e.key === "Backspace") setPendingDelete(p.id);
                       }}
-                      draggable
+                      draggable={!selecting}
                       onDragStart={(e) => {
                         setDragId(p.id);
                         e.dataTransfer.effectAllowed = "move";
@@ -349,7 +418,7 @@ function FeedPlanner() {
                         setDragId(null);
                         setOverId(null);
                       }}
-                      onClick={() => setSelectedId(p.id)}
+                      onClick={() => (selecting ? togglePick(p.id) : setSelectedId(p.id))}
                       aria-label={`Post ${STATUS_LABEL[p.status]} ${shortDate(p.scheduled_at)}${campaign ? `, campaña ${campaign.name}` : ""}`}
                       className={cn(
                         "group relative aspect-[3/4] overflow-hidden bg-muted text-left cursor-grab active:cursor-grabbing outline-none transition-all",
@@ -357,10 +426,16 @@ function FeedPlanner() {
                         dragId === p.id && "opacity-40",
                         overId === p.id && dragId !== p.id && "ring-2 ring-inset ring-primary",
                         selectedId === p.id && "ring-2 ring-inset ring-foreground",
+                        picked.includes(p.id) && "ring-4 ring-inset ring-primary",
                         "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                       )}
                     >
                       <Tile post={p} />
+                      {selecting && (
+                        <span className={cn("absolute left-2 top-2 z-10 flex size-6 items-center justify-center rounded-full border-2 border-white text-white", picked.includes(p.id) ? "bg-primary" : "bg-black/40")}>
+                          {picked.includes(p.id) && <Check className="size-3.5" />}
+                        </span>
+                      )}
                       {campaign && (
                         <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: campaign.color }} />
                       )}
@@ -427,6 +502,19 @@ function FeedPlanner() {
             )}
           </div>
 
+          {selecting && (
+            <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-border bg-popover/95 px-5 py-2.5 shadow-xl backdrop-blur">
+              <span className="text-sm">
+                {picked.length === 0 ? "Toca los posts que quieras unir" : `${picked.length} seleccionado(s)`}
+              </span>
+              <Button size="sm" disabled={picked.length < 2} onClick={() => void mergePicked()}>
+                <Merge className="size-4" />
+                Unir en carrusel
+              </Button>
+              <Button size="sm" variant="ghost" onClick={stopSelecting}>Cancelar</Button>
+            </div>
+          )}
+
           {dragId != null && (
             <div
               onDragOver={(e) => {
@@ -455,6 +543,7 @@ function FeedPlanner() {
             {live.length > 0 ? "; después aparece lo que ya está en tu perfil." : "."}
           </p>
         </div>
+        )}
       </section>
 
       <aside className="space-y-5 min-w-0">
@@ -561,6 +650,64 @@ function Stat({ value, label }: { value: string; label: string }) {
     <div>
       <p className="text-[15px] font-semibold tabular-nums leading-none">{value}</p>
       <p className="text-[11px] text-muted-foreground mt-1">{label}</p>
+    </div>
+  );
+}
+
+function CarouselsView({
+  posts,
+  campaignById,
+  selectedId,
+  onOpen,
+}: {
+  posts: ScheduledPost[];
+  campaignById: Map<number, Campaign>;
+  selectedId: number | null;
+  onOpen: (id: number) => void;
+}) {
+  if (posts.length === 0) {
+    return (
+      <div className="teko-card p-10 text-center text-sm text-muted-foreground">
+        Aún no tienes carruseles. Importa una carpeta con varias imágenes o une posts desde el feed.
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      {posts.map((p, n) => {
+        const campaign = p.campaign_id ? campaignById.get(p.campaign_id) : undefined;
+        return (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => onOpen(p.id)}
+            className={cn(
+              "teko-card block w-full space-y-3 p-4 text-left transition-colors hover:border-ring",
+              selectedId === p.id && "ring-2 ring-foreground"
+            )}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="truncate text-sm font-semibold">
+                Carrusel {n + 1}
+                {p.caption ? ` · ${p.caption.slice(0, 50)}` : ""}
+              </p>
+              <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                {campaign && <span className="size-2 rounded-[3px]" style={{ background: campaign.color }} />}
+                {p.media_urls?.length} láminas · {STATUS_LABEL[p.status]}
+              </span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {p.media_urls?.map((url, i) => (
+                <div key={`${url}-${i}`} className="relative h-32 w-24 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`Lámina ${i + 1}`} className="size-full object-cover" />
+                  <span className="absolute left-1 top-1 rounded-full bg-black/60 px-1.5 text-[10px] font-semibold tabular-nums text-white">{i + 1}</span>
+                </div>
+              ))}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
