@@ -88,6 +88,8 @@ function FeedPlanner() {
   const [view, setView] = useState<"feed" | "carousels">("feed");
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<number[]>([]);
+  const [carouselPicked, setCarouselPicked] = useState<number[]>([]);
+  const [dissolving, setDissolving] = useState(false);
   const [showCampaignForm, setShowCampaignForm] = useState(params.get("new") === "campaign");
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
 
@@ -240,6 +242,55 @@ function FeedPlanner() {
     }
   }
 
+  /** Disuelve carruseles: cada lámina pasa a ser un post propio y el original conserva solo la primera. */
+  async function dissolvePosts(targets: ScheduledPost[]) {
+    setDissolving(true);
+    const created = new Map<number, ScheduledPost[]>();
+    const updatedById = new Map<number, ScheduledPost>();
+    let failed = 0;
+
+    for (const post of targets) {
+      const urls = post.media_urls ?? [];
+      if (urls.length < 2) continue;
+      try {
+        const news: ScheduledPost[] = [];
+        for (const url of urls.slice(1)) {
+          news.push(
+            await api<ScheduledPost>("/scheduled-posts", {
+              method: "POST",
+              body: {
+                platform: "instagram",
+                type: isVideoUrl(url) ? "reel" : "photo",
+                status: "draft",
+                caption: "",
+                media_urls: [url],
+                campaign_id: post.campaign_id,
+              },
+            })
+          );
+        }
+        updatedById.set(
+          post.id,
+          await api<ScheduledPost>(`/scheduled-posts/${post.id}`, {
+            method: "PATCH",
+            body: { media_urls: [urls[0]], type: isVideoUrl(urls[0]) ? "reel" : "photo" },
+          })
+        );
+        created.set(post.id, news);
+      } catch {
+        failed++;
+      }
+    }
+
+    const all = [...created.values()].flat();
+    setPosts((prev) => [...prev.map((p) => (updatedById.has(p.id) ? { ...p, ...updatedById.get(p.id) } : p)), ...all]);
+    if (all.length) persistOrder(planned.flatMap((p) => [p, ...(created.get(p.id) ?? [])]));
+    setCarouselPicked([]);
+    setDissolving(false);
+    if (failed) toast("error", `${failed} carrusel(es) no se pudieron disolver`, "Inténtalo de nuevo con esos.");
+    if (created.size) toast("success", `${created.size} carrusel(es) disueltos`, `${all.length + created.size} posts independientes en tu feed.`);
+  }
+
   /** Saca láminas de un carrusel: cada una pasa a ser un borrador propio, justo detrás del original. */
   async function extractSlides(post: ScheduledPost, base: string[], urls: string[]): Promise<string[] | null> {
     try {
@@ -372,6 +423,10 @@ function FeedPlanner() {
             campaignById={campaignById}
             selectedId={selectedId}
             onOpen={setSelectedId}
+            picked={carouselPicked}
+            onPick={setCarouselPicked}
+            busy={dissolving}
+            onDissolve={dissolvePosts}
           />
         ) : (
         <div className="teko-card dot-grid p-4 sm:p-8">
@@ -663,12 +718,22 @@ function CarouselsView({
   campaignById,
   selectedId,
   onOpen,
+  picked,
+  onPick,
+  busy,
+  onDissolve,
 }: {
   posts: ScheduledPost[];
   campaignById: Map<number, Campaign>;
   selectedId: number | null;
   onOpen: (id: number) => void;
+  picked: number[];
+  onPick: (ids: number[]) => void;
+  busy: boolean;
+  onDissolve: (targets: ScheduledPost[]) => void;
 }) {
+  const [confirming, setConfirming] = useState(false);
+
   if (posts.length === 0) {
     return (
       <div className="teko-card p-10 text-center text-sm text-muted-foreground">
@@ -676,31 +741,80 @@ function CarouselsView({
       </div>
     );
   }
+
+  const chosen = posts.filter((p) => picked.includes(p.id));
+  const allPicked = chosen.length === posts.length;
+  const slides = chosen.reduce((n, p) => n + (p.media_urls?.length ?? 0), 0);
+
   return (
     <div className="space-y-4">
+      <div className="teko-card flex flex-wrap items-center justify-between gap-3 p-3">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            setConfirming(false);
+            onPick(allPicked ? [] : posts.map((p) => p.id));
+          }}
+          className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
+        >
+          {allPicked ? "Quitar selección" : `Seleccionar todos (${posts.length})`}
+        </button>
+
+        {confirming ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm">
+              ¿Disolver {chosen.length} carrusel(es)? Quedarán {slides} posts sueltos.
+            </span>
+            <Button size="sm" variant="destructive" disabled={busy} onClick={() => { setConfirming(false); onDissolve(chosen); }}>
+              {busy ? "Disolviendo…" : "Sí, disolver"}
+            </Button>
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>Cancelar</Button>
+          </div>
+        ) : (
+          <Button size="sm" disabled={busy || chosen.length === 0} onClick={() => setConfirming(true)}>
+            <Scissors className="size-4" />
+            Disolver seleccionados{chosen.length ? ` (${chosen.length})` : ""}
+          </Button>
+        )}
+      </div>
+
       {posts.map((p, n) => {
         const campaign = p.campaign_id ? campaignById.get(p.campaign_id) : undefined;
+        const isPicked = picked.includes(p.id);
         return (
-          <button
+          <div
             key={p.id}
-            type="button"
-            onClick={() => onOpen(p.id)}
             className={cn(
-              "teko-card block w-full space-y-3 p-4 text-left transition-colors hover:border-ring",
+              "teko-card space-y-3 p-4 transition-colors",
+              isPicked && "ring-2 ring-primary",
               selectedId === p.id && "ring-2 ring-foreground"
             )}
           >
-            <div className="flex items-center justify-between gap-3">
-              <p className="truncate text-sm font-semibold">
-                Carrusel {n + 1}
-                {p.caption ? ` · ${p.caption.slice(0, 50)}` : ""}
-              </p>
-              <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                {campaign && <span className="size-2 rounded-[3px]" style={{ background: campaign.color }} />}
-                {p.media_urls?.length} láminas · {STATUS_LABEL[p.status]}
-              </span>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={isPicked}
+                disabled={busy}
+                onChange={() => { setConfirming(false); onPick(isPicked ? picked.filter((x) => x !== p.id) : [...picked, p.id]); }}
+                aria-label={`Seleccionar carrusel ${n + 1}`}
+              />
+              <button type="button" onClick={() => onOpen(p.id)} className="min-w-0 flex-1 text-left">
+                <p className="truncate text-sm font-semibold">
+                  Carrusel {n + 1}
+                  {p.caption ? ` · ${p.caption.slice(0, 50)}` : ""}
+                </p>
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {campaign && <span className="size-2 rounded-[3px]" style={{ background: campaign.color }} />}
+                  {p.media_urls?.length} láminas · {STATUS_LABEL[p.status]}
+                </p>
+              </button>
+              <Button size="sm" variant="outline" disabled={busy} onClick={() => onDissolve([p])}>
+                <Scissors className="size-4" />
+                Disolver
+              </Button>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="flex cursor-pointer gap-2 overflow-x-auto pb-1" onClick={() => onOpen(p.id)}>
               {p.media_urls?.map((url, i) => (
                 <div key={`${url}-${i}`} className="relative h-32 w-24 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -709,7 +823,7 @@ function CarouselsView({
                 </div>
               ))}
             </div>
-          </button>
+          </div>
         );
       })}
     </div>
