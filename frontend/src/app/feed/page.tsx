@@ -346,7 +346,11 @@ function FeedPlanner() {
             ))}
           </div>
           {view === "feed" && (
-            <Button variant={selecting ? "default" : "outline"} onClick={() => (selecting ? stopSelecting() : (setSelectedId(null), setSelecting(true)))} className="h-10 rounded-full px-4">
+            <Button variant={selecting ? "default" : "outline"} onClick={() => {
+                if (selecting) return stopSelecting();
+                setSelectedId(null);
+                setSelecting(true);
+              }} className="h-10 rounded-full px-4">
               <Merge className="size-4" />
               {selecting ? "Cancelar selección" : "Seleccionar y unir"}
             </Button>
