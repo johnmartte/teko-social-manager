@@ -19,7 +19,7 @@ export default function HelpPage() {
 
   return (
     <div className="teko-enter mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="sticky -top-6 z-20 -mx-4 -mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/95 px-4 pb-3 pt-6 backdrop-blur sm:-mx-7 sm:px-7">
         <div className="pill-track" role="tablist" aria-label="Sección de ayuda">
           <button role="tab" data-active={tab === "manual"} aria-selected={tab === "manual"} onClick={() => setTab("manual")}>
             Manual de uso
@@ -43,7 +43,7 @@ export default function HelpPage() {
       {tab === "manual" ? (
         <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
           <nav aria-label="Índice del manual" className="hidden lg:block">
-            <ul className="sticky top-24 space-y-0.5 text-sm">
+            <ul className="sticky top-20 max-h-[calc(100vh-11rem)] space-y-0.5 overflow-y-auto text-sm">
               {shownGuides.map((g) => (
                 <li key={g.id}>
                   <a href={`#${g.id}`} className="block rounded-lg px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
@@ -65,7 +65,7 @@ export default function HelpPage() {
             {shownGuides.length === 0 && <p className="text-sm text-muted-foreground">No encontramos nada con esa búsqueda.</p>}
 
             {shownGuides.map((g) => (
-              <section key={g.id} id={g.id} className="teko-card scroll-mt-24 space-y-4 p-5">
+              <section key={g.id} id={g.id} className="teko-card scroll-mt-20 space-y-4 p-5">
                 <div>
                   <h2 className="text-base font-semibold">{g.title}</h2>
                   <p className="text-sm text-muted-foreground">{g.summary}</p>

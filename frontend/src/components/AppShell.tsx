@@ -44,11 +44,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   // Marco tipo "app de escritorio": la navegación vive sobre el marco y el contenido en un panel inset.
   return (
-    <div className="flex min-h-screen bg-frame p-2 gap-2">
+    <div className="flex h-screen overflow-hidden bg-frame p-2 gap-2">
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col rounded-[22px] bg-background border border-border overflow-hidden">
         <Header />
-        <main className="flex-1 px-4 py-6 sm:px-7">{children}</main>
+        <main className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-7">{children}</main>
       </div>
     </div>
   );

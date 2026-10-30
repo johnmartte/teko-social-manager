@@ -184,7 +184,7 @@ export default function InboxPage() {
   const avatarClass = "bg-muted border border-border";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)]">
+    <div className="flex flex-col h-[calc(100vh-136px)]">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div>
