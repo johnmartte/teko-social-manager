@@ -75,7 +75,8 @@ export default function InboxPage() {
   const connected = status?.instagram?.connected || status?.facebook?.connected;
 
   const loadConversations = useCallback(async () => {
-    setLoading(true);
+    // No ponemos loading=true aquí: 'loading' arranca en true para la 1ª carga y los
+    // refrescos (30 s, botón, tras enviar) actualizan la lista en su sitio sin borrarla.
     setError(null);
     try {
       const data = await api<ConversationsResponse>("/messages/conversations");
@@ -107,10 +108,13 @@ export default function InboxPage() {
   }, [connected, loadConversations]);
 
   async function openConversation(conv: Conversation) {
+    const sameConv = selected?.id === conv.id; // tras enviar reabrimos el mismo chat: no lo vaciamos ni parpadea
     setSelected(conv);
-    setMessages([]);
-    setMsgsLoading(true);
-    setReplyText("");
+    if (!sameConv) {
+      setMessages([]);
+      setMsgsLoading(true);
+      setReplyText("");
+    }
     try {
       const data = await api<MessagesResponse>(
         `/messages/${conv.id}?channel=${conv.channel}`
@@ -125,6 +129,7 @@ export default function InboxPage() {
 
   async function sendReply() {
     if (!selected || !replyText.trim() || sending) return;
+    const text = replyText.trim();
     setSending(true);
     try {
       await api("/messages/send", {
@@ -133,11 +138,15 @@ export default function InboxPage() {
           conversation_id: selected.id,
           channel: selected.channel,
           recipient_id: selected.participant_id,
-          message: replyText.trim(),
+          message: text,
         },
       });
+      // Aparece al instante: no recargamos los mensajes desde Meta (lento) tras enviar.
       setReplyText("");
-      await openConversation(selected);
+      setMessages((prev) => [
+        ...prev,
+        { id: `temp-${Date.now()}`, message: text, from_id: "__me__", from_name: "", created_time: new Date().toISOString(), attachments: [] },
+      ]);
     } catch (e) {
       alert((e as Error).message || "Error enviando mensaje");
     } finally {

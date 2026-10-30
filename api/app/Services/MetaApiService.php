@@ -650,20 +650,23 @@ class MetaApiService
         $seenIds = [];
         $debug = ['ig_user_id' => $igUserId, 'attempts' => []];
 
-        // Strategy 1: Instagram Login API — graph.instagram.com/me/conversations
-        // This is the correct endpoint for tokens from Instagram OAuth
-        $this->fetchConversationsFromEndpoint(
-            "https://graph.instagram.com/v20.0/me/conversations",
-            ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
-            $allConversations, $seenIds, $debug, 'ig_me'
-        );
+        // Con login por Facebook el token es de Página: los endpoints graph.instagram.com no aplican
+        // y solo añadirían latencia (timeout + paginación) antes de fallar. Se saltan.
+        if ($this->oauthProvider !== 'facebook') {
+            // Strategy 1: Instagram Login API — graph.instagram.com/me/conversations
+            $this->fetchConversationsFromEndpoint(
+                "https://graph.instagram.com/v20.0/me/conversations",
+                ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
+                $allConversations, $seenIds, $debug, 'ig_me'
+            );
 
-        // Strategy 2: Instagram Login API — graph.instagram.com/{igUserId}/conversations
-        $this->fetchConversationsFromEndpoint(
-            "https://graph.instagram.com/v20.0/{$igUserId}/conversations",
-            ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
-            $allConversations, $seenIds, $debug, 'ig_userid'
-        );
+            // Strategy 2: Instagram Login API — graph.instagram.com/{igUserId}/conversations
+            $this->fetchConversationsFromEndpoint(
+                "https://graph.instagram.com/v20.0/{$igUserId}/conversations",
+                ['platform' => 'instagram', 'fields' => $fields, 'limit' => 50, 'access_token' => $token],
+                $allConversations, $seenIds, $debug, 'ig_userid'
+            );
+        }
 
         // Strategy 3: Page API — graph.facebook.com/{pageId}/conversations
         // Works if token is a Page Access Token
@@ -790,6 +793,11 @@ class MetaApiService
             $data = $response->json();
         }
 
+        // Propagar el error real (p. ej. fuera de la ventana de 24 h) en vez de reportar éxito falso.
+        if (isset($data['error'])) {
+            throw new \RuntimeException("Instagram message error: " . ($data['error']['message'] ?? json_encode($data)));
+        }
+
         return $data;
     }
 
@@ -841,11 +849,12 @@ class MetaApiService
      */
     private function resolvePageId(string $token): ?string
     {
-        $response = Http::get("{$this->fbApi}/me", [
-            'fields' => 'id',
-            'access_token' => $token,
-        ]);
-
-        return $response->json('id');
+        // El Page ID no cambia; se resuelve una vez por token en vez de en cada llamada de mensajería.
+        return \Illuminate\Support\Facades\Cache::remember('meta_page_id_' . md5($token), 3600, function () use ($token) {
+            return Http::timeout(10)->get("{$this->fbApi}/me", [
+                'fields' => 'id',
+                'access_token' => $token,
+            ])->json('id') ?: null;
+        });
     }
 }

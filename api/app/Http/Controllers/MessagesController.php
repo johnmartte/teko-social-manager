@@ -201,6 +201,12 @@ class MessagesController extends Controller
 
     private function ensurePageSubscribed(string $pageToken): void
     {
+        // La suscripción es un ajuste único; se evita repetir 2 llamadas HTTP en cada carga de la bandeja.
+        $cacheKey = 'meta_page_subscribed_' . md5($pageToken);
+        if (\Illuminate\Support\Facades\Cache::get($cacheKey)) {
+            return;
+        }
+
         try {
             $version = config('meta.graph_api_version', 'v20.0');
             $pageId = Http::get("https://graph.facebook.com/{$version}/me", [
@@ -213,6 +219,7 @@ class MessagesController extends Controller
                     'subscribed_fields' => 'messages,messaging_postbacks,message_deliveries,message_reads',
                     'access_token' => $pageToken,
                 ]);
+                \Illuminate\Support\Facades\Cache::put($cacheKey, true, 3600);
             }
         } catch (\Throwable $e) {
             \Log::warning('Page subscription error: ' . $e->getMessage());
