@@ -18,6 +18,23 @@ export const guides: Guide[] = [
     tips: ["Tu cuenta del sistema es distinta de tus cuentas de Instagram y Facebook: primero entras al sistema y luego conectas tus redes."],
   },
   {
+    id: "touch-id",
+    title: "Entrar con Touch ID (acceso rápido)",
+    summary: "Inicia sesión con la huella de tu Mac o tu gestor de contraseñas, sin escribir nada.",
+    steps: [
+      { text: "Inicia sesión una vez con tu correo y contraseña, como siempre." },
+      { text: "Entra en Configuración y busca la tarjeta «Acceso rápido (Touch ID)»." },
+      { text: "Pulsa «Activar Touch ID en este dispositivo». Tu Mac te pedirá la huella para guardar el acceso." },
+      { text: "La próxima vez, en la pantalla de inicio de sesión pulsa «Entrar con Touch ID / passkey» y confirma con tu huella." },
+      { text: "Para quitar un dispositivo, pulsa la papelera junto a su nombre en la misma tarjeta." },
+    ],
+    tips: [
+      "El acceso rápido queda ligado al sitio donde lo activas: actívalo desde la dirección real del sistema, no desde una de pruebas.",
+      "Si usas un gestor de contraseñas (iCloud, Google), el acceso también puede aparecer en tus otros dispositivos.",
+      "Tu huella nunca sale de tu equipo: el sistema solo recibe una firma que confirma que fuiste tú.",
+    ],
+  },
+  {
     id: "conectar",
     title: "Conectar Instagram y Facebook",
     summary: "Enlaza tus redes para publicar, ver mensajes y estadísticas.",
@@ -195,6 +212,8 @@ export const guides: Guide[] = [
 ];
 
 export const faqs: Faq[] = [
+  { q: "¿Cómo entro sin escribir mi correo y contraseña cada vez?", a: "Activa el acceso rápido en Configuración > «Acceso rápido (Touch ID)». Después, en el inicio de sesión, pulsa «Entrar con Touch ID / passkey» y confirma con tu huella." },
+  { q: "Perdí o cambié de computadora, ¿qué pasa con mi acceso rápido?", a: "Sigues entrando con tu correo y contraseña. Desde el equipo nuevo vuelve a activar el acceso rápido, y elimina el anterior en Configuración si ya no lo usas." },
   { q: "¿Por qué no puedo conectar mi cuenta de Instagram?", a: "Revisa que sea una cuenta profesional (Business o Creator), que esté vinculada a una Página de Facebook, y que al conectar hayas marcado tanto la Página como la cuenta de Instagram en la ventana de Facebook." },
   { q: "No veo mis mensajes en el Inbox, ¿qué hago?", a: "Confirma que Instagram aparece conectado en verde arriba y que en la app de Instagram está activado «Permitir acceso a los mensajes» (Configuración > Mensajes y respuestas > Herramientas conectadas). Si cambiaste algo, vuelve a conectar la cuenta desde Configuración." },
   { q: "¿Por qué no puedo responder un mensaje?", a: "Instagram solo permite responder dentro de las 24 horas siguientes al último mensaje de esa persona. Cuando te vuelva a escribir, podrás responderle de nuevo." },

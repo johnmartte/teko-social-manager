@@ -5,6 +5,7 @@ use App\Http\Controllers\FacebookController;
 use App\Http\Controllers\InstagramController;
 use App\Http\Controllers\MessagesController;
 use App\Http\Controllers\ScheduledPostController;
+use App\Http\Controllers\PasskeyController;
 use App\Http\Controllers\StorageController;
 use App\Http\Controllers\SystemAuthController;
 use App\Http\Controllers\UploadController;
@@ -81,11 +82,17 @@ Route::post('/debug/register', function (\Illuminate\Http\Request $request) {
     }
 });
 Route::post('/auth/system/login', [SystemAuthController::class, 'login']);
+Route::post('/auth/passkey/login-options', [PasskeyController::class, 'loginOptions'])->middleware('throttle:20,1');
+Route::post('/auth/passkey/login', [PasskeyController::class, 'loginVerify'])->middleware('throttle:10,1');
 Route::post('/auth/system/forgot-password', [SystemAuthController::class, 'forgotPassword']);
 Route::post('/auth/system/reset-password', [SystemAuthController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/system/me', [SystemAuthController::class, 'me']);
     Route::post('/auth/system/logout', [SystemAuthController::class, 'logout']);
+    Route::get('/auth/passkeys', [PasskeyController::class, 'index']);
+    Route::post('/auth/passkeys/options', [PasskeyController::class, 'registerOptions']);
+    Route::post('/auth/passkeys', [PasskeyController::class, 'registerVerify']);
+    Route::delete('/auth/passkeys/{passkey}', [PasskeyController::class, 'destroy']);
     Route::patch('/auth/system/profile', [SystemAuthController::class, 'updateProfile']);
     Route::patch('/auth/system/email', [SystemAuthController::class, 'updateEmail']);
     Route::patch('/auth/system/password', [SystemAuthController::class, 'updatePassword']);

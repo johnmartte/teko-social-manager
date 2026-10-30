@@ -1,16 +1,18 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { Check, Eye, EyeOff } from "lucide-react";
+import { Check, Eye, EyeOff, Fingerprint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/AuthLayout";
+import { isCancelled, passkeysSupported } from "@/lib/passkeys";
 
 export default function LoginPage() {
-  const { loginWithEmail } = useAuth();
+  const { loginWithEmail, loginWithPasskey } = useAuth();
+  const supported = useSyncExternalStore(() => () => {}, passkeysSupported, () => false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +35,19 @@ export default function LoginPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo iniciar sesion";
       setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onPasskey = async () => {
+    setSubmitting(true);
+    setError("");
+    try {
+      await loginWithPasskey();
+      window.location.href = "/";
+    } catch (err) {
+      if (!isCancelled(err)) setError(err instanceof Error ? err.message : "No se pudo entrar con el passkey");
     } finally {
       setSubmitting(false);
     }
@@ -123,6 +138,20 @@ export default function LoginPage() {
             {submitting ? "Ingresando..." : "Iniciar sesión"}
           </Button>
         </form>
+
+        {supported && (
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              o
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <Button type="button" variant="outline" className="w-full" disabled={submitting} onClick={onPasskey}>
+              <Fingerprint className="size-4" />
+              Entrar con Touch ID / passkey
+            </Button>
+          </div>
+        )}
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           ¿No tienes cuenta?{" "}

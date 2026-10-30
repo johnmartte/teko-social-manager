@@ -28,6 +28,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function passkeys(): HasMany
+    {
+        return $this->hasMany(Passkey::class);
+    }
+
     public function socialCredentials(): HasMany
     {
         return $this->hasMany(SocialCredential::class);

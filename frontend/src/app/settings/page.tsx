@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import StorageUsage from "@/components/StorageUsage";
+import PasskeysCard from "@/components/PasskeysCard";
 
 export default function SettingsPage() {
   const { status, user, disconnectSocial, updateEmail, updatePassword } = useAuth();
@@ -91,6 +92,10 @@ export default function SettingsPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          <Card title="Acceso rápido (Touch ID)">
+            <PasskeysCard />
+          </Card>
+
           <Card title="Almacenamiento de imágenes">
             <StorageUsage />
           </Card>
