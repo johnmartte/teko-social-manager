@@ -14,6 +14,7 @@ import {
   FileText,
   Settings,
   Grid3x3,
+  LifeBuoy,
   Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,10 @@ export const navGroups = [
       { href: "/insights", label: "Estadísticas", icon: BarChart3 },
       { href: "/posts", label: "Publicados", icon: FileText },
     ],
+  },
+  {
+    label: "Soporte",
+    items: [{ href: "/help", label: "Ayuda y manual", icon: LifeBuoy }],
   },
 ];
 

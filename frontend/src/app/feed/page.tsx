@@ -83,7 +83,8 @@ function FeedPlanner() {
   const [error, setError] = useState<string | null>(null);
   const [dragId, setDragId] = useState<number | null>(null);
   const [overId, setOverId] = useState<number | null>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const postParam = params.get("post");
+  const [selectedId, setSelectedId] = useState<number | null>(postParam ? Number(postParam) : null);
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
   const [view, setView] = useState<"feed" | "carousels">("feed");
   const [selecting, setSelecting] = useState(false);
@@ -114,6 +115,11 @@ function FeedPlanner() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Llegar desde el buscador o una notificación (?post=ID) abre ese post en el editor.
+  useEffect(() => {
+    if (postParam) setSelectedId(Number(postParam));
+  }, [postParam]);
 
   useEffect(() => {
     if (!status?.instagram.connected) return;

@@ -33,6 +33,7 @@ type AuthContextType = {
   refresh: () => void;
   registerWithEmail: (name: string, email: string, password: string) => Promise<void>;
   loginWithEmail: (email: string, password: string, remember?: boolean) => Promise<void>;
+  updateProfile: (name: string) => Promise<void>;
   updateEmail: (newEmail: string, currentPassword: string) => Promise<void>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   disconnectSocial: (platform?: string) => Promise<void>;
@@ -47,6 +48,7 @@ const AuthContext = createContext<AuthContextType>({
   refresh: () => {},
   registerWithEmail: async () => {},
   loginWithEmail: async () => {},
+  updateProfile: async () => {},
   updateEmail: async () => {},
   updatePassword: async () => {},
   disconnectSocial: async () => {},
@@ -210,6 +212,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchStatus();
   }, [fetchStatus]);
 
+  const updateProfile = useCallback(async (name: string) => {
+    const appToken = getStoredValue("app_token");
+    if (!appToken) throw new Error("Tu sesion expiro. Inicia sesion nuevamente.");
+    const data = await requestSystemAuth<{ user: AppUser }>("/auth/system/profile", {
+      method: "PATCH",
+      payload: { name },
+      token: appToken,
+    });
+    storeAuthValue("app_user", JSON.stringify(data.user), !!localStorage.getItem("app_token"));
+    setUser(data.user);
+  }, []);
+
   const updateEmail = useCallback(async (newEmail: string, currentPassword: string) => {
     const appToken = getStoredValue("app_token");
     if (!appToken) throw new Error("Tu sesion expiro. Inicia sesion nuevamente.");
@@ -307,6 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refresh,
         registerWithEmail,
         loginWithEmail,
+        updateProfile,
         updateEmail,
         updatePassword,
         disconnectSocial,

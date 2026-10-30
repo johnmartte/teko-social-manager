@@ -86,6 +86,26 @@ class SystemAuthController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:120'],
+        ]);
+
+        $user->name = trim($validated['name']);
+        $user->save();
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+        ]);
+    }
+
     public function updateEmail(Request $request): JsonResponse
     {
         $user = $request->user();

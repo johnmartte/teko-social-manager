@@ -86,6 +86,7 @@ Route::post('/auth/system/reset-password', [SystemAuthController::class, 'resetP
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/system/me', [SystemAuthController::class, 'me']);
     Route::post('/auth/system/logout', [SystemAuthController::class, 'logout']);
+    Route::patch('/auth/system/profile', [SystemAuthController::class, 'updateProfile']);
     Route::patch('/auth/system/email', [SystemAuthController::class, 'updateEmail']);
     Route::patch('/auth/system/password', [SystemAuthController::class, 'updatePassword']);
 

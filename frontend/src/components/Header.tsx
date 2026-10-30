@@ -3,10 +3,12 @@
 import { useAuth } from "@/context/AuthContext";
 import { getLoginUrl } from "@/lib/api";
 import { useTheme } from "@/context/ThemeContext";
-import { Search, Sun, Moon, User, Settings, LogOut, Link2, Plus } from "lucide-react";
+import { Sun, Moon, User, Settings, LogOut, Link2, Plus, LifeBuoy } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { navGroups } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
+import SearchBox from "@/components/SearchBox";
+import NotificationBell from "@/components/NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +32,7 @@ export default function Header() {
   const current = navGroups
     .flatMap((g) => g.items.map((i) => ({ ...i, group: g.label })))
     .find((i) => (i.href === "/" ? pathname === "/" : pathname.startsWith(i.href)));
-  const title = current?.label ?? (pathname.startsWith("/settings") ? "Configuración" : "");
+  const title = current?.label ?? (pathname.startsWith("/settings") ? "Configuración" : pathname.startsWith("/profile") ? "Mi perfil" : "");
 
   return (
     <header className="h-[72px] flex items-center justify-between gap-4 px-4 sm:px-7 sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
@@ -40,14 +42,7 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-2">
-        <label className="hidden xl:flex items-center gap-2 h-10 w-64 rounded-full border border-input bg-card px-4 focus-within:border-ring">
-          <Search className="size-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
-          <input
-            type="search"
-            placeholder="Buscar posts, campañas…"
-            className="bg-transparent text-sm outline-none w-full placeholder:text-muted-foreground"
-          />
-        </label>
+        <SearchBox />
 
         <div className="hidden md:flex items-center gap-1.5">
           <ConnectionPill label="Instagram" connected={!!igConnected} />
@@ -65,6 +60,8 @@ export default function Header() {
             </a>
           </Button>
         )}
+
+        <NotificationBell />
 
         <Button
           variant="ghost"
@@ -109,15 +106,21 @@ export default function Header() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/settings">
+              <Link href="/profile">
                 <User className="size-4" strokeWidth={1.75} />
-                Perfil
+                Mi perfil
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/settings">
                 <Settings className="size-4" strokeWidth={1.75} />
                 Configuración
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/help">
+                <LifeBuoy className="size-4" strokeWidth={1.75} />
+                Ayuda
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={toggleTheme}>
