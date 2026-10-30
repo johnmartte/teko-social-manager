@@ -12,6 +12,7 @@ import {
   Trash2,
   CalendarClock,
   ImageOff,
+  Scissors,
   X,
 } from "lucide-react";
 import { api, formatNum } from "@/lib/api";
@@ -24,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "@/components/ImageUpload";
 import FolderImport from "@/components/FolderImport";
+import { useToast } from "@/components/Toaster";
 
 const SWATCHES = ["#d7f36a", "#c4b5fd", "#a7e8c9", "#f6e27f", "#f7a8cf", "#a9cdf5", "#f7c09b"];
 
@@ -35,6 +37,9 @@ const STATUS_LABEL: Record<ScheduledPost["status"], string> = {
 };
 
 /** Orden del feed: posición manual primero; sin posición, el más tardío arriba (como Instagram). */
+const isVideoUrl = (u: string) => /\.(mp4|mov|webm)(\?|$)/i.test(u);
+const MAX_SLIDES = 10; // límite de Instagram por carrusel
+
 function feedSort(a: ScheduledPost, b: ScheduledPost) {
   if (a.feed_position != null && b.feed_position != null) return a.feed_position - b.feed_position;
   if (a.feed_position != null) return -1;
@@ -66,6 +71,7 @@ function FeedPlanner() {
   const router = useRouter();
   const params = useSearchParams();
   const { status } = useAuth();
+  const toast = useToast();
 
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -186,6 +192,41 @@ function FeedPlanner() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo guardar");
       return false;
+    }
+  }
+
+  /** Saca láminas de un carrusel: cada una pasa a ser un borrador propio, justo detrás del original. */
+  async function extractSlides(post: ScheduledPost, base: string[], urls: string[]): Promise<string[] | null> {
+    try {
+      const created: ScheduledPost[] = [];
+      for (const url of urls) {
+        created.push(
+          await api<ScheduledPost>("/scheduled-posts", {
+            method: "POST",
+            body: {
+              platform: "instagram",
+              type: isVideoUrl(url) ? "reel" : "photo",
+              status: "draft",
+              caption: "",
+              media_urls: [url],
+              campaign_id: post.campaign_id,
+            },
+          })
+        );
+      }
+      const remaining = base.filter((u) => !urls.includes(u));
+      const type = remaining.length > 1 ? "carousel" : remaining[0] && isVideoUrl(remaining[0]) ? "reel" : "photo";
+      const updated = await api<ScheduledPost>(`/scheduled-posts/${post.id}`, {
+        method: "PATCH",
+        body: { media_urls: remaining, type },
+      });
+      setPosts((prev) => [...prev.map((p) => (p.id === post.id ? { ...p, ...updated } : p)), ...created]);
+      persistOrder(planned.flatMap((p) => (p.id === post.id ? [p, ...created] : [p])));
+      toast("success", created.length === 1 ? "Lámina separada" : `${created.length} láminas separadas`, "Ahora son posts independientes en tu feed.");
+      return remaining;
+    } catch (e) {
+      toast("error", "No se pudo separar", e instanceof Error ? e.message : undefined);
+      return null;
     }
   }
 
@@ -433,6 +474,7 @@ function FeedPlanner() {
             onSave={(patch) => savePost(selected.id, patch)}
             onDelete={() => deletePost(selected.id)}
             onNudge={(d) => nudge(selected.id, d)}
+            onExtract={(base, urls) => extractSlides(selected, base, urls)}
           />
         ) : (
           <CampaignPanel
@@ -541,7 +583,10 @@ function Tile({ post }: { post: ScheduledPost }) {
         </span>
       )}
       {post.type !== "photo" && (
-        <span className="absolute top-2 right-2 text-white drop-shadow">
+        <span className="absolute top-2 right-2 flex items-center gap-1 text-white drop-shadow">
+          {post.type === "carousel" && (post.media_urls?.length ?? 0) > 1 && (
+            <span className="text-[11px] font-semibold tabular-nums">{post.media_urls?.length}</span>
+          )}
           {post.type === "reel" ? <Film className="size-4" /> : <Layers className="size-4" />}
         </span>
       )}
@@ -821,6 +866,7 @@ function PostEditor({
   onSave,
   onDelete,
   onNudge,
+  onExtract,
 }: {
   post: ScheduledPost;
   campaigns: Campaign[];
@@ -830,9 +876,10 @@ function PostEditor({
   onSave: (patch: Partial<ScheduledPost>) => Promise<boolean>;
   onDelete: () => void;
   onNudge: (delta: number) => void;
+  onExtract: (base: string[], urls: string[]) => Promise<string[] | null>;
 }) {
   const [caption, setCaption] = useState(post.caption ?? "");
-  const [media, setMedia] = useState(post.media_urls?.[0] ?? "");
+  const [media, setMedia] = useState<string[]>(post.media_urls ?? []);
   const [type, setType] = useState(post.type === "text" ? "photo" : post.type);
   const [when, setWhen] = useState(toLocalInput(post.scheduled_at));
   const [campaignId, setCampaignId] = useState<number | null>(post.campaign_id);
@@ -842,10 +889,35 @@ function PostEditor({
   const draftPatch = {
     caption,
     type,
-    media_urls: media ? [media] : [],
+    media_urls: media,
     campaign_id: campaignId,
     scheduled_at: when ? new Date(when).toISOString() : null,
   } as Partial<ScheduledPost>;
+
+  // Mantiene el formato coherente con el número de láminas (carrusel = 2 o más).
+  function setSlides(next: string[]) {
+    setMedia(next);
+    if (next.length > 1 && type === "photo") setType("carousel");
+    if (next.length <= 1 && type === "carousel") setType("photo");
+  }
+
+  function moveSlide(i: number, delta: number) {
+    const next = [...media];
+    [next[i], next[i + delta]] = [next[i + delta], next[i]];
+    setSlides(next);
+  }
+
+  async function extract(urls: string[]) {
+    setSaving(true);
+    const remaining = await onExtract(media, urls);
+    if (remaining) {
+      setMedia(remaining);
+      setType(remaining.length > 1 ? "carousel" : remaining[0] && isVideoUrl(remaining[0]) ? "reel" : "photo");
+    }
+    setSaving(false);
+  }
+
+  const invalidCarousel = type === "carousel" && media.length < 2;
 
   async function save(status: ScheduledPost["status"]) {
     setSaving(true);
@@ -885,12 +957,66 @@ function PostEditor({
         ))}
       </div>
 
-      <ImageUpload
-        value={media}
-        onChange={setMedia}
-        accept={type === "reel" ? "video/*" : "image/*"}
-        label={type === "reel" ? "video" : "imagen"}
-      />
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label>{type === "reel" ? "Video" : `Láminas (${media.length}/${MAX_SLIDES})`}</Label>
+          {media.length > 1 && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => extract(media.slice(1))}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              <Scissors className="size-3.5" />
+              Separar todo en posts
+            </button>
+          )}
+        </div>
+
+        {media.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {media.map((url, i) => (
+              <div key={`${url}-${i}`} className="space-y-1">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-lg border border-border bg-muted">
+                  {isVideoUrl(url) ? (
+                    <video src={url} muted className="size-full object-cover" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={url} alt={`Lámina ${i + 1}`} className="size-full object-cover" />
+                  )}
+                  <span className="absolute left-1 top-1 rounded-full bg-black/60 px-1.5 text-[10px] font-semibold text-white tabular-nums">{i + 1}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <button type="button" disabled={i === 0} onClick={() => moveSlide(i, -1)} aria-label="Mover antes" className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30">
+                    <ArrowLeft className="size-3.5" />
+                  </button>
+                  <button type="button" disabled={i === media.length - 1} onClick={() => moveSlide(i, 1)} aria-label="Mover después" className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30">
+                    <ArrowRight className="size-3.5" />
+                  </button>
+                  {media.length > 1 && (
+                    <button type="button" disabled={saving} onClick={() => extract([url])} aria-label="Separar como post" title="Separar como post" className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30">
+                      <Scissors className="size-3.5" />
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setSlides(media.filter((_, j) => j !== i))} aria-label="Quitar lámina" title="Quitar lámina" className="p-1 text-muted-foreground hover:text-error">
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(type !== "reel" || media.length === 0) && media.length < MAX_SLIDES && (
+          <ImageUpload
+            key={media.length}
+            value=""
+            onChange={(u) => u && setSlides([...media, u])}
+            accept={type === "reel" ? "video/*" : "image/*"}
+            label={type === "reel" ? "video" : media.length ? "otra lámina" : "imagen"}
+          />
+        )}
+      </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="p-caption">Texto</Label>
@@ -925,7 +1051,7 @@ function PostEditor({
         <Button variant="outline" disabled={saving} onClick={() => save("draft")} className="flex-1">
           Guardar borrador
         </Button>
-        <Button disabled={saving || !when || !media} onClick={() => save("pending")} className="flex-1" title={!media ? "Añade una imagen" : !when ? "Elige una fecha" : undefined}>
+        <Button disabled={saving || !when || media.length === 0 || invalidCarousel} onClick={() => save("pending")} className="flex-1" title={media.length === 0 ? "Añade una imagen" : invalidCarousel ? "Un carrusel necesita al menos 2 láminas" : !when ? "Elige una fecha" : undefined}>
           <CalendarClock className="size-4" />
           Programar
         </Button>
