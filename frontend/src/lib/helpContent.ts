@@ -37,7 +37,7 @@ export const guides: Guide[] = [
     title: "Crear y usar campañas",
     summary: "Agrupa tus posts por campaña para organizarlos por color.",
     steps: [
-      { text: "Entra en «Feed y campañas» y pulsa «Nueva campaña» (también está el signo + junto a «Campañas» en el menú lateral)." },
+      { image: "/manual/feed.jpg", text: "Entra en «Feed y campañas» y pulsa «Nueva campaña» (también está el signo + junto a «Campañas» en el menú lateral)." },
       { text: "Ponle nombre, un color y, si quieres, una descripción y fechas de inicio y fin." },
       { text: "Guarda. La campaña aparece como pestaña arriba del feed y en el menú lateral." },
       { text: "Pulsa la pestaña de una campaña para resaltar sus posts; los demás se atenúan. «Todo el feed» vuelve a mostrar todo." },
@@ -63,7 +63,7 @@ export const guides: Guide[] = [
     title: "Importar una carpeta de imágenes",
     summary: "Sube muchas imágenes de una vez; cada carpeta se convierte en un post.",
     steps: [
-      { text: "En «Feed y campañas» pulsa «Importar carpeta» y elige la carpeta principal desde tu computadora." },
+      { image: "/manual/feed.jpg", text: "En «Feed y campañas» pulsa «Importar carpeta» y elige la carpeta principal desde tu computadora." },
       { text: "El sistema lee las subcarpetas: cada una se convierte en un borrador. Con varias imágenes es un carrusel; con una sola, una foto." },
       { text: "Revisa la lista. Puedes desmarcar lo que no quieras importar. Las carpetas «Historias» y «Variaciones» vienen desmarcadas." },
       { text: "Pulsa «Importar». Verás una barra de progreso mientras se suben los archivos." },
@@ -80,9 +80,9 @@ export const guides: Guide[] = [
     title: "Gestionar carruseles: ver, unir y disolver",
     summary: "Mira todas las láminas, sepáralas o junta varios posts en uno.",
     steps: [
-      { text: "Abre un post de tipo carrusel: en el editor ves todas sus láminas numeradas. Usa las flechas para reordenarlas, la X para quitar una y la tijera para sacarla como post independiente." },
+      { image: "/manual/carrusel-editor.jpg", text: "Abre un post de tipo carrusel: en el editor ves todas sus láminas numeradas. Usa las flechas para reordenarlas, la X para quitar una y la tijera para sacarla como post independiente." },
       { text: "Pulsa la pestaña «Carruseles» (arriba del feed) para ver todos tus carruseles con sus láminas en fila." },
-      { text: "Si un carrusel en realidad eran varios posts sueltos, pulsa «Disolver»: cada lámina pasa a ser un post propio." },
+      { image: "/manual/carruseles.jpg", text: "Si un carrusel en realidad eran varios posts sueltos, pulsa «Disolver»: cada lámina pasa a ser un post propio." },
       { text: "Para disolver muchos a la vez, marca sus casillas (o «Seleccionar todos») y pulsa «Disolver seleccionados»; confirma el aviso." },
       { text: "Para juntar posts en un carrusel, vuelve a «Feed», pulsa «Seleccionar y unir», toca los posts que quieras y pulsa «Unir en carrusel»." },
     ],
@@ -107,7 +107,7 @@ export const guides: Guide[] = [
     title: "Publicar ahora, programar o en lote",
     summary: "Las tres formas de enviar contenido a tus redes.",
     steps: [
-      { text: "Entra en «Publicar» (o pulsa «Crear» arriba). Elige el modo: «Ahora», «Programar» o «Múltiples»." },
+      { image: "/manual/publicar.jpg", text: "Entra en «Publicar» (o pulsa «Crear» arriba). Elige el modo: «Ahora», «Programar» o «Múltiples»." },
       { text: "Elige el formato: IG Foto, IG Reel, IG Carrusel, FB Texto o FB Foto. Las redes sin conectar aparecen desactivadas." },
       { text: "Sube la imagen o el video y escribe el texto. En «Programar» elige también la fecha y la hora." },
       { text: "En «Múltiples» defines un rango: fecha de inicio, posts por día y horas por día. El sistema reparte tus publicaciones automáticamente." },
@@ -177,7 +177,7 @@ export const guides: Guide[] = [
     title: "Buscador y notificaciones",
     summary: "Encuentra cualquier cosa rápido y entérate de lo importante.",
     steps: [
-      { text: "Usa la lupa de arriba para buscar páginas, campañas, posts o temas de esta ayuda. Pulsa un resultado para ir directo." },
+      { image: "/manual/buscador.jpg", text: "Usa la lupa de arriba para buscar páginas, campañas, posts o temas de esta ayuda. Pulsa un resultado para ir directo." },
       { text: "La campana muestra avisos: publicaciones que fallaron, posts que se publican en las próximas 24 horas y publicaciones recientes." },
       { text: "Pulsa un aviso para ir al post. Usa «Marcar todo como leído» para limpiar el contador." },
     ],
