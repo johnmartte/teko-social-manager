@@ -10,14 +10,8 @@ export default function BrandMark({
 }) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <div className="relative size-9 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-[inset_0_-2px_0_rgba(0,0,0,.18)]">
-        <svg viewBox="0 0 24 24" className="size-[18px] text-primary-foreground" fill="none" aria-hidden>
-          <rect x="3" y="3" width="8" height="8" rx="2" fill="currentColor" />
-          <rect x="13" y="3" width="8" height="8" rx="4" fill="currentColor" opacity=".55" />
-          <rect x="3" y="13" width="8" height="8" rx="4" fill="currentColor" opacity=".55" />
-          <rect x="13" y="13" width="8" height="8" rx="2" fill="currentColor" />
-        </svg>
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logos/teko-social.svg" alt="Teko Social" className="size-9 shrink-0" />
       {showName && (
         <div className="leading-none">
           <span className="block text-[15px] font-semibold tracking-tight">Teko Social</span>

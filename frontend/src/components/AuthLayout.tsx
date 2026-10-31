@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
+import PoweredBy from "@/components/PoweredBy";
 
 // Fotos de Pexels (licencia libre) que rotan solas en el panel izquierdo.
 const px = (id: number) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=1400`;
@@ -60,6 +61,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               <BrandMark />
             </div>
             {children}
+            <PoweredBy className="mt-10 text-center text-white/40" />
           </div>
         </div>
       </div>

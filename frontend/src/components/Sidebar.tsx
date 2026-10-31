@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import type { Campaign } from "@/lib/types";
 import BrandMark from "@/components/BrandMark";
+import PoweredBy from "@/components/PoweredBy";
 import { InstagramIcon, FacebookIcon } from "@/components/PlatformIcon";
 
 export const navGroups = [
@@ -132,6 +133,7 @@ export default function Sidebar() {
           </span>
         </Link>
         <NavLink href="/settings" label="Configuración" icon={Settings} active={isActive("/settings")} />
+        <PoweredBy className="hidden lg:block px-3 pt-1 text-sidebar-muted" />
       </div>
     </aside>
   );

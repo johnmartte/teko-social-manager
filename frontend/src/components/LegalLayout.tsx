@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import BrandMark from "@/components/BrandMark";
+import PoweredBy from "@/components/PoweredBy";
 
 /** Páginas legales públicas (Meta las exige sin login). Mismo look oscuro que el acceso. */
 export default function LegalLayout({
@@ -39,6 +40,7 @@ export default function LegalLayout({
           <Link href="/privacy" className="hover:text-white">Privacidad</Link>
           <Link href="/data-deletion" className="hover:text-white">Eliminación de datos</Link>
         </footer>
+        <PoweredBy className="mt-4 text-center text-white/40" />
       </div>
     </div>
   );
